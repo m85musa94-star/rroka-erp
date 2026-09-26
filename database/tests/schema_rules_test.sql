@@ -61,6 +61,11 @@ SELECT pg_temp.expect_error('quotation: discount above subtotal rejected',
     'UPDATE quotations SET status = ''SENT'', discount_amount = 999999 WHERE id = 1', 'RROKA_QUOTATION_NEGATIVE');
 SELECT pg_temp.expect_ok('quotation: DRAFT -> SENT',
     'UPDATE quotations SET status = ''SENT'', discount_amount = 500 WHERE id = 1');
+SELECT pg_temp.expect_error('quotation: header frozen once SENT (discount)',
+    'UPDATE quotations SET discount_amount = 0 WHERE id = 1', 'RROKA_QUOTATION_LOCKED');
+SELECT pg_temp.expect_error('quotation: approving cannot sneak in other changes',
+    'UPDATE quotations SET status = ''APPROVED'', approved_at = now(), approved_by = 2, discount_amount = 0 WHERE id = 1',
+    'RROKA_QUOTATION_LOCKED');
 SELECT pg_temp.expect_error('quotation: lines frozen once SENT',
     'UPDATE quotation_lines SET unit_price = 1 WHERE quotation_id = 1 AND line_no = 1', 'RROKA_QUOTATION_LOCKED');
 SELECT pg_temp.expect_error('quotation: APPROVED requires approver (CHECK)',

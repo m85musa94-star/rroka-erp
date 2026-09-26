@@ -31,11 +31,11 @@ $$ LANGUAGE sql STABLE;
 
 -- Human-readable document numbers: PREFIX-YYYY-000001.
 -- These are operational references only; official invoice numbering is Daftra's.
-CREATE SEQUENCE seq_client_no;
-CREATE SEQUENCE seq_survey_no;
-CREATE SEQUENCE seq_quotation_no;
-CREATE SEQUENCE seq_project_no;
-CREATE SEQUENCE seq_production_order_no;
+CREATE SEQUENCE IF NOT EXISTS seq_client_no;
+CREATE SEQUENCE IF NOT EXISTS seq_survey_no;
+CREATE SEQUENCE IF NOT EXISTS seq_quotation_no;
+CREATE SEQUENCE IF NOT EXISTS seq_project_no;
+CREATE SEQUENCE IF NOT EXISTS seq_production_order_no;
 
 CREATE OR REPLACE FUNCTION fn_doc_number(prefix text, seq regclass) RETURNS text AS $$
     SELECT prefix || '-' || to_char(now(), 'YYYY') || '-' || lpad(nextval(seq)::text, 6, '0')
@@ -210,16 +210,20 @@ DECLARE
     v_net   numeric;
 BEGIN
     IF TG_OP = 'UPDATE' THEN
-        IF OLD.status IN ('APPROVED', 'REJECTED', 'EXPIRED', 'CANCELLED') THEN
-            -- Only the Daftra link and a cancellation of an approved quote with no project may change.
+        -- Only a DRAFT is editable. After that the only changes allowed are
+        -- linking the Daftra estimate, and (from SENT) a status move with its approval stamp.
+        IF OLD.status <> 'DRAFT' THEN
             IF NEW.status = OLD.status
-               AND (NEW.daftra_estimate_id IS DISTINCT FROM OLD.daftra_estimate_id)
                AND (to_jsonb(NEW) - 'daftra_estimate_id' - 'updated_at')
                  = (to_jsonb(OLD) - 'daftra_estimate_id' - 'updated_at') THEN
                 RETURN NEW;
             END IF;
-            RAISE EXCEPTION 'RROKA_QUOTATION_LOCKED: quotation % is % and cannot be modified', OLD.quotation_no, OLD.status
-                USING ERRCODE = 'P0001';
+            IF NOT (OLD.status = 'SENT' AND NEW.status <> 'SENT'
+               AND (to_jsonb(NEW) - 'status' - 'approved_at' - 'approved_by' - 'daftra_estimate_id' - 'updated_at')
+                 = (to_jsonb(OLD) - 'status' - 'approved_at' - 'approved_by' - 'daftra_estimate_id' - 'updated_at')) THEN
+                RAISE EXCEPTION 'RROKA_QUOTATION_LOCKED: quotation % is % and cannot be modified', OLD.quotation_no, OLD.status
+                    USING ERRCODE = 'P0001';
+            END IF;
         END IF;
 
         IF NEW.status IS DISTINCT FROM OLD.status AND NOT (

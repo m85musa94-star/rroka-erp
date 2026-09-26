@@ -1,0 +1,53 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: rroka
+          POSTGRES_PASSWORD: rroka_ci
+          POSTGRES_DB: rroka_testing
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U rroka"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGUSER: rroka
+      PGPASSWORD: rroka_ci
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Database business-rule tests
+        run: scripts/test-db.sh
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, pgsql
+
+      - name: Install dependencies
+        working-directory: backend
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Code style
+        working-directory: backend
+        run: vendor/bin/pint --test
+
+      - name: API tests
+        working-directory: backend
+        env:
+          DB_HOST: 127.0.0.1
+          DB_USERNAME: rroka
+          DB_PASSWORD: rroka_ci
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan test
