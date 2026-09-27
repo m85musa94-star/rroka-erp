@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\RequirePermission;
 use App\Http\Middleware\SetAuditUser;
 use Illuminate\Database\QueryException;
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'permission' => RequirePermission::class,
             'audit.user' => SetAuditUser::class,
+            'active' => EnsureUserIsActive::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -42,17 +44,23 @@ return Application::configure(basePath: dirname(__DIR__))
 
             preg_match('/RROKA_[A-Z0-9_]+/', $e->getMessage(), $m);
             preg_match('/ERROR:\s+(.+?)(?:\n|\(Connection)/', $e->getMessage(), $detail);
+            $code = $m[0] ?? $map[$sqlState];
 
-            return response()->json([
-                'error' => $m[0] ?? $map[$sqlState],
-                'message' => trim($detail[1] ?? ''),
-            ], 422);
+            if (! request()->expectsJson() && ! request()->is('api/*')) {
+                return back()->withInput()->withErrors(['rule' => __("rroka.errors.$code")]);
+            }
+
+            return response()->json(['error' => $code, 'message' => trim($detail[1] ?? '')], 422);
         });
 
         // Domain refusals thrown as HttpException('CODE[: detail]') get the same JSON shape.
         $exceptions->render(function (HttpException $e) {
             if (! preg_match('/^([A-Z][A-Z0-9_]+)(?::\s*(.*))?$/s', $e->getMessage(), $m)) {
                 return null;
+            }
+
+            if (! request()->expectsJson() && ! request()->is('api/*')) {
+                return back()->withInput()->withErrors(['rule' => __("rroka.errors.{$m[1]}")]);
             }
 
             return response()->json(['error' => $m[1], 'message' => $m[2] ?? ''], $e->getStatusCode());

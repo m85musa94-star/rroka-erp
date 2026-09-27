@@ -13,6 +13,10 @@ class RequirePermission
         $user = $request->user();
 
         if (! $user || ! $user->is_active || ! $user->hasPermission($permission)) {
+            if (! $request->expectsJson() && ! $request->is('api/*')) {
+                abort(403, 'ليست لديك صلاحية لهذه العملية.');
+            }
+
             return response()->json(['error' => 'FORBIDDEN', 'permission' => $permission], 403);
         }
 
