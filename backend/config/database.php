@@ -96,6 +96,7 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
+            'timezone' => env('DB_TIMEZONE', 'Asia/Riyadh'),
             'sslmode' => env('DB_SSLMODE', 'prefer'),
         ],
 

@@ -14,13 +14,20 @@ use Illuminate\Support\Facades\DB;
  */
 class CreateSystemAdmin extends Command
 {
-    protected $signature = 'rroka:create-admin {email} {name}';
+    protected $signature = 'rroka:create-admin {email} {name} {--if-none : Do nothing when any user already exists (first-deploy bootstrap)}';
 
     protected $description = 'Create a user with the system_admin role (all permissions)';
 
     public function handle(): int
     {
-        $password = $this->secret('Password (min 12 characters)');
+        if ($this->option('if-none') && User::query()->exists()) {
+            $this->info('Users already exist; skipping admin bootstrap.');
+
+            return self::SUCCESS;
+        }
+
+        // Non-interactive deploys pass the password through the environment.
+        $password = getenv('INITIAL_ADMIN_PASSWORD') ?: $this->secret('Password (min 12 characters)');
         if (strlen((string) $password) < 12) {
             $this->error('Password must be at least 12 characters.');
 

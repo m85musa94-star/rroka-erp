@@ -25,10 +25,13 @@
 
 ## بنية الكود وأوامر التطوير
 
-- `database/schema/rroka_schema.sql` هو المصدر الوحيد للمخطط؛ Laravel يحمّله كما هو
+- `backend/database/schema/rroka_schema.sql` هو المصدر الوحيد للمخطط؛ Laravel يحمّله كما هو
   (`backend/database/migrations/0000_00_00_000000_load_rroka_schema.php`). لا تُنشئ جداول الأعمال بـ Schema Builder.
-- كل قاعدة رقابية جديدة في المخطط تحتاج اختبارًا في `database/tests/schema_rules_test.sql` (مسموح + ممنوع).
+- كل قاعدة رقابية جديدة في المخطط تحتاج اختبارًا في `backend/database/sql-tests/schema_rules_test.sql` (مسموح + ممنوع).
 - اختبارات: `scripts/test-db.sh` (مع PGHOST/PGUSER/PGPASSWORD) ثم `cd backend && php artisan test`.
 - التنسيق: `cd backend && vendor/bin/pint`.
 - رفض قاعدة في قاعدة البيانات يُرفع بـ `RROKA_*` ويظهر للـ API كـ 422 (`bootstrap/app.php`).
 - معدلات التكلفة جداول مؤرَّخة وإلحاقية فقط (`worker_rates`, `machine_rates`, `overhead_rates`).
+- النشر: `Dockerfile` في الجذر (صورة serversideup/php FrankenPHP) و`docker/start.sh`؛ الدليل في `docs/DEPLOYMENT.md`.
+- `SetAuditUser` يضبط `rroka.user_id` على مستوى الجلسة: يتطلب اتصالًا مباشرًا بقاعدة البيانات لا مجمَّعًا بنمط المعاملات.
+- الواجهة Blade بلا خطوة بناء (CSS في `public/css/app.css`)؛ الرسائل العربية في `lang/ar/rroka.php`.

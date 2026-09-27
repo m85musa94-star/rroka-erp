@@ -7,10 +7,11 @@
 
 | المسار | المحتوى |
 |---|---|
-| `database/schema/rroka_schema.sql` | مخطط PostgreSQL — **المصدر الوحيد** للجداول والقواعد الرقابية |
-| `database/tests/schema_rules_test.sql` | اختبارات القواعد الرقابية (مسموح/ممنوع لكل قاعدة) |
-| `backend/` | تطبيق Laravel 13 (REST API) — يحمّل المخطط أعلاه عبر migration |
-| `.github/workflows/tests.yml` | تشغيل كل الاختبارات تلقائيًا مع كل رفع |
+| `backend/database/schema/rroka_schema.sql` | مخطط PostgreSQL — **المصدر الوحيد** للجداول والقواعد الرقابية |
+| `backend/database/sql-tests/schema_rules_test.sql` | اختبارات القواعد الرقابية (مسموح/ممنوع لكل قاعدة) |
+| `backend/` | تطبيق Laravel 13: الواجهة العربية + REST API — يحمّل المخطط أعلاه عبر migration |
+| `.github/workflows/tests.yml` | تشغيل كل الاختبارات وبناء صورة النشر تلقائيًا مع كل رفع |
+| `Dockerfile`, `docker/` | صورة التشغيل للخادم — انظر [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) |
 
 ## التشغيل محليًا (للمطوّر)
 
