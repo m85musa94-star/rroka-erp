@@ -15,7 +15,7 @@ Route::middleware(['auth:sanctum', 'audit.user'])->group(function () {
     Route::get('/clients/{client}', [ClientController::class, 'show'])->middleware('permission:clients.view');
     Route::post('/clients', [ClientController::class, 'store'])->middleware('permission:clients.manage');
     Route::patch('/clients/{client}', [ClientController::class, 'update'])->middleware('permission:clients.manage');
-    Route::post('/clients/{client}/sync-to-daftra', [ClientController::class, 'syncToDaftra'])->middleware('permission:daftra.sync');
+    Route::post('/clients/{client}/sync-to-daftra', [ClientController::class, 'syncToDaftra'])->middleware(['permission:daftra.sync', 'audit.user:manual']);
 
     Route::get('/quotations', [QuotationController::class, 'index'])->middleware('permission:quotations.view');
     Route::get('/quotations/{quotation}', [QuotationController::class, 'show'])->middleware('permission:quotations.view');
@@ -24,7 +24,7 @@ Route::middleware(['auth:sanctum', 'audit.user'])->group(function () {
     Route::post('/quotations/{quotation}/send', [QuotationController::class, 'send'])->middleware('permission:quotations.manage');
     Route::post('/quotations/{quotation}/approve', [QuotationController::class, 'approve'])->middleware('permission:quotations.approve');
     Route::post('/quotations/{quotation}/reject', [QuotationController::class, 'reject'])->middleware('permission:quotations.approve');
-    Route::post('/quotations/{quotation}/sync-to-daftra', [QuotationController::class, 'syncToDaftra'])->middleware('permission:daftra.sync');
+    Route::post('/quotations/{quotation}/sync-to-daftra', [QuotationController::class, 'syncToDaftra'])->middleware(['permission:daftra.sync', 'audit.user:manual']);
 
     Route::get('/projects', [ProjectController::class, 'index'])->middleware('permission:projects.view');
     Route::get('/projects/{project}', [ProjectController::class, 'show'])->middleware('permission:projects.view');

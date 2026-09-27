@@ -28,6 +28,11 @@ class CreateSystemAdmin extends Command
 
         // Non-interactive deploys pass the password through the environment.
         $password = getenv('INITIAL_ADMIN_PASSWORD') ?: $this->secret('Password (min 12 characters)');
+        if (! filter_var($this->argument('email'), FILTER_VALIDATE_EMAIL)) {
+            $this->error('Invalid email address.');
+
+            return self::FAILURE;
+        }
         if (strlen((string) $password) < 12) {
             $this->error('Password must be at least 12 characters.');
 

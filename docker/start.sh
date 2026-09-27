@@ -10,10 +10,8 @@ fi
 
 php artisan migrate --force
 
-# First deploy only: creates the system admin if no user exists yet.
-if [ -n "$INITIAL_ADMIN_EMAIL" ] && [ -n "$INITIAL_ADMIN_PASSWORD" ]; then
-  php artisan rroka:create-admin "$INITIAL_ADMIN_EMAIL" "${INITIAL_ADMIN_NAME:-مدير النظام}" --if-none
-fi
+# First deploy only: creates the system admin while no user exists yet.
+php artisan rroka:bootstrap-admin
 
 php artisan config:cache
 php artisan route:cache

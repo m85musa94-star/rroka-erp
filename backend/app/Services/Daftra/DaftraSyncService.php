@@ -6,6 +6,7 @@ use App\Models\Client;
 use App\Models\DaftraSyncLog;
 use App\Models\Quotation;
 use App\Models\User;
+use App\Support\AuditContext;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -30,10 +31,13 @@ class DaftraSyncService
         $result = $this->run('CLIENT', $client->id, 'POST /clients', $payload, $user,
             fn () => $this->daftra->createClient($payload));
 
-        $client->forceFill([
-            'daftra_client_id' => $result['id'],
-            'daftra_client_number' => $result['client_number'] ?? null,
-        ])->save();
+        DB::transaction(function () use ($client, $result, $user) {
+            AuditContext::apply($user->id);
+            $client->forceFill([
+                'daftra_client_id' => $result['id'],
+                'daftra_client_number' => $result['client_number'] ?? null,
+            ])->save();
+        });
 
         return $client;
     }
@@ -60,7 +64,10 @@ class DaftraSyncService
             ['Estimate' => $estimate, 'InvoiceItem' => $items], $user,
             fn () => $this->daftra->createEstimate($estimate, $items));
 
-        $quotation->forceFill(['daftra_estimate_id' => $result['id']])->save();
+        DB::transaction(function () use ($quotation, $result, $user) {
+            AuditContext::apply($user->id);
+            $quotation->forceFill(['daftra_estimate_id' => $result['id']])->save();
+        });
 
         return $quotation;
     }

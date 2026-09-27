@@ -29,7 +29,7 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::get('/clients/{client}/edit', [ClientController::class, 'edit'])->name('clients.edit');
         Route::put('/clients/{client}', [ClientController::class, 'update'])->name('clients.update');
     });
-    Route::post('/clients/{client}/sync', [ClientController::class, 'sync'])->name('clients.sync')->middleware('permission:daftra.sync');
+    Route::post('/clients/{client}/sync', [ClientController::class, 'sync'])->name('clients.sync')->middleware(['permission:daftra.sync', 'audit.user:manual']);
 
     Route::middleware('permission:quotations.view')->group(function () {
         Route::get('/quotations', [QuotationController::class, 'index'])->name('quotations.index');
@@ -44,7 +44,7 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::get('/quotations/{quotation}/edit', [QuotationController::class, 'edit'])->name('quotations.edit');
         Route::put('/quotations/{quotation}', [QuotationController::class, 'update'])->name('quotations.update');
     });
-    Route::post('/quotations/{quotation}/sync', [QuotationController::class, 'sync'])->name('quotations.sync')->middleware('permission:daftra.sync');
+    Route::post('/quotations/{quotation}/sync', [QuotationController::class, 'sync'])->name('quotations.sync')->middleware(['permission:daftra.sync', 'audit.user:manual']);
 
     Route::middleware('permission:projects.view')->group(function () {
         Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');

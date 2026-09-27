@@ -38,6 +38,10 @@ class DaftraSyncTest extends ApiTestCase
         $log = DB::table('daftra_sync_log')->where('entity_id', $client['id'])->first();
         $this->assertSame('SUCCESS', $log->status);
         $this->assertSame(77, (int) $log->daftra_id);
+
+        // The link written after the call is audited under the acting user.
+        $audit = DB::table('audit_log')->where(['table_name' => 'clients', 'row_id' => $client['id'], 'action' => 'UPDATE'])->latest('id')->first();
+        $this->assertSame($admin->id, (int) $audit->user_id);
     }
 
     public function test_failed_sync_is_logged_and_reported(): void

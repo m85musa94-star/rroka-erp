@@ -33,5 +33,6 @@
 - رفض قاعدة في قاعدة البيانات يُرفع بـ `RROKA_*` ويظهر للـ API كـ 422 (`bootstrap/app.php`).
 - معدلات التكلفة جداول مؤرَّخة وإلحاقية فقط (`worker_rates`, `machine_rates`, `overhead_rates`).
 - النشر: `Dockerfile` في الجذر (صورة serversideup/php FrankenPHP) و`docker/start.sh`؛ الدليل في `docs/DEPLOYMENT.md`.
-- `SetAuditUser` يضبط `rroka.user_id` على مستوى الجلسة: يتطلب اتصالًا مباشرًا بقاعدة البيانات لا مجمَّعًا بنمط المعاملات.
+- `SetAuditUser`: كل طلب كتابة معاملة واحدة، و`rroka.user_id` محلي للمعاملة (`AuditContext::apply`)؛ مسارات المزامنة مع دفترة `audit.user:manual` وتطبّق السياق بنفسها.
+- الاستضافة المختارة: Laravel Cloud (المجلد الجذر `backend`)؛ `composer.lock` في جذر المستودع للتعرّف فقط.
 - الواجهة Blade بلا خطوة بناء (CSS في `public/css/app.css`)؛ الرسائل العربية في `lang/ar/rroka.php`.
