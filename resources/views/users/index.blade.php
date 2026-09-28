@@ -2,7 +2,7 @@
 @section('title', 'المستخدمون')
 @section('content')
 <div class="card">
-    <div class="actions" style="margin-bottom:12px"><a class="btn" href="{{ route('users.create') }}">مستخدم جديد</a></div>
+    <div class="actions" style="justify-content:space-between;margin-bottom:12px"><p class="muted" style="margin:0">كل مستخدم يدخل ببريده وكلمة مروره، ويرى ما تسمح به أدواره فقط.</p><a class="btn" href="{{ route('users.create') }}">+ مستخدم جديد</a></div>
     <div class="table-wrap"><table>
         <tr><th>الاسم</th><th>البريد</th><th>الأدوار</th><th>الحالة</th><th></th></tr>
         @foreach($users as $usr)

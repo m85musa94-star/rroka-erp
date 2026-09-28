@@ -50,6 +50,14 @@ return [
         'PENDING' => 'قيد التنفيذ', 'SUCCESS' => 'نجح', 'FAILED' => 'فشل',
     ],
 
+    'permission_groups' => [
+        'clients' => 'العملاء', 'surveys' => 'المعاينات', 'quotations' => 'عروض الأسعار',
+        'projects' => 'المشاريع', 'designs' => 'التصاميم', 'bom' => 'قوائم المواد',
+        'inventory' => 'المخزون', 'production' => 'الإنتاج', 'quality' => 'الجودة',
+        'installations' => 'التركيب', 'costing' => 'التكلفة والربحية', 'settings' => 'الإعدادات',
+        'daftra' => 'دفترة', 'users' => 'المستخدمون والأدوار', 'audit' => 'سجل التدقيق',
+    ],
+
     'client_type' => ['INDIVIDUAL' => 'فرد', 'COMPANY' => 'منشأة'],
 
     'overhead_basis' => [

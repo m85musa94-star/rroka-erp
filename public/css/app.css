@@ -113,3 +113,9 @@ dl.kv dd { margin: 0; }
 .pagination { display: flex; gap: 8px; list-style: none; padding: 0; margin: 14px 0 0; }
 .pagination li a, .pagination li span { display: inline-block; padding: 5px 12px; border: 1px solid var(--line); border-radius: 8px; }
 .pagination li.disabled span { color: var(--muted); }
+.perm-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.perm-group { border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px 12px; margin: 0; }
+.perm-group legend { padding: 0 6px; }
+.perm-all { display: flex; gap: 6px; align-items: center; font-weight: 700; color: var(--ink); font-size: 14px; }
+.perm-item { display: flex; gap: 8px; align-items: center; color: var(--ink); font-size: 14px; padding: 3px 0; margin: 0; }
+.perm-item input, .perm-all input { width: auto; }

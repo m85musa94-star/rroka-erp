@@ -64,6 +64,6 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
 
     Route::middleware('permission:users.manage')->group(function () {
         Route::resource('users', UserController::class)->except(['show', 'destroy']);
-        Route::resource('roles', RoleController::class)->except(['show', 'destroy']);
+        Route::resource('roles', RoleController::class)->except(['show']);
     });
 });

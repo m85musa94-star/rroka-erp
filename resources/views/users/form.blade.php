@@ -23,7 +23,7 @@
                 <input type="checkbox" name="roles[]" value="{{ $r->id }}" style="width:auto" @checked(in_array($r->id, $chosen))> {{ $r->name_ar }}
             </label>
         @empty
-            <p class="muted">لا توجد أدوار. أنشئ الأدوار من صفحة "الأدوار والصلاحيات".</p>
+            <p class="muted">لا توجد أدوار بعد. <a href="{{ route('roles.create') }}">أنشئ دورًا أولًا</a> ثم ارجع إلى هنا.</p>
         @endforelse
     </div>
     <div class="actions"><button class="btn">حفظ</button><a class="btn ghost" href="{{ route('users.index') }}">إلغاء</a></div>

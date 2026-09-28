@@ -1,28 +1,50 @@
 @extends('layouts.app')
-@section('title', $role->exists ? 'تعديل الدور' : 'دور جديد')
+@section('title', $role->exists ? 'تعديل الدور: '.$role->name_ar : 'دور جديد')
 @section('content')
-@php($chosen = old('permissions', $selected))
-<form method="post" action="{{ $role->exists ? route('roles.update', $role) : route('roles.store') }}" class="card">
+@php($chosen = array_map('intval', old('permissions', $selected)))
+@php($isAdmin = $role->code === 'system_admin')
+<form method="post" action="{{ $role->exists ? route('roles.update', $role) : route('roles.store') }}">
     @csrf
     @if($role->exists) @method('put') @endif
-    <div class="grid g3">
-        <div class="field"><label>اسم الدور *</label><input name="name_ar" value="{{ old('name_ar', $role->name_ar) }}" required placeholder="مثال: مسؤول المبيعات"></div>
-        <div class="field"><label>الرمز (إنجليزي) *</label><input name="code" value="{{ old('code', $role->code) }}" required dir="ltr" placeholder="sales_officer" pattern="[a-z][a-z0-9_]*"></div>
-        <div class="field"><label>الوصف</label><input name="description" value="{{ old('description', $role->description) }}"></div>
+    <div class="card">
+        <div class="grid g2">
+            <div class="field"><label>اسم الدور *</label><input name="name_ar" value="{{ old('name_ar', $role->name_ar) }}" required placeholder="مثال: مسؤول المبيعات، مشرف الإنتاج، أمين المستودع"></div>
+            <div class="field"><label>الوصف</label><input name="description" value="{{ old('description', $role->description) }}" placeholder="اختياري: ما مسؤوليات هذا الدور؟"></div>
+        </div>
     </div>
-    @if($role->code === 'system_admin')
-        <p class="alert warn">دور مدير النظام يملك كل الصلاحيات دائمًا.</p>
+
+    @if($isAdmin)
+        <p class="alert warn">دور مدير النظام يملك كل الصلاحيات دائمًا، ولا تُعدَّل صلاحياته.</p>
     @else
-    <div class="field"><label>الصلاحيات</label>
-        <div class="grid g3">
-        @foreach($permissions as $p)
-            <label style="display:flex;gap:6px;align-items:center;color:var(--ink)">
-                <input type="checkbox" name="permissions[]" value="{{ $p->id }}" style="width:auto" @checked(in_array($p->id, $chosen))> {{ $p->description }}
-            </label>
-        @endforeach
+    <div class="card">
+        <h2>الصلاحيات <span class="muted" style="font-weight:400;font-size:13px">— حدّد ما يستطيع صاحب هذا الدور فعله</span></h2>
+        <div class="perm-groups">
+            @foreach($groups as $g)
+                <fieldset class="perm-group">
+                    <legend>
+                        <label class="perm-all"><input type="checkbox" class="js-all"> {{ $g['label'] }}</label>
+                    </legend>
+                    @foreach($g['items'] as $p)
+                        <label class="perm-item">
+                            <input type="checkbox" name="permissions[]" value="{{ $p->id }}" @checked(in_array($p->id, $chosen))>
+                            {{ $p->description }}
+                        </label>
+                    @endforeach
+                </fieldset>
+            @endforeach
         </div>
     </div>
     @endif
     <div class="actions"><button class="btn">حفظ</button><a class="btn ghost" href="{{ route('roles.index') }}">إلغاء</a></div>
 </form>
 @endsection
+@push('scripts')
+<script>
+document.querySelectorAll('.perm-group').forEach(g => {
+    const all = g.querySelector('.js-all'), items = [...g.querySelectorAll('input[name="permissions[]"]')];
+    const sync = () => { const n = items.filter(i => i.checked).length; all.checked = n === items.length; all.indeterminate = n > 0 && n < items.length; };
+    all.addEventListener('change', () => { items.forEach(i => i.checked = all.checked); sync(); });
+    items.forEach(i => i.addEventListener('change', sync)); sync();
+});
+</script>
+@endpush
