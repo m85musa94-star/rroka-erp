@@ -34,6 +34,7 @@ class ListView
         public array $groups = [],
         public array $views = ['list'],
         public ?string $defaultView = null,
+        public array $keep = [],
     ) {
         $this->q = trim((string) $request->query('q', ''));
         $this->active = array_values(array_intersect((array) $request->query('f', []), array_keys($filters)));
@@ -73,6 +74,7 @@ class ListView
     public function url(array $changes): string
     {
         $params = array_filter([
+            ...array_map(fn ($k) => $this->request->query($k), array_combine($this->keep, $this->keep)),
             'q' => $this->q ?: null,
             'f' => $this->active ?: null,
             'g' => $this->group,

@@ -226,3 +226,39 @@ tr.row-link:hover td { background: #faf8f5; }
   .statusbar span { padding: 5px 10px 5px 18px; font-size: 12px; }
   .table-wrap td, .table-wrap th { white-space: nowrap; }
 }
+
+/* ---------- Reports ---------- */
+.report-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.report-card { display: grid; gap: 6px; color: var(--ink); margin: 0; }
+.report-card:hover { text-decoration: none; border-color: #cdbfb2; box-shadow: 0 3px 10px rgba(0,0,0,.06); }
+.report-card strong { font-size: 16px; }
+.report-bar { display: flex; flex-wrap: wrap; gap: 14px; align-items: end; padding: 12px 14px; }
+.report-bar label { display: grid; gap: 4px; margin: 0; }
+.report-bar select { min-width: 190px; }
+table.pivot tbody tr:hover td { background: #faf8f5; }
+table.pivot tfoot th { background: #f1eee9; color: var(--ink); font-weight: 700; }
+td.strong { font-weight: 700; }
+
+.viz { --grid: #e6e2dc; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--ink); margin: 6px 0 14px; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-inline-end: 6px; vertical-align: -1px; }
+.bars { display: grid; gap: 10px; }
+.bar-row { display: grid; grid-template-columns: minmax(90px, 220px) 1fr; gap: 12px; align-items: center; }
+.bar-label { font-size: 13px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: start; }
+.bar-track { position: relative; height: 24px; margin-inline-end: 110px; border-inline-start: 1px solid var(--grid); }
+.bar, .bar-stack { position: absolute; top: 2px; height: 20px; }
+.bar { background: #2a78d6; border-radius: 4px 0 0 4px; }
+[dir="rtl"] .bar { border-radius: 4px 0 0 4px; }
+.bar.neg { background: #e34948; border-radius: 0 4px 4px 0; }
+.bar-stack { display: flex; gap: 2px; background: transparent; }
+.bar-stack .seg { display: block; height: 100%; min-width: 2px; }
+.bar-stack .seg:last-child { border-radius: 4px 0 0 4px; }
+.bar:hover, .bar-stack .seg:hover { filter: brightness(1.08); }
+.bar-zero { position: absolute; top: -2px; bottom: -2px; width: 1px; background: #8f8a84; }
+.bar-value { position: absolute; top: 2px; line-height: 20px; font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+@media (max-width: 860px) {
+  .bar-row { grid-template-columns: 1fr; gap: 4px; }
+  .bar-track { margin-inline-end: 90px; }
+  .report-bar select { min-width: 0; width: 100%; }
+  .report-bar label { flex: 1 1 140px; }
+}

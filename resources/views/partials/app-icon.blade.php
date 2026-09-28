@@ -68,6 +68,12 @@
         <circle cx="24" cy="26" r="5" fill="#fff"/>
         <path d="M34 34l20 20M46 46l-5 5M51 51l-4 4" stroke="#2A5F7E" stroke-width="6" stroke-linecap="round"/>
         @break
+    @case('reports')
+        <rect x="10" y="30" width="10" height="24" rx="3" fill="#5FD0BD"/>
+        <rect x="27" y="16" width="10" height="38" rx="3" fill="#8E5486"/>
+        <rect x="44" y="24" width="10" height="30" rx="3" fill="#F2BD5B"/>
+        <path d="M8 22L26 10l14 8 16-10" stroke="#E8833A" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        @break
     @case('home')
         <rect x="8" y="8" width="20" height="20" rx="5" fill="currentColor"/>
         <rect x="36" y="8" width="20" height="20" rx="5" fill="currentColor"/>

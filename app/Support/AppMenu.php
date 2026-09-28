@@ -17,6 +17,7 @@ class AppMenu
             ['key' => 'clients', 'label' => 'العملاء', 'route' => 'clients.index', 'match' => 'clients.*', 'permission' => 'clients.view', 'group' => 'sales'],
             ['key' => 'quotations', 'label' => 'عروض الأسعار', 'route' => 'quotations.index', 'match' => 'quotations.*', 'permission' => 'quotations.view', 'group' => 'sales'],
             ['key' => 'projects', 'label' => 'المشاريع', 'route' => 'projects.index', 'match' => 'projects.*', 'permission' => 'projects.view', 'group' => 'ops'],
+            ['key' => 'reports', 'label' => 'التقارير', 'route' => 'reports.index', 'match' => 'reports.*', 'permission' => ['quotations.view', 'projects.view', 'costing.view'], 'group' => 'reports'],
             ['key' => 'designs', 'label' => 'التصاميم', 'route' => null, 'match' => null, 'permission' => null, 'group' => 'ops'],
             ['key' => 'inventory', 'label' => 'المخزون', 'route' => null, 'match' => null, 'permission' => null, 'group' => 'ops'],
             ['key' => 'production', 'label' => 'الإنتاج', 'route' => null, 'match' => null, 'permission' => null, 'group' => 'ops'],
@@ -31,10 +32,22 @@ class AppMenu
     /** Built apps the user may open first, then planned ones (never clickable). */
     public static function forUser(User $user): array
     {
-        $built = array_filter(self::all(), fn ($a) => $a['route'] !== null && $user->hasPermission($a['permission']));
+        $built = array_filter(self::all(), fn ($a) => $a['route'] !== null && self::can($user, $a['permission']));
         $planned = array_filter(self::all(), fn ($a) => $a['route'] === null);
 
         return array_values([...$built, ...$planned]);
+    }
+
+    /** A string permission, or any of an array of permissions. */
+    public static function can(User $user, string|array $permission): bool
+    {
+        foreach ((array) $permission as $p) {
+            if ($user->hasPermission($p)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -47,6 +60,12 @@ class AppMenu
             return [];
         }
         $defs = match ($app['group']) {
+            'reports' => [
+                ['كل التقارير', 'reports.index', [], ['quotations.view', 'projects.view', 'costing.view']],
+                ['عروض الأسعار', 'reports.show', ['key' => 'quotations'], 'quotations.view'],
+                ['المشاريع', 'reports.show', ['key' => 'projects'], 'projects.view'],
+                ['الربحية', 'reports.show', ['key' => 'profitability'], 'costing.view'],
+            ],
             'settings' => [
                 ['معدلات التكلفة', 'rates.index', [], 'settings.cost_rates'],
                 ['المستخدمون', 'users.index', [], 'users.manage'],
@@ -63,11 +82,14 @@ class AppMenu
                     ['بانتظار رد العميل', 'quotations.index', ['f' => ['sent']], 'quotations.view'],
                     ['مراحل العروض', 'quotations.index', ['v' => 'kanban'], 'quotations.view'],
                     ['العملاء', 'clients.index', [], 'clients.view'],
+                    ['التقارير', 'reports.show', ['key' => 'quotations'], 'quotations.view'],
                 ],
                 'projects' => [
                     ['كل المشاريع', 'projects.index', [], 'projects.view'],
                     ['الجارية', 'projects.index', ['f' => ['open']], 'projects.view'],
                     ['مراحل المشاريع', 'projects.index', ['v' => 'kanban'], 'projects.view'],
+                    ['التقارير', 'reports.show', ['key' => 'projects'], 'projects.view'],
+                    ['الربحية', 'reports.show', ['key' => 'profitability'], 'costing.view'],
                 ],
                 default => [],
             },
@@ -75,7 +97,7 @@ class AppMenu
 
         $items = [];
         foreach ($defs as [$label, $route, $params, $perm]) {
-            if (! $user->hasPermission($perm)) {
+            if (! self::can($user, $perm)) {
                 continue;
             }
             $url = route($route, $params);
@@ -95,6 +117,12 @@ class AppMenu
 
     private static function isActive(string $route, array $params): bool
     {
+        if ($route === 'reports.show') {
+            return request()->routeIs('reports.show') && request()->route('key') === $params['key'];
+        }
+        if ($route === 'reports.index') {
+            return request()->routeIs('reports.index');
+        }
         if (! request()->routeIs(str_replace('.index', '.*', $route))) {
             return false;
         }

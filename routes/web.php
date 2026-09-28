@@ -6,6 +6,7 @@ use App\Http\Controllers\Web\CostRateController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\ProjectController;
 use App\Http\Controllers\Web\QuotationController;
+use App\Http\Controllers\Web\ReportController;
 use App\Http\Controllers\Web\RoleController;
 use App\Http\Controllers\Web\UserController;
 use Illuminate\Support\Facades\Route;
@@ -53,6 +54,10 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
     });
     Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store')->middleware('permission:projects.manage');
     Route::post('/projects/{project}/stage/{to}', [ProjectController::class, 'stage'])->name('projects.stage')->middleware('permission:projects.manage');
+
+    // Per-report permissions are checked in the controller.
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/{key}', [ReportController::class, 'show'])->whereIn('key', ['quotations', 'projects', 'profitability'])->name('reports.show');
 
     Route::middleware('permission:settings.cost_rates')->prefix('settings/rates')->name('rates.')->group(function () {
         Route::get('/', [CostRateController::class, 'index'])->name('index');

@@ -38,3 +38,4 @@
 - الاستضافة المختارة: Laravel Cloud. تطبيق Laravel في جذر المستودع مباشرة (نُقل من `backend/` لأن المنصة تبني من الجذر).
 - الواجهة Blade بلا خطوة بناء (CSS في `public/css/app.css`)؛ الرسائل العربية في `lang/ar/rroka.php`.
 - الواجهة على نمط Odoo: `AppMenu` (شبكة التطبيقات وقائمة الشريط العلوي)، `ListView` (بحث/فلاتر/تجميع/عرض قائمة أو بطاقات)، `partials/control-panel`، `partials/statusbar`، و`partials/chatter` (سجل النشاط من `audit_log` عبر `ActivityLog`). كل وحدة جديدة تستخدمها.
+- التقارير: `app/Reports` (محرك جدول محوري واحد بـ GROUPING SETS، فالنسب لا تُجمع خطأً)، يُسجَّل كل تقرير في `ReportRegistry` مع أبعاده ومقاييسه وفلاتره وصلاحيته. القيمة غير القابلة للحساب تُعرض "—" لا صفرًا.
