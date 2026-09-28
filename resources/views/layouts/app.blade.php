@@ -11,42 +11,34 @@
 </head>
 <body>
 @php($u = auth()->user())
+@php($app = \App\Support\AppMenu::current())
+<header class="topbar">
+    <a href="{{ route('dashboard') }}" class="tb-home" title="التطبيقات" aria-label="التطبيقات">
+        @include('partials.app-icon', ['key' => 'home', 'size' => 22])
+    </a>
+    @if($app)
+        <a href="{{ route($app['route']) }}" class="tb-app">
+            @include('partials.app-icon', ['key' => $app['key'], 'size' => 26])
+            <span>{{ $app['label'] }}</span>
+        </a>
+    @else
+        <span class="tb-app"><span>إر روكا للأثاث</span></span>
+    @endif
+    <div class="tb-spacer"></div>
+    <div class="tb-user">
+        <span class="tb-avatar">{{ mb_substr($u->name, 0, 1) }}</span>
+        <span class="tb-name">{{ $u->name }}</span>
+        <form method="post" action="{{ route('logout') }}" class="inline">@csrf
+            <button class="btn ghost sm tb-logout">خروج</button>
+        </form>
+    </div>
+</header>
 <div class="shell">
-    <aside class="side">
-        <div class="logo">إر روكا للأثاث<small>نظام التشغيل والتكلفة</small></div>
-        <nav>
-            <a href="{{ route('dashboard') }}" @class(['on' => request()->routeIs('dashboard')])>الرئيسية</a>
-            @if($u->hasPermission('clients.view'))
-                <a href="{{ route('clients.index') }}" @class(['on' => request()->routeIs('clients.*')])>العملاء</a>
-            @endif
-            @if($u->hasPermission('quotations.view'))
-                <a href="{{ route('quotations.index') }}" @class(['on' => request()->routeIs('quotations.*')])>عروض الأسعار</a>
-            @endif
-            @if($u->hasPermission('projects.view'))
-                <a href="{{ route('projects.index') }}" @class(['on' => request()->routeIs('projects.*')])>المشاريع</a>
-            @endif
-            @if($u->hasPermission('settings.cost_rates') || $u->hasPermission('users.manage'))
-                <div class="sep">الإعدادات</div>
-            @endif
-            @if($u->hasPermission('settings.cost_rates'))
-                <a href="{{ route('rates.index') }}" @class(['on' => request()->routeIs('rates.*')])>معدلات التكلفة</a>
-            @endif
-            @if($u->hasPermission('users.manage'))
-                <a href="{{ route('users.index') }}" @class(['on' => request()->routeIs('users.*')])>المستخدمون</a>
-                <a href="{{ route('roles.index') }}" @class(['on' => request()->routeIs('roles.*')])>الأدوار والصلاحيات</a>
-            @endif
-        </nav>
-    </aside>
     <main class="main">
-        <div class="top">
-            <h1>@yield('title')</h1>
-            <div class="who">
-                <span>{{ $u->name }}</span>
-                <form method="post" action="{{ route('logout') }}" class="inline">@csrf
-                    <button class="btn ghost sm">خروج</button>
-                </form>
-            </div>
-        </div>
+        @hasSection('hide_title')
+        @else
+            <div class="top"><h1>@yield('title')</h1></div>
+        @endif
 
         @if(session('ok'))
             <div class="alert ok">{{ session('ok') }}</div>

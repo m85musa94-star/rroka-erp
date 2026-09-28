@@ -1,8 +1,27 @@
 @extends('layouts.app')
 @section('title', 'الرئيسية')
+@section('hide_title', true)
 @section('content')
 @php($u = auth()->user())
-<div class="grid g4">
+<section class="launcher" aria-label="التطبيقات">
+    @foreach(\App\Support\AppMenu::forUser($u) as $a)
+        @if($a['route'])
+            <a class="app-tile" href="{{ route($a['route']) }}">
+                <span class="app-icon">@include('partials.app-icon', ['key' => $a['key']])</span>
+                <span class="app-label">{{ $a['label'] }}</span>
+            </a>
+        @else
+            <div class="app-tile soon" title="قيد البناء">
+                <span class="app-icon">@include('partials.app-icon', ['key' => $a['key']])</span>
+                <span class="app-label">{{ $a['label'] }}</span>
+                <span class="soon-tag">قريبًا</span>
+            </div>
+        @endif
+    @endforeach
+</section>
+
+<h2 class="section-title">نظرة عامة</h2>
+<div class="grid kpis" style="margin-bottom:18px">
     @if($u->hasPermission('projects.view'))
         <div class="card kpi"><div class="label">المشاريع الجارية</div><div class="value">{{ $activeProjects }}</div></div>
         <div class="card kpi"><div class="label">قيمة عقود المشاريع الجارية (قبل الضريبة)</div><div class="value">{{ number_format($openContractValue, 2) }}</div></div>
