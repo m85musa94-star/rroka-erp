@@ -4,7 +4,11 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\QuotationController;
+use App\Http\Controllers\HealthController;
 use Illuminate\Support\Facades\Route;
+
+// No throttle: the limiter uses the database cache, which may be what is broken.
+Route::get('/health', HealthController::class);
 
 Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 
