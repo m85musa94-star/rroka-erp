@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\DaftraSyncLog;
 use App\Services\Daftra\DaftraSyncService;
+use App\Support\ActivityLog;
+use App\Support\ListView;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -15,14 +17,34 @@ class ClientController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = Client::query()->orderByDesc('id');
-        if ($search = $request->query('q')) {
+        $lv = new ListView($request,
+            filters: [
+                'company' => ['label' => 'منشآت', 'group' => 'type', 'apply' => fn ($q) => $q->where('client_type', 'COMPANY')],
+                'individual' => ['label' => 'أفراد', 'group' => 'type', 'apply' => fn ($q) => $q->where('client_type', 'INDIVIDUAL')],
+                'daftra' => ['label' => 'مرتبط بدفترة', 'group' => 'daftra', 'apply' => fn ($q) => $q->whereNotNull('daftra_client_id')],
+                'no_daftra' => ['label' => 'غير مرتبط بدفترة', 'group' => 'daftra', 'apply' => fn ($q) => $q->whereNull('daftra_client_id')],
+            ],
+            groups: [
+                'type' => ['label' => 'النوع', 'key' => fn ($c) => $c->client_type, 'title' => fn ($c) => __("rroka.client_type.$c->client_type")],
+                'city' => ['label' => 'المدينة', 'key' => fn ($c) => $c->city ?? '', 'title' => fn ($c) => $c->city ?: 'بلا مدينة'],
+            ],
+            views: ['list', 'kanban'],
+        );
+
+        $query = $lv->applyFilters(Client::query()->orderByDesc('id'));
+        if ($lv->q !== '') {
+            $search = $lv->q;
             $query->where(fn ($q) => $q->where('business_name', 'ilike', "%{$search}%")
                 ->orWhere('phone', 'ilike', "%{$search}%")
+                ->orWhere('city', 'ilike', "%{$search}%")
                 ->orWhere('client_no', 'ilike', "%{$search}%"));
         }
 
-        return view('clients.index', ['clients' => $query->paginate(30)->withQueryString()]);
+        return view('clients.index', [
+            'lv' => $lv,
+            'clients' => $lv->group ? null : $query->paginate(30)->withQueryString(),
+            'groups' => $lv->group ? $lv->grouped($query->limit(1000)->get()) : null,
+        ]);
     }
 
     public function create(): View
@@ -45,6 +67,7 @@ class ClientController extends Controller
             'client' => $client,
             'quotations' => $client->quotations()->orderByDesc('id')->get(),
             'syncLog' => DaftraSyncLog::where(['entity_type' => 'CLIENT', 'entity_id' => $client->id])->orderByDesc('id')->get(),
+            'activity' => ActivityLog::for(['clients' => [$client->id]]),
         ]);
     }
 

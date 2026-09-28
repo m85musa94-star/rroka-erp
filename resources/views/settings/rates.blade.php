@@ -1,5 +1,8 @@
 @extends('layouts.app')
 @section('title', 'معدلات التكلفة')
+@section('cp')
+    @include('partials.control-panel', ['crumbs' => [['الإعدادات', null], ['معدلات التكلفة', null]]])
+@endsection
 @section('content')
 <div class="alert warn">
     أدخل أرقامًا حقيقية من واقع الورشة فقط. لا تُعدَّل المعدلات ولا تُحذف: أي تغيير يُسجَّل معدلًا جديدًا بتاريخ سريان جديد،

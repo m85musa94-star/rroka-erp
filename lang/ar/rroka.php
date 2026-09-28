@@ -9,6 +9,7 @@ return [
         'RROKA_QUOTATION_NEGATIVE' => 'الخصم أكبر من مجموع البنود.',
         'RROKA_PROJECT_NEEDS_APPROVED_QUOTATION' => 'لا يُنشأ مشروع إلا على عرض سعر معتمد.',
         'RROKA_PROJECT_CLIENT_MISMATCH' => 'عميل المشروع لا يطابق عميل عرض السعر.',
+        'RROKA_PROJECT_TRANSITION' => 'هذا الانتقال بين مراحل المشروع غير مسموح.',
         'RROKA_PROJECT_IMMUTABLE' => 'العميل وعرض السعر وقيمة العقد ثابتة بعد إنشاء المشروع.',
         'RROKA_DESIGN_RELEASE_NEEDS_CLIENT_APPROVAL' => 'لا تُصدَر نسخة التصميم للإنتاج قبل موافقة العميل عليها.',
         'RROKA_DESIGN_VERSION_CLOSED' => 'نسخة التصميم مغلقة ولا يمكن إعادة فتحها.',
@@ -56,6 +57,23 @@ return [
         'inventory' => 'المخزون', 'production' => 'الإنتاج', 'quality' => 'الجودة',
         'installations' => 'التركيب', 'costing' => 'التكلفة والربحية', 'settings' => 'الإعدادات',
         'daftra' => 'دفترة', 'users' => 'المستخدمون والأدوار', 'audit' => 'سجل التدقيق',
+    ],
+
+    'entities' => [
+        'clients' => 'العميل', 'quotations' => 'عرض السعر', 'quotation_lines' => 'بند', 'projects' => 'المشروع',
+        'users' => 'المستخدم', 'roles' => 'الدور',
+    ],
+
+    'fields' => [
+        'status' => 'الحالة', 'business_name' => 'الاسم', 'client_type' => 'النوع', 'phone' => 'الجوال',
+        'email' => 'البريد', 'vat_number' => 'الرقم الضريبي', 'commercial_reg_no' => 'السجل التجاري',
+        'city' => 'المدينة', 'address' => 'العنوان', 'notes' => 'ملاحظات', 'daftra_client_id' => 'رقم العميل في دفترة',
+        'daftra_client_number' => 'رقم العميل في دفترة', 'daftra_estimate_id' => 'رقم العرض في دفترة',
+        'issue_date' => 'تاريخ الإصدار', 'valid_until' => 'صالح حتى', 'discount_amount' => 'الخصم',
+        'approved_at' => 'تاريخ الاعتماد', 'approved_by' => 'المعتمِد', 'client_id' => 'العميل',
+        'title' => 'العنوان', 'start_date' => 'تاريخ البدء', 'target_date' => 'التسليم المستهدف',
+        'completed_at' => 'تاريخ الإكمال', 'manager_id' => 'مدير المشروع', 'contract_value' => 'قيمة العقد',
+        'description' => 'الوصف', 'quantity' => 'الكمية', 'unit_price' => 'سعر الوحدة', 'unit' => 'الوحدة',
     ],
 
     'client_type' => ['INDIVIDUAL' => 'فرد', 'COMPANY' => 'منشأة'],

@@ -1,5 +1,8 @@
 @extends('layouts.app')
 @section('title', 'المستخدمون')
+@section('cp')
+    @include('partials.control-panel', ['crumbs' => [['الإعدادات', null], ['المستخدمون', null]]])
+@endsection
 @section('content')
 <div class="card">
     <div class="actions" style="justify-content:space-between;margin-bottom:12px"><p class="muted" style="margin:0">كل مستخدم يدخل ببريده وكلمة مروره، ويرى ما تسمح به أدواره فقط.</p><a class="btn" href="{{ route('users.create') }}">+ مستخدم جديد</a></div>

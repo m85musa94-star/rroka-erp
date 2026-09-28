@@ -1,5 +1,8 @@
 @extends('layouts.app')
 @section('title', $role->exists ? 'تعديل الدور: '.$role->name_ar : 'دور جديد')
+@section('cp')
+    @include('partials.control-panel', ['crumbs' => [['الأدوار والصلاحيات', route('roles.index')], [$role->exists ? $role->name_ar : 'جديد', null]]])
+@endsection
 @section('content')
 @php($chosen = array_map('intval', old('permissions', $selected)))
 @php($isAdmin = $role->code === 'system_admin')

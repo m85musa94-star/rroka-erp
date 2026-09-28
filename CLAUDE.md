@@ -27,6 +27,7 @@
 
 - `database/schema/rroka_schema.sql` هو المصدر الوحيد للمخطط؛ Laravel يحمّله كما هو
   (`database/migrations/0000_00_00_000000_load_rroka_schema.php`). لا تُنشئ جداول الأعمال بـ Schema Builder.
+- **النظام يعمل فعليًا منذ 2026-09-28:** أي تعديل على المخطط يُضاف إلى `rroka_schema.sql` (للتثبيت الجديد) **وإلى migration جديدة** بصيغة `CREATE OR REPLACE`/`IF NOT EXISTS` (لقاعدة الإنتاج القائمة)، ويُختبر الترقية من النسخة السابقة.
 - كل قاعدة رقابية جديدة في المخطط تحتاج اختبارًا في `database/sql-tests/schema_rules_test.sql` (مسموح + ممنوع).
 - اختبارات: `scripts/test-db.sh` (مع PGHOST/PGUSER/PGPASSWORD) ثم `php artisan test`.
 - التنسيق: `vendor/bin/pint`.
@@ -36,3 +37,4 @@
 - `SetAuditUser`: كل طلب كتابة معاملة واحدة، و`rroka.user_id` محلي للمعاملة (`AuditContext::apply`)؛ مسارات المزامنة مع دفترة `audit.user:manual` وتطبّق السياق بنفسها.
 - الاستضافة المختارة: Laravel Cloud. تطبيق Laravel في جذر المستودع مباشرة (نُقل من `backend/` لأن المنصة تبني من الجذر).
 - الواجهة Blade بلا خطوة بناء (CSS في `public/css/app.css`)؛ الرسائل العربية في `lang/ar/rroka.php`.
+- الواجهة على نمط Odoo: `AppMenu` (شبكة التطبيقات وقائمة الشريط العلوي)، `ListView` (بحث/فلاتر/تجميع/عرض قائمة أو بطاقات)، `partials/control-panel`، `partials/statusbar`، و`partials/chatter` (سجل النشاط من `audit_log` عبر `ActivityLog`). كل وحدة جديدة تستخدمها.

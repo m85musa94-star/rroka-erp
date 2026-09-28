@@ -1,5 +1,10 @@
 @extends('layouts.app')
 @section('title', $client->exists ? 'تعديل العميل' : 'عميل جديد')
+@section('cp')
+    @include('partials.control-panel', ['crumbs' => $client->exists
+        ? [['العملاء', route('clients.index')], [$client->business_name, route('clients.show', $client)], ['تعديل', null]]
+        : [['العملاء', route('clients.index')], ['جديد', null]]])
+@endsection
 @section('content')
 <form method="post" action="{{ $client->exists ? route('clients.update', $client) : route('clients.store') }}" class="card">
     @csrf

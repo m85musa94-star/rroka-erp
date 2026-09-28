@@ -328,6 +328,28 @@ END $$ LANGUAGE plpgsql;
 CREATE TRIGGER trg_project_guard BEFORE INSERT OR UPDATE ON projects
     FOR EACH ROW EXECUTE FUNCTION fn_project_guard();
 
+-- Project stage transitions (Odoo-style stage bar). Closed projects are final.
+CREATE OR REPLACE FUNCTION fn_project_status_guard() RETURNS trigger AS $$
+BEGIN
+    IF NEW.status = OLD.status THEN
+        RETURN NEW;
+    END IF;
+    IF NOT (
+           (OLD.status = 'ACTIVE'        AND NEW.status IN ('IN_PRODUCTION', 'ON_HOLD', 'CANCELLED'))
+        OR (OLD.status = 'IN_PRODUCTION' AND NEW.status IN ('INSTALLATION', 'ON_HOLD', 'CANCELLED'))
+        OR (OLD.status = 'INSTALLATION'  AND NEW.status IN ('COMPLETED', 'ON_HOLD'))
+        OR (OLD.status = 'ON_HOLD'       AND NEW.status IN ('ACTIVE', 'IN_PRODUCTION', 'INSTALLATION', 'CANCELLED'))
+    ) THEN
+        RAISE EXCEPTION 'RROKA_PROJECT_TRANSITION: % -> % not allowed', OLD.status, NEW.status
+            USING ERRCODE = 'P0001';
+    END IF;
+    RETURN NEW;
+END $$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_project_status_guard ON projects;
+CREATE TRIGGER trg_project_status_guard BEFORE UPDATE OF status ON projects
+    FOR EACH ROW EXECUTE FUNCTION fn_project_status_guard();
+
 -- ---------------------------------------------------------------------
 -- 6. Designs and versions
 -- ---------------------------------------------------------------------

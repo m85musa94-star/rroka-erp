@@ -1,10 +1,19 @@
 @extends('layouts.app')
 @section('title', 'عرض السعر '.$q->quotation_no)
+@section('cp')
+    @include('partials.control-panel', ['crumbs' => [['عروض الأسعار', route('quotations.index')], [$q->quotation_no, null]]])
+@endsection
 @section('content')
-@php($u = auth()->user())
-<div class="card">
-    <div class="actions" style="margin-bottom:14px">
-        @include('partials.badge', ['s' => $q->status])
+@php
+    $u = auth()->user();
+    $path = match ($q->status) {
+        'REJECTED', 'EXPIRED' => ['DRAFT', 'SENT', $q->status],
+        'CANCELLED' => ['DRAFT', 'CANCELLED'],
+        default => ['DRAFT', 'SENT', 'APPROVED'],
+    };
+@endphp
+<div class="rec-bar">
+    <div class="actions">
         @if($q->status === 'DRAFT' && $u->hasPermission('quotations.manage'))
             <a class="btn ghost sm" href="{{ route('quotations.edit', $q) }}">تعديل</a>
             <form method="post" action="{{ route('quotations.transition', [$q, 'send']) }}" class="inline" onsubmit="return confirm('بعد الإرسال يُجمَّد العرض ولا يُعدَّل إلا بإعادته إلى مسودة. متابعة؟')">@csrf<button class="btn sm">تسجيل الإرسال للعميل</button></form>
@@ -32,6 +41,10 @@
         @endif
         <button class="btn ghost sm" onclick="window.print()">طباعة</button>
     </div>
+    @include('partials.statusbar', ['path' => $path, 'current' => $q->status, 'bad' => ['REJECTED', 'EXPIRED', 'CANCELLED']])
+</div>
+<div class="card">
+    <h1 class="rec-title">{{ $q->quotation_no }}</h1>
     <dl class="kv">
         <dt>العميل</dt><dd><a href="{{ route('clients.show', $q->client) }}">{{ $q->client->business_name }}</a></dd>
         <dt>تاريخ الإصدار</dt><dd>{{ $q->issue_date->format('Y-m-d') }}</dd>
@@ -58,4 +71,5 @@
 </div>
 
 @include('partials.sync-log', ['log' => $syncLog])
+@include('partials.chatter', ['activity' => $activity])
 @endsection

@@ -1,5 +1,8 @@
 @extends('layouts.app')
 @section('title', $user->exists ? 'تعديل '.$user->name : 'مستخدم جديد')
+@section('cp')
+    @include('partials.control-panel', ['crumbs' => [['المستخدمون', route('users.index')], [$user->exists ? $user->name : 'جديد', null]]])
+@endsection
 @section('content')
 @php($chosen = old('roles', $user->exists ? $user->roles->pluck('id')->all() : []))
 <form method="post" action="{{ $user->exists ? route('users.update', $user) : route('users.store') }}" class="card">

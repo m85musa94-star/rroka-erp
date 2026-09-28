@@ -282,6 +282,23 @@ SELECT pg_temp.expect_eq('zero assumption: no cost rates are seeded by the schem
   + (SELECT count(*) FROM machine_rates WHERE basis_note <> 'TEST')
   + (SELECT count(*) FROM overhead_rates WHERE basis_note <> 'TEST'), 0::bigint);
 
+
+-- ---------------------------------------------------------------------
+-- Project stage transitions
+-- ---------------------------------------------------------------------
+SELECT pg_temp.expect_error('project stage: ACTIVE cannot jump to COMPLETED',
+    'UPDATE projects SET status = ''COMPLETED'', completed_at = now() WHERE id = 1', 'RROKA_PROJECT_TRANSITION');
+SELECT pg_temp.expect_ok('project stage: ACTIVE -> IN_PRODUCTION',
+    'UPDATE projects SET status = ''IN_PRODUCTION'' WHERE id = 1');
+SELECT pg_temp.expect_ok('project stage: IN_PRODUCTION -> ON_HOLD -> INSTALLATION',
+    'UPDATE projects SET status = ''ON_HOLD'' WHERE id = 1; UPDATE projects SET status = ''INSTALLATION'' WHERE id = 1');
+SELECT pg_temp.expect_error('project stage: completion needs completed_at (CHECK)',
+    'UPDATE projects SET status = ''COMPLETED'' WHERE id = 1', 'check constraint');
+SELECT pg_temp.expect_ok('project stage: INSTALLATION -> COMPLETED',
+    'UPDATE projects SET status = ''COMPLETED'', completed_at = now() WHERE id = 1');
+SELECT pg_temp.expect_error('project stage: completed project is final',
+    'UPDATE projects SET status = ''ACTIVE'' WHERE id = 1', 'RROKA_PROJECT_TRANSITION');
+
 -- ---------------------------------------------------------------------
 -- Report
 -- ---------------------------------------------------------------------

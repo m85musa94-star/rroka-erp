@@ -1,5 +1,8 @@
 @extends('layouts.app')
 @section('title', 'الأدوار والصلاحيات')
+@section('cp')
+    @include('partials.control-panel', ['crumbs' => [['الإعدادات', null], ['الأدوار والصلاحيات', null]]])
+@endsection
 @section('content')
 <div class="card">
     <div class="actions" style="justify-content:space-between;margin-bottom:12px">

@@ -7,6 +7,8 @@ use App\Models\Client;
 use App\Models\DaftraSyncLog;
 use App\Models\Quotation;
 use App\Services\Daftra\DaftraSyncService;
+use App\Support\ActivityLog;
+use App\Support\ListView;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,15 +18,51 @@ class QuotationController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = Quotation::with('client:id,business_name')->orderByDesc('id');
-        if ($status = $request->query('status')) {
-            $query->where('status', $status);
-        }
-        $quotations = $query->paginate(30)->withQueryString();
-        $totals = DB::table('v_quotation_totals')->whereIn('quotation_id', $quotations->pluck('id'))
-            ->pluck('net_before_vat', 'quotation_id');
+        $status = fn (string $st) => fn ($q) => $q->where('quotations.status', $st);
+        $lv = new ListView($request,
+            filters: [
+                'draft' => ['label' => 'مسودة', 'group' => 'status', 'apply' => $status('DRAFT')],
+                'sent' => ['label' => 'بانتظار رد العميل', 'group' => 'status', 'apply' => $status('SENT')],
+                'approved' => ['label' => 'معتمد', 'group' => 'status', 'apply' => $status('APPROVED')],
+                'rejected' => ['label' => 'مرفوض', 'group' => 'status', 'apply' => $status('REJECTED')],
+                'this_month' => ['label' => 'هذا الشهر', 'group' => 'date', 'apply' => fn ($q) => $q->where('issue_date', '>=', now()->startOfMonth())],
+                'no_project' => ['label' => 'معتمد بلا مشروع', 'group' => 'project', 'apply' => fn ($q) => $q->where('quotations.status', 'APPROVED')->whereDoesntHave('project')],
+            ],
+            groups: [
+                'status' => ['label' => 'الحالة', 'key' => fn ($r) => $r->status, 'title' => fn ($r) => __("rroka.status.$r->status")],
+                'client' => ['label' => 'العميل', 'key' => fn ($r) => $r->client_id, 'title' => fn ($r) => $r->client->business_name],
+                'month' => ['label' => 'الشهر', 'key' => fn ($r) => $r->issue_date->format('Y-m'), 'title' => fn ($r) => $r->issue_date->format('Y-m')],
+            ],
+            views: ['list', 'kanban'],
+        );
 
-        return view('quotations.index', compact('quotations', 'totals'));
+        $query = $lv->applyFilters(
+            Quotation::query()->with('client:id,business_name')
+                ->join('v_quotation_totals as t', 't.quotation_id', '=', 'quotations.id')
+                ->select('quotations.*', 't.net_before_vat')
+                ->orderByDesc('quotations.id')
+        );
+        if ($lv->q !== '') {
+            $search = $lv->q;
+            $query->where(fn ($q) => $q->where('quotation_no', 'ilike', "%{$search}%")
+                ->orWhereHas('client', fn ($c) => $c->where('business_name', 'ilike', "%{$search}%")));
+        }
+
+        if ($lv->view === 'kanban') {
+            $all = $query->limit(500)->get();
+            $columns = collect(['DRAFT', 'SENT', 'APPROVED', 'REJECTED', 'EXPIRED', 'CANCELLED'])
+                ->mapWithKeys(fn ($st) => [$st => $all->where('status', $st)->values()])
+                ->filter(fn ($items, $st) => in_array($st, ['DRAFT', 'SENT', 'APPROVED'], true) || $items->isNotEmpty());
+
+            return view('quotations.index', ['lv' => $lv, 'columns' => $columns, 'quotations' => null, 'groups' => null]);
+        }
+
+        return view('quotations.index', [
+            'lv' => $lv,
+            'columns' => null,
+            'quotations' => $lv->group ? null : $query->paginate(30)->withQueryString(),
+            'groups' => $lv->group ? $lv->grouped($query->limit(1000)->get()) : null,
+        ]);
     }
 
     public function create(Request $request): View
@@ -59,6 +97,12 @@ class QuotationController extends Controller
             'totals' => $quotation->totals(),
             'syncLog' => DaftraSyncLog::where(['entity_type' => 'QUOTATION', 'entity_id' => $quotation->id])->orderByDesc('id')->get(),
             'approver' => $quotation->approved_by ? DB::table('users')->where('id', $quotation->approved_by)->value('name') : null,
+            'activity' => ActivityLog::for([
+                'quotations' => [$quotation->id],
+                'quotation_lines' => DB::table('audit_log')->where('table_name', 'quotation_lines')
+                    ->whereRaw("(coalesce(new_data, old_data)->>'quotation_id')::bigint = ?", [$quotation->id])
+                    ->pluck('row_id')->all(),
+            ]),
         ]);
     }
 

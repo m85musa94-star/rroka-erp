@@ -1,5 +1,10 @@
 @extends('layouts.app')
 @section('title', $quotation->exists ? 'تعديل '.$quotation->quotation_no : 'عرض سعر جديد')
+@section('cp')
+    @include('partials.control-panel', ['crumbs' => $quotation->exists
+        ? [['عروض الأسعار', route('quotations.index')], [$quotation->quotation_no, route('quotations.show', $quotation)], ['تعديل', null]]
+        : [['عروض الأسعار', route('quotations.index')], ['جديد', null]]])
+@endsection
 @section('content')
 @php($rows = old('lines', $lines ?: [['description' => '', 'quantity' => 1, 'unit' => 'قطعة', 'unit_price' => '']]))
 <form method="post" action="{{ $quotation->exists ? route('quotations.update', $quotation) : route('quotations.store') }}">

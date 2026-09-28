@@ -1,5 +1,8 @@
 @extends('layouts.app')
 @section('title', 'مشروع جديد')
+@section('cp')
+    @include('partials.control-panel', ['crumbs' => [['المشاريع', route('projects.index')], ['جديد', null]]])
+@endsection
 @section('content')
 @if($quotations->isEmpty())
     <div class="alert warn">لا توجد عروض أسعار معتمدة بلا مشروع. المشروع لا يُنشأ إلا على عرض سعر معتمد.</div>

@@ -1,10 +1,39 @@
 @extends('layouts.app')
 @section('title', $project->project_no.' — '.$project->title)
+@section('cp')
+    @include('partials.control-panel', ['crumbs' => [['المشاريع', route('projects.index')], [$project->project_no, null]]])
+@endsection
 @section('content')
-@php($m = fn ($v) => $v === null ? '<span class="na">غير مكتمل</span>' : number_format($v, 2))
+@php
+    $m = fn ($v) => $v === null ? '<span class="na">غير مكتمل</span>' : number_format($v, 2);
+    $next = match ($project->status) {
+        'ACTIVE' => [['IN_PRODUCTION', 'بدء الإنتاج', '', null], ['ON_HOLD', 'إيقاف مؤقت', 'ghost', null], ['CANCELLED', 'إلغاء المشروع', 'ghost', 'إلغاء المشروع نهائيًا؟']],
+        'IN_PRODUCTION' => [['INSTALLATION', 'الانتقال إلى التركيب', '', null], ['ON_HOLD', 'إيقاف مؤقت', 'ghost', null], ['CANCELLED', 'إلغاء المشروع', 'ghost', 'إلغاء المشروع نهائيًا؟']],
+        'INSTALLATION' => [['COMPLETED', 'إكمال المشروع', 'ok', 'إكمال المشروع؟ لن يمكن تغيير مرحلته بعد ذلك.'], ['ON_HOLD', 'إيقاف مؤقت', 'ghost', null]],
+        'ON_HOLD' => [['ACTIVE', 'استئناف', '', null], ['CANCELLED', 'إلغاء المشروع', 'ghost', 'إلغاء المشروع نهائيًا؟']],
+        default => [],
+    };
+    $path = in_array($project->status, ['ON_HOLD', 'CANCELLED'], true)
+        ? ['ACTIVE', $project->status]
+        : ['ACTIVE', 'IN_PRODUCTION', 'INSTALLATION', 'COMPLETED'];
+@endphp
+<div class="rec-bar">
+    <div class="actions">
+        @if(auth()->user()->hasPermission('projects.manage'))
+            @foreach($next as [$to, $label, $style, $confirm])
+                <form method="post" action="{{ route('projects.stage', [$project, $to]) }}" class="inline" @if($confirm) onsubmit="return confirm('{{ $confirm }}')" @endif>@csrf
+                    <button class="btn sm {{ $style }}">{{ $label }}</button>
+                </form>
+            @endforeach
+        @endif
+        <a class="btn ghost sm" href="{{ route('quotations.show', $project->quotation) }}">عرض السعر {{ $project->quotation->quotation_no }}</a>
+    </div>
+    @include('partials.statusbar', ['path' => $path, 'current' => $project->status, 'bad' => ['ON_HOLD', 'CANCELLED']])
+</div>
 <div class="card">
+    <h1 class="rec-title">{{ $project->title }}</h1>
+    <p class="rec-sub">{{ $project->project_no }}</p>
     <dl class="kv">
-        <dt>الحالة</dt><dd>@include('partials.badge', ['s' => $project->status])</dd>
         <dt>العميل</dt><dd><a href="{{ route('clients.show', $project->client) }}">{{ $project->client->business_name }}</a></dd>
         <dt>عرض السعر</dt><dd><a href="{{ route('quotations.show', $project->quotation) }}">{{ $project->quotation->quotation_no }}</a></dd>
         <dt>قيمة العقد</dt><dd>{{ number_format($project->contract_value, 2) }} <span class="muted">(قبل الضريبة)</span></dd>
@@ -36,4 +65,5 @@
     <p class="hint">الربح هنا ربح تشغيلي للمشروع قبل الضريبة، ولا يحل محل القوائم المالية في دفترة.</p>
 </div>
 @endif
+@include('partials.chatter', ['activity' => $activity])
 @endsection

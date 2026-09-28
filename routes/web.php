@@ -52,6 +52,7 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::get('/projects/{project}', [ProjectController::class, 'show'])->name('projects.show');
     });
     Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store')->middleware('permission:projects.manage');
+    Route::post('/projects/{project}/stage/{to}', [ProjectController::class, 'stage'])->name('projects.stage')->middleware('permission:projects.manage');
 
     Route::middleware('permission:settings.cost_rates')->prefix('settings/rates')->name('rates.')->group(function () {
         Route::get('/', [CostRateController::class, 'index'])->name('index');

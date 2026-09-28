@@ -21,6 +21,11 @@
             @include('partials.app-icon', ['key' => $app['key'], 'size' => 26])
             <span>{{ $app['label'] }}</span>
         </a>
+        <nav class="tb-menu" aria-label="أقسام التطبيق">
+            @foreach(\App\Support\AppMenu::menu($app, $u) as [$label, $url, $on])
+                <a href="{{ $url }}" @class(['on' => $on])>{{ $label }}</a>
+            @endforeach
+        </nav>
     @else
         <span class="tb-app"><span>إر روكا للأثاث</span></span>
     @endif
@@ -33,12 +38,20 @@
         </form>
     </div>
 </header>
+@if($app)
+    <nav class="tb-menu-m" aria-label="أقسام التطبيق">
+        @foreach(\App\Support\AppMenu::menu($app, $u) as [$label, $url, $on])
+            <a href="{{ $url }}" @class(['on' => $on])>{{ $label }}</a>
+        @endforeach
+    </nav>
+@endif
 <div class="shell">
     <main class="main">
         @hasSection('hide_title')
-        @else
+        @elseif(! View::hasSection('cp'))
             <div class="top"><h1>@yield('title')</h1></div>
         @endif
+        @yield('cp')
 
         @if(session('ok'))
             <div class="alert ok">{{ session('ok') }}</div>
