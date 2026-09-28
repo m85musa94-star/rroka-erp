@@ -25,6 +25,16 @@ class ProfitabilityReport extends Report
         return 'التكلفة الفعلية ومجمل الربح والهامش — للمشاريع مكتملة التكلفة فقط.';
     }
 
+    public function dateColumn(): string
+    {
+        return 'r.start_date';
+    }
+
+    public function dateLabel(): string
+    {
+        return 'تاريخ بدء المشروع';
+    }
+
     public function permissions(): array
     {
         return ['costing.view'];
@@ -80,9 +90,10 @@ class ProfitabilityReport extends Report
         ];
     }
 
-    public function note(array $activeFilters): ?string
+    public function note(array $activeFilters, ?string $from = null, ?string $to = null): ?string
     {
-        $row = DB::selectOne('SELECT count(*) AS total, count(*) FILTER (WHERE total_cost IS NOT NULL) AS complete FROM v_project_actual_cost');
+        [$where, $bindings] = $this->where($activeFilters, $from, $to);
+        $row = DB::selectOne("SELECT count(*) AS total, count(*) FILTER (WHERE r.complete) AS complete FROM ({$this->base()}) r {$where}", $bindings);
         if ((int) $row->total === 0) {
             return null;
         }

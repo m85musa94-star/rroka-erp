@@ -19,6 +19,16 @@ class QuotationsReport extends Report
         return 'قيمة العروض وعددها ومعدل التحويل، حسب الحالة والشهر والعميل.';
     }
 
+    public function dateColumn(): string
+    {
+        return 'r.issue_date';
+    }
+
+    public function dateLabel(): string
+    {
+        return 'تاريخ إصدار العرض';
+    }
+
     public function permissions(): array
     {
         return ['quotations.view'];
@@ -74,7 +84,7 @@ class QuotationsReport extends Report
         ];
     }
 
-    public function note(array $activeFilters): ?string
+    public function note(array $activeFilters, ?string $from = null, ?string $to = null): ?string
     {
         return 'معدل التحويل = العروض المعتمدة ÷ العروض التي حُسمت (معتمدة أو مرفوضة أو منتهية)؛ العروض المفتوحة لا تدخل فيه.';
     }

@@ -10,15 +10,32 @@
 @endsection
 @section('content')
 @php
+    $d = fn ($x) => '<bdi dir="ltr">'.e($x).'</bdi>';
+    $rangeHtml = match (true) {
+        $from && $to => 'من '.$d($from).' إلى '.$d($to),
+        (bool) $from => 'من '.$d($from),
+        (bool) $to => 'حتى '.$d($to),
+        default => null,
+    };
     $m = $measures[$measure];
     $fmt = fn ($v) => \App\Reports\Report::format($v, $m['format']);
     $base = request()->except(['export']);
     $palette = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#4a3aa7'];
 @endphp
 
+<p class="report-range">
+    {{ $report->dateLabel() }}: <strong>{!! $rangeHtml ?? 'كل الفترات' !!}</strong>
+    @if($swapped)<span class="muted">— عُكس التاريخان لأن تاريخ البداية كان بعد تاريخ النهاية.</span>@endif
+</p>
 <form method="get" class="card report-bar">
     @foreach($lv->active as $f)<input type="hidden" name="f[]" value="{{ $f }}">@endforeach
     <input type="hidden" name="v" value="{{ $lv->view }}">
+    <label>من تاريخ
+        <input type="date" name="from" value="{{ $from }}" onchange="this.form.submit()" aria-label="من تاريخ">
+    </label>
+    <label>إلى تاريخ
+        <input type="date" name="to" value="{{ $to }}" onchange="this.form.submit()" aria-label="إلى تاريخ">
+    </label>
     <label>القيمة
         <select name="m" onchange="this.form.submit()">
             @foreach($measures as $k => $def)<option value="{{ $k }}" @selected($k === $measure)>{{ $def['label'] }}</option>@endforeach
@@ -36,6 +53,9 @@
         </select>
     </label>
     <div class="actions" style="margin-inline-start:auto">
+        @if($from || $to)
+            <a class="btn ghost sm" href="{{ request()->fullUrlWithQuery(['from' => null, 'to' => null]) }}">مسح التاريخ</a>
+        @endif
         @if($col)
             <a class="btn ghost sm" href="{{ request()->fullUrlWithQuery(['rows' => $col, 'cols' => $row]) }}" title="تبديل الصفوف والأعمدة">⇄ تبديل</a>
         @endif
@@ -53,11 +73,11 @@
         if ($hasNeg) { $series = []; }
         $max = max(0, (float) $values->max());
         $min = min(0, (float) $values->min());
-        $range = ($max - $min) ?: 1;
-        $zero = -$min / $range * 100;
+        $span = ($max - $min) ?: 1;
+        $zero = -$min / $span * 100;
     @endphp
     <div class="card viz">
-        <h2 style="margin-bottom:4px">{{ $m['label'] }} حسب {{ $dims[$row]['label'] }}</h2>
+        <h2 style="margin-bottom:4px">{{ $m['label'] }} حسب {{ $dims[$row]['label'] }}@if($rangeHtml) <span class="muted" style="font-weight:400;font-size:14px">({!! $rangeHtml !!})</span>@endif</h2>
         @if($col && ! $m['additive'])<p class="hint" style="margin-top:0">القيمة المختارة نسبة لا تُجمع، فالرسم يعرض الإجمالي لكل صف؛ التفصيل حسب {{ $dims[$col]['label'] }} في الجدول المحوري.</p>@endif
         @if($hasNeg && $col)<p class="hint" style="margin-top:0">توجد قيم سالبة، فالرسم يعرض الإجمالي لكل صف دون تقسيم.</p>@endif
         @if(count($series) > 1)
@@ -78,7 +98,7 @@
                             <span class="bar-value" style="inset-inline-start: calc({{ $zero }}% + 6px)" title="لا يمكن حسابها لهذا الصف">— غير قابل للحساب</span>
                         @elseif($series)
                             @php($acc = 0)
-                            <div class="bar-stack" style="inset-inline-start: {{ $zero }}%; width: {{ $v / $range * 100 }}%">
+                            <div class="bar-stack" style="inset-inline-start: {{ $zero }}%; width: {{ $v / $span * 100 }}%">
                                 @foreach($series as $i => $s)
                                     @php($sv = (float) ($pivot['cells'][$r['key']][$s['key']] ?? 0))
                                     @if($sv > 0)<span class="seg" style="flex: {{ $sv }}; background: {{ $palette[$i] }}" title="{{ $s['label'] }}: {{ $fmt($sv) }}"></span>@endif
@@ -88,10 +108,10 @@
                             </div>
                         @else
                             <div @class(['bar', 'neg' => $v < 0]) title="{{ $r['label'] }}: {{ $fmt($v) }}"
-                                 style="inset-inline-start: {{ $v >= 0 ? $zero : $zero - abs($v) / $range * 100 }}%; width: {{ abs($v) / $range * 100 }}%"></div>
+                                 style="inset-inline-start: {{ $v >= 0 ? $zero : $zero - abs($v) / $span * 100 }}%; width: {{ abs($v) / $span * 100 }}%"></div>
                         @endif
                         @if($raw !== null)
-                            <span class="bar-value" style="inset-inline-start: calc({{ $v >= 0 ? $zero + $v / $range * 100 : $zero }}% + 6px)">{{ $fmt($v) }}</span>
+                            <span class="bar-value" style="inset-inline-start: calc({{ $v >= 0 ? $zero + $v / $span * 100 : $zero }}% + 6px)">{{ $fmt($v) }}</span>
                         @endif
                     </div>
                 </div>
@@ -129,7 +149,7 @@
     </div>
 @endif
 
-@if($note = $report->note($lv->active))
+@if($note = $report->note($lv->active, $from, $to))
     <p class="alert warn" style="margin-top:12px">{{ $note }}</p>
 @endif
 @endsection

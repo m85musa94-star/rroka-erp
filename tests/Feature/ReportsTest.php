@@ -95,4 +95,39 @@ class ReportsTest extends ApiTestCase
         $this->actingAs($this->admin())->get("/reports/quotations?rows=x;drop&cols=y&m=z'&f[]=bad&v=nope")->assertOk();
         $this->actingAs($this->admin())->get('/reports/unknown')->assertNotFound();
     }
+
+    public function test_date_range_from_and_to(): void
+    {
+        $admin = $this->admin();
+        $c = Client::create(['business_name' => 'جيم', 'client_type' => 'COMPANY']);
+        foreach ([['2026-01-15', 100], ['2026-02-10', 200], ['2026-03-05', 400]] as [$date, $amt]) {
+            $q = Quotation::create(['client_id' => $c->id, 'issue_date' => $date, 'discount_amount' => 0]);
+            $q->lines()->create(['line_no' => 1, 'description' => 'x', 'quantity' => 1, 'unit' => 'قطعة', 'unit_price' => $amt]);
+        }
+
+        // Inclusive on both ends: Feb + Mar = 600.
+        $this->actingAs($admin)->get('/reports/quotations?rows=month&m=value&from=2026-02-10&to=2026-03-05')->assertOk()
+            ->assertSee('من <bdi dir="ltr">2026-02-10</bdi> إلى <bdi dir="ltr">2026-03-05</bdi>', false)
+            ->assertDontSee('2026-01')
+            ->assertSeeInOrder(['2026-02', '200.00', '2026-03', '400.00', 'الإجمالي', '600.00']);
+
+        // Only "to": Jan + Feb = 300.
+        $this->actingAs($admin)->get('/reports/quotations?rows=month&m=value&to=2026-02-28')->assertOk()
+            ->assertSee('حتى <bdi dir="ltr">2026-02-28</bdi>', false)->assertSeeInOrder(['الإجمالي', '300.00']);
+
+        // Reversed dates are swapped, and the owner is told.
+        $this->actingAs($admin)->get('/reports/quotations?rows=month&m=value&from=2026-03-31&to=2026-02-01')->assertOk()
+            ->assertSee('عُكس التاريخان')->assertSeeInOrder(['الإجمالي', '600.00']);
+
+        // Garbage dates are ignored, not injected.
+        $this->actingAs($admin)->get("/reports/quotations?m=value&from=2026-13-45&to=x'or'1")->assertOk()
+            ->assertSee('كل الفترات');
+
+        // The range is kept in the CSV and when switching to the graph.
+        $csv = $this->actingAs($admin)->get('/reports/quotations?rows=month&m=value&from=2026-02-01&export=csv')->streamedContent();
+        $this->assertStringContainsString('تاريخ إصدار العرض: من 2026-02-01', $csv);
+        $this->assertStringContainsString('الإجمالي,600.00', $csv);
+        $this->actingAs($admin)->get('/reports/quotations?rows=month&m=value&from=2026-02-01')->assertOk()
+            ->assertSee('from=2026-02-01', false);
+    }
 }

@@ -31,32 +31,63 @@ class ReportController extends Controller
         $col = isset($dims[$request->query('cols')]) && $request->query('cols') !== $row ? $request->query('cols') : null;
         $measure = isset($measures[$request->query('m')]) ? $request->query('m') : $report->defaultMeasure();
 
+        $from = $this->date($request->query('from'));
+        $to = $this->date($request->query('to'));
+        $swapped = false;
+        if ($from && $to && $from > $to) {
+            [$from, $to] = [$to, $from];
+            $swapped = true;
+        }
+
         $lv = new ListView($request,
             filters: array_map(fn ($f) => $f + ['apply' => fn ($q) => $q], $report->filters()),
             views: ['pivot', 'graph'],
-            keep: ['rows', 'cols', 'm'],
+            keep: ['rows', 'cols', 'm', 'from', 'to'],
         );
 
-        $pivot = $report->pivot($row, $col, $measure, $lv->active);
+        $pivot = $report->pivot($row, $col, $measure, $lv->active, $from, $to);
+        $range = $this->rangeText($from, $to);
 
         if ($request->query('export') === 'csv') {
-            return $this->csv($report, $pivot, $row, $col, $measure);
+            return $this->csv($report, $pivot, $row, $col, $measure, $range);
         }
 
-        return view('reports.show', compact('report', 'lv', 'pivot', 'row', 'col', 'measure', 'dims', 'measures'));
+        return view('reports.show', compact('report', 'lv', 'pivot', 'row', 'col', 'measure', 'dims', 'measures', 'from', 'to', 'range', 'swapped'));
+    }
+
+    /** A valid Y-m-d date or null (anything else is ignored). */
+    private function date(mixed $value): ?string
+    {
+        if (! is_string($value) || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            return null;
+        }
+        $d = \DateTime::createFromFormat('!Y-m-d', $value);
+
+        return $d && $d->format('Y-m-d') === $value ? $value : null;
+    }
+
+    private function rangeText(?string $from, ?string $to): ?string
+    {
+        return match (true) {
+            $from && $to => "من {$from} إلى {$to}",
+            (bool) $from => "من {$from}",
+            (bool) $to => "حتى {$to}",
+            default => null,
+        };
     }
 
     /** UTF-8 CSV with BOM so Excel opens Arabic correctly. */
-    private function csv(Report $report, array $p, string $row, ?string $col, string $measure): StreamedResponse
+    private function csv(Report $report, array $p, string $row, ?string $col, string $measure, ?string $range): StreamedResponse
     {
         $fmt = $report->measures()[$measure]['format'];
         $num = fn ($v) => $v === null ? '' : ($fmt === 'int' ? (string) (int) $v : number_format($v, $fmt === 'pct' ? 1 : 2, '.', ''));
         $name = $report->key().'-'.now()->format('Y-m-d').'.csv';
 
-        return response()->streamDownload(function () use ($report, $p, $row, $measure, $num) {
+        return response()->streamDownload(function () use ($report, $p, $row, $measure, $num, $range) {
             $out = fopen('php://output', 'w');
             fwrite($out, "\xEF\xBB\xBF");
             fputcsv($out, [$report->title().' — '.$report->measures()[$measure]['label']]);
+            fputcsv($out, [$report->dateLabel().': '.($range ?? 'كل الفترات')]);
             $header = [$report->dimensions()[$row]['label']];
             foreach ($p['cols'] as $c) {
                 $header[] = $c['label'];

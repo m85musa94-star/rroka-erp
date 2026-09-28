@@ -19,6 +19,16 @@ class ProjectsReport extends Report
         return 'عدد المشاريع وقيمة عقودها والمتأخر منها، حسب المرحلة والشهر والعميل.';
     }
 
+    public function dateColumn(): string
+    {
+        return 'r.start_date';
+    }
+
+    public function dateLabel(): string
+    {
+        return 'تاريخ بدء المشروع';
+    }
+
     public function permissions(): array
     {
         return ['projects.view'];

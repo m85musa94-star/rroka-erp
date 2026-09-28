@@ -31,6 +31,11 @@ abstract class Report
     /** @return array<string, array{label:string, agg:string, format:string, additive:bool}> */
     abstract public function measures(): array;
 
+    /** Column the from/to date range applies to (on alias r). */
+    abstract public function dateColumn(): string;
+
+    abstract public function dateLabel(): string;
+
     /** @return array<string, array{label:string, group:string, sql:string}> */
     public function filters(): array
     {
@@ -48,7 +53,7 @@ abstract class Report
     }
 
     /** Shown under the report: data-quality caveats (e.g. excluded rows). */
-    public function note(array $activeFilters): ?string
+    public function note(array $activeFilters, ?string $from = null, ?string $to = null): ?string
     {
         return null;
     }
@@ -58,21 +63,21 @@ abstract class Report
      *               cells: array<string, array<string, float|null>>, rowTotals: array<string, float|null>,
      *               colTotals: array<string, float|null>, grand: float|null}
      */
-    public function pivot(string $row, ?string $col, string $measure, array $activeFilters): array
+    public function pivot(string $row, ?string $col, string $measure, array $activeFilters, ?string $from = null, ?string $to = null): array
     {
         $dims = $this->dimensions();
         $m = $this->measures()[$measure];
         $rowExpr = $dims[$row]['expr'];
         $colExpr = $col ? $dims[$col]['expr'] : "''";
 
-        $where = $this->whereSql($activeFilters);
+        [$where, $bindings] = $this->where($activeFilters, $from, $to);
         $sql = "SELECT ({$rowExpr})::text AS rk, ({$colExpr})::text AS ck,
                        grouping(({$rowExpr})::text) AS gr, grouping(({$colExpr})::text) AS gc,
                        {$m['agg']} AS v
                   FROM ({$this->base()}) r
                  {$where}
               GROUP BY GROUPING SETS ((({$rowExpr})::text, ({$colExpr})::text), (({$rowExpr})::text), (({$colExpr})::text), ())";
-        $data = collect(DB::select($sql));
+        $data = collect(DB::select($sql, $bindings));
 
         $label = fn (string $dim, ?string $k) => $this->label($dim, $k);
         $rows = $data->where('gr', 0)->where('gc', 1)
@@ -124,8 +129,16 @@ abstract class Report
         return $labeler ? $labeler($key) : $key;
     }
 
-    private function whereSql(array $active): string
+    /**
+     * WHERE clause for the active filters (OR within a group, AND across groups)
+     * plus the inclusive from/to date range, with bound parameters.
+     *
+     * @return array{0:string, 1:list<string>}
+     */
+    public function where(array $active, ?string $from = null, ?string $to = null): array
     {
+        $parts = [];
+        $bindings = [];
         $byGroup = [];
         foreach ($active as $key) {
             $f = $this->filters()[$key] ?? null;
@@ -133,11 +146,19 @@ abstract class Report
                 $byGroup[$f['group']][] = '('.$f['sql'].')';
             }
         }
-        if (! $byGroup) {
-            return '';
+        foreach ($byGroup as $ors) {
+            $parts[] = '('.implode(' OR ', $ors).')';
+        }
+        if ($from) {
+            $parts[] = "{$this->dateColumn()} >= ?::date";
+            $bindings[] = $from;
+        }
+        if ($to) {
+            $parts[] = "{$this->dateColumn()} <= ?::date";
+            $bindings[] = $to;
         }
 
-        return 'WHERE '.implode(' AND ', array_map(fn ($ors) => '('.implode(' OR ', $ors).')', $byGroup));
+        return [$parts ? 'WHERE '.implode(' AND ', $parts) : '', $bindings];
     }
 
     public static function format(?float $v, string $format): string
