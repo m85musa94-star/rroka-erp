@@ -19,11 +19,11 @@
             @csrf
             <div class="field">
                 <label for="email">البريد الإلكتروني</label>
-                <input id="email" name="email" type="email" value="{{ old('email') }}" required autofocus dir="ltr">
+                <input id="email" name="email" type="email" value="{{ old('email') }}" required autofocus dir="ltr" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="username">
             </div>
             <div class="field">
                 <label for="password">كلمة المرور</label>
-                <input id="password" name="password" type="password" required dir="ltr">
+                <input id="password" name="password" type="password" required dir="ltr" autocomplete="current-password">
             </div>
             <div class="field">
                 <label style="display:flex;gap:6px;align-items:center;color:var(--ink)">

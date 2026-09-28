@@ -20,8 +20,9 @@ class AuthController extends Controller
 
     public function login(Request $request): RedirectResponse
     {
+        $request->merge(['email' => Str::lower(trim((string) $request->input('email')))]);
         $data = $request->validate(['email' => ['required', 'email'], 'password' => ['required', 'string']]);
-        $key = Str::lower($data['email']).'|'.$request->ip();
+        $key = $data['email'].'|'.$request->ip();
 
         if (RateLimiter::tooManyAttempts($key, 5)) {
             throw ValidationException::withMessages([
