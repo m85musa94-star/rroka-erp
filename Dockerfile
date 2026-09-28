@@ -16,10 +16,10 @@ RUN chmod 755 /usr/local/bin/rroka-start
 
 USER www-data
 WORKDIR /var/www/html
-COPY --chown=www-data:www-data backend/composer.json backend/composer.lock ./
+COPY --chown=www-data:www-data composer.json composer.lock ./
 RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --no-interaction --no-progress
 
-COPY --chown=www-data:www-data backend/ ./
+COPY --chown=www-data:www-data . ./
 
 RUN composer dump-autoload --optimize --no-dev \
     && php artisan package:discover \

@@ -25,14 +25,14 @@
 
 ## بنية الكود وأوامر التطوير
 
-- `backend/database/schema/rroka_schema.sql` هو المصدر الوحيد للمخطط؛ Laravel يحمّله كما هو
-  (`backend/database/migrations/0000_00_00_000000_load_rroka_schema.php`). لا تُنشئ جداول الأعمال بـ Schema Builder.
-- كل قاعدة رقابية جديدة في المخطط تحتاج اختبارًا في `backend/database/sql-tests/schema_rules_test.sql` (مسموح + ممنوع).
-- اختبارات: `scripts/test-db.sh` (مع PGHOST/PGUSER/PGPASSWORD) ثم `cd backend && php artisan test`.
-- التنسيق: `cd backend && vendor/bin/pint`.
+- `database/schema/rroka_schema.sql` هو المصدر الوحيد للمخطط؛ Laravel يحمّله كما هو
+  (`database/migrations/0000_00_00_000000_load_rroka_schema.php`). لا تُنشئ جداول الأعمال بـ Schema Builder.
+- كل قاعدة رقابية جديدة في المخطط تحتاج اختبارًا في `database/sql-tests/schema_rules_test.sql` (مسموح + ممنوع).
+- اختبارات: `scripts/test-db.sh` (مع PGHOST/PGUSER/PGPASSWORD) ثم `php artisan test`.
+- التنسيق: `vendor/bin/pint`.
 - رفض قاعدة في قاعدة البيانات يُرفع بـ `RROKA_*` ويظهر للـ API كـ 422 (`bootstrap/app.php`).
 - معدلات التكلفة جداول مؤرَّخة وإلحاقية فقط (`worker_rates`, `machine_rates`, `overhead_rates`).
 - النشر: `Dockerfile` في الجذر (صورة serversideup/php FrankenPHP) و`docker/start.sh`؛ الدليل في `docs/DEPLOYMENT.md`.
 - `SetAuditUser`: كل طلب كتابة معاملة واحدة، و`rroka.user_id` محلي للمعاملة (`AuditContext::apply`)؛ مسارات المزامنة مع دفترة `audit.user:manual` وتطبّق السياق بنفسها.
-- الاستضافة المختارة: Laravel Cloud (المجلد الجذر `backend`)؛ `composer.lock` في جذر المستودع للتعرّف فقط.
+- الاستضافة المختارة: Laravel Cloud. تطبيق Laravel في جذر المستودع مباشرة (نُقل من `backend/` لأن المنصة تبني من الجذر).
 - الواجهة Blade بلا خطوة بناء (CSS في `public/css/app.css`)؛ الرسائل العربية في `lang/ar/rroka.php`.

@@ -10,5 +10,5 @@ cleanup() { psql -d postgres -qc "DROP DATABASE IF EXISTS $DB" >/dev/null 2>&1 |
 trap cleanup EXIT
 
 psql -d postgres -qc "CREATE DATABASE $DB"
-psql -d "$DB" -q -v ON_ERROR_STOP=1 -f "$ROOT/backend/database/schema/rroka_schema.sql"
-psql -d "$DB" -q -v ON_ERROR_STOP=1 -f "$ROOT/backend/database/sql-tests/schema_rules_test.sql"
+psql -d "$DB" -q -v ON_ERROR_STOP=1 -f "$ROOT/database/schema/rroka_schema.sql"
+psql -d "$DB" -q -v ON_ERROR_STOP=1 -f "$ROOT/database/sql-tests/schema_rules_test.sql"

@@ -34,15 +34,12 @@ jobs:
           extensions: pdo_pgsql, pgsql
 
       - name: Install dependencies
-        working-directory: backend
         run: composer install --no-interaction --prefer-dist --no-progress
 
       - name: Code style
-        working-directory: backend
         run: vendor/bin/pint --test
 
       - name: API tests
-        working-directory: backend
         env:
           DB_HOST: 127.0.0.1
           DB_USERNAME: rroka

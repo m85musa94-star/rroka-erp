@@ -7,9 +7,9 @@
 
 | المسار | المحتوى |
 |---|---|
-| `backend/database/schema/rroka_schema.sql` | مخطط PostgreSQL — **المصدر الوحيد** للجداول والقواعد الرقابية |
-| `backend/database/sql-tests/schema_rules_test.sql` | اختبارات القواعد الرقابية (مسموح/ممنوع لكل قاعدة) |
-| `backend/` | تطبيق Laravel 13: الواجهة العربية + REST API — يحمّل المخطط أعلاه عبر migration |
+| `database/schema/rroka_schema.sql` | مخطط PostgreSQL — **المصدر الوحيد** للجداول والقواعد الرقابية |
+| `database/sql-tests/schema_rules_test.sql` | اختبارات القواعد الرقابية (مسموح/ممنوع لكل قاعدة) |
+| جذر المستودع | تطبيق Laravel 13: الواجهة العربية + REST API — يحمّل المخطط أعلاه عبر migration |
 | `.github/workflows/tests.yml` | تشغيل كل الاختبارات وبناء صورة النشر تلقائيًا مع كل رفع |
 | `Dockerfile`, `docker/` | صورة التشغيل للخادم — انظر [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) |
 
@@ -23,7 +23,6 @@ createdb rroka && createdb rroka_testing
 PGHOST=127.0.0.1 PGUSER=... PGPASSWORD=... scripts/test-db.sh
 
 # 3) التطبيق
-cd backend
 composer install
 cp .env.example .env && php artisan key:generate   # ثم عبّئ DB_PASSWORD
 php artisan migrate
