@@ -3,6 +3,7 @@
 use App\Http\Controllers\Web\AuthController;
 use App\Http\Controllers\Web\ClientController;
 use App\Http\Controllers\Web\CostRateController;
+use App\Http\Controllers\Web\DaftraSettingsController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\LocaleController;
 use App\Http\Controllers\Web\ProjectController;
@@ -70,6 +71,12 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::post('/machines', [CostRateController::class, 'storeMachine'])->name('machines.store');
         Route::post('/machines/{machine}/rates', [CostRateController::class, 'storeMachineRate'])->name('machines.rate');
         Route::post('/overhead', [CostRateController::class, 'storeOverhead'])->name('overhead.store');
+    });
+
+    Route::middleware('permission:daftra.sync')->prefix('settings/daftra')->name('daftra.')->group(function () {
+        Route::get('/', [DaftraSettingsController::class, 'index'])->name('index');
+        // Calls Daftra over HTTP and writes nothing, so it runs outside the request transaction.
+        Route::post('/probe', [DaftraSettingsController::class, 'probe'])->name('probe')->middleware(['audit.user:manual', 'throttle:6,1']);
     });
 
     Route::middleware('permission:users.manage')->group(function () {

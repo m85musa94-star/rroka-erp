@@ -4,11 +4,12 @@ namespace App\Services\Daftra;
 
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 
 /**
- * Thin transport for the Daftra API. Only endpoints verified against
- * docs.daftara.dev are exposed here.
+ * Thin transport for the Daftra API. Write endpoints are limited to those
+ * verified against docs.daftara.dev; get() is read-only and serves DaftraProbe.
  */
 class DaftraClient
 {
@@ -44,6 +45,24 @@ class DaftraClient
     public function createEstimate(array $estimate, array $items): array
     {
         return $this->post('/estimates', ['Estimate' => $estimate, 'InvoiceItem' => $items]);
+    }
+
+    /**
+     * Read-only GET used by DaftraProbe. Returns the raw response so the caller
+     * can report the status; paths are unverified until the probe confirms them.
+     */
+    public function get(string $path, array $query = []): Response
+    {
+        if (! $this->isConfigured()) {
+            throw new DaftraException('Daftra credentials are not configured (DAFTRA_SUBDOMAIN / DAFTRA_API_KEY / DAFTRA_TOKEN).');
+        }
+
+        return $this->request()->get($path, $query);
+    }
+
+    public function subdomain(): ?string
+    {
+        return $this->subdomain;
     }
 
     private function post(string $path, array $body): array

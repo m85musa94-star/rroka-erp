@@ -22,6 +22,8 @@
 - `POST /clients` → `{"Client": {"business_name": ...}}` → 202 + `id`, `client_number`
 - `POST /estimates` → `Estimate` + `InvoiceItem[]` → 202 + `id`
 - تحويل عرض سعر لفاتورة: نقطة منفصلة — **لم تُفحص بعد، لا تُنفَّذ قبل التحقق**.
+- نقاط القراءة (`/invoices.json`، `/invoice_payments.json`، …) **غير مُتحقَّق منها**؛ `DaftraProbe` يفحصها على الحساب الفعلي.
+  لا يُبنى تقرير مالي على حقل لم يظهر في نتيجة الفحص.
 
 ## بنية الكود وأوامر التطوير
 

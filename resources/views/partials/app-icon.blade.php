@@ -58,6 +58,11 @@
         <circle cx="23" cy="44" r="3.5" fill="#F2BD5B"/><circle cx="32" cy="44" r="3.5" fill="#F2BD5B"/>
         <rect x="37.5" y="40.5" width="7" height="7" rx="2" fill="#E8833A"/>
         @break
+    @case('daftra')
+        <rect x="8" y="20" width="22" height="24" rx="5" fill="#2A5F7E"/>
+        <rect x="34" y="20" width="22" height="24" rx="5" fill="#5FD0BD"/>
+        <path d="M24 32h16" stroke="#F2BD5B" stroke-width="6" stroke-linecap="round"/>
+        @break
     @case('users')
         <circle cx="32" cy="22" r="11" fill="#E8833A"/>
         <path d="M12 54c0-12 9-20 20-20s20 8 20 20z" fill="#F2BD5B"/>

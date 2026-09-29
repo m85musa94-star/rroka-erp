@@ -58,7 +58,7 @@ class LocalizationTest extends ApiTestCase
             '/projects', '/projects?v=kanban', "/projects/{$projectId}",
             '/settings/rates', '/users', '/users/create', "/users/{$admin->id}/edit",
             '/roles', '/roles/create', "/roles/{$roleId}/edit",
-            '/reports',
+            '/reports', '/settings/daftra',
         ];
         foreach (['quotations', 'projects', 'profitability'] as $r) {
             $pages[] = "/reports/$r";

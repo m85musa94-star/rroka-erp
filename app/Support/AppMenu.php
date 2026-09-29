@@ -24,6 +24,7 @@ class AppMenu
             ['key' => 'quality', 'label' => __('الجودة'), 'route' => null, 'match' => null, 'permission' => null, 'group' => 'ops'],
             ['key' => 'installation', 'label' => __('التركيب'), 'route' => null, 'match' => null, 'permission' => null, 'group' => 'ops'],
             ['key' => 'rates', 'label' => __('معدلات التكلفة'), 'route' => 'rates.index', 'match' => 'rates.*', 'permission' => 'settings.cost_rates', 'group' => 'settings'],
+            ['key' => 'daftra', 'label' => __('الربط مع دفترة'), 'route' => 'daftra.index', 'match' => 'daftra.*', 'permission' => 'daftra.sync', 'group' => 'settings'],
             ['key' => 'users', 'label' => __('المستخدمون'), 'route' => 'users.index', 'match' => 'users.*', 'permission' => 'users.manage', 'group' => 'settings'],
             ['key' => 'roles', 'label' => __('الأدوار والصلاحيات'), 'route' => 'roles.index', 'match' => 'roles.*', 'permission' => 'users.manage', 'group' => 'settings'],
         ];
@@ -68,6 +69,7 @@ class AppMenu
             ],
             'settings' => [
                 ['معدلات التكلفة', 'rates.index', [], 'settings.cost_rates'],
+                ['الربط مع دفترة', 'daftra.index', [], 'daftra.sync'],
                 ['المستخدمون', 'users.index', [], 'users.manage'],
                 ['الأدوار والصلاحيات', 'roles.index', [], 'users.manage'],
             ],
