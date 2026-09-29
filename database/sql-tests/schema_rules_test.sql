@@ -108,7 +108,14 @@ INSERT INTO design_versions (id, design_id, version_no) VALUES (1, 1, 1), (2, 1,
 SELECT pg_temp.expect_error('design: release requires client approval first',
     'UPDATE design_versions SET status = ''RELEASED_FOR_PRODUCTION'', released_at = now(), released_by = 1 WHERE id = 1',
     'RROKA_DESIGN_RELEASE_NEEDS_CLIENT_APPROVAL');
+SELECT pg_temp.expect_error('design: DRAFT cannot skip client review',
+    'UPDATE design_versions SET status = ''CLIENT_APPROVED'', client_approved_at = now() WHERE id = 1', 'RROKA_DESIGN_TRANSITION');
+UPDATE design_versions SET status = 'CLIENT_REVIEW' WHERE id IN (1, 2);
+SELECT pg_temp.expect_error('design: client approval needs its date',
+    'UPDATE design_versions SET status = ''CLIENT_APPROVED'' WHERE id = 1', 'RROKA_DESIGN_TRANSITION');
 UPDATE design_versions SET status = 'CLIENT_APPROVED', client_approved_at = now() WHERE id IN (1, 2);
+SELECT pg_temp.expect_error('design: a new version starts as DRAFT',
+    'INSERT INTO design_versions (design_id, version_no, status) VALUES (1, 9, ''CLIENT_APPROVED'')', 'RROKA_DESIGN_TRANSITION');
 SELECT pg_temp.expect_ok('design: release v1',
     'UPDATE design_versions SET status = ''RELEASED_FOR_PRODUCTION'', released_at = now(), released_by = 1 WHERE id = 1');
 SELECT pg_temp.expect_error('design: only ONE released version per design',
@@ -192,7 +199,10 @@ INSERT INTO machines (id, code, name) VALUES (1, 'CNC', 'TEST CNC');
 SELECT pg_temp.expect_error('time: cannot log on PLANNED order',
     'INSERT INTO labor_logs (production_order_id, worker_id, work_date, hours) VALUES (1, 1, ''2026-02-01'', 8)',
     'RROKA_TIME_LOG_ORDER_STATE');
-UPDATE production_orders SET status = 'IN_PROGRESS', started_at = now() WHERE id = 1;
+SELECT pg_temp.expect_error('production: PLANNED cannot jump to COMPLETED',
+    'UPDATE production_orders SET status = ''COMPLETED'', completed_at = now() WHERE id = 1', 'RROKA_PRODUCTION_TRANSITION');
+UPDATE production_orders SET status = 'IN_PROGRESS' WHERE id = 1;
+SELECT pg_temp.expect_eq('production: start stamps started_at', (SELECT started_at IS NOT NULL FROM production_orders WHERE id = 1), true);
 INSERT INTO labor_logs (production_order_id, worker_id, work_date, hours) VALUES
     (1, 1, '2026-02-01', 8), (1, 2, '2026-02-01', 4);
 INSERT INTO machine_logs (production_order_id, machine_id, work_date, hours) VALUES (1, 1, '2026-02-01', 3);

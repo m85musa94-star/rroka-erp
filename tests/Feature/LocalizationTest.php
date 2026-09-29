@@ -3,8 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\Client;
+use App\Models\DesignVersion;
 use App\Models\Permission;
+use App\Models\ProductionOrder;
 use App\Models\Project;
+use App\Models\RawMaterial;
 use App\Models\Role;
 use App\Models\StudioAsset;
 use App\Models\User;
@@ -58,6 +61,19 @@ class LocalizationTest extends ApiTestCase
         $this->actingAs($admin)->post('/studio', ['category' => 'FINISHED_WORK', 'title' => 'Oak kitchen', 'project_id' => $projectId,
             'files' => [UploadedFile::fake()->image('k.jpg')]]);
         $assetId = StudioAsset::value('id');
+        // Manufacturing records in English.
+        $this->actingAs($admin)->post('/inventory', ['code' => 'MDF18', 'name' => 'MDF board', 'uom' => 'sheet', 'is_active' => 1]);
+        $materialId = RawMaterial::value('id');
+        $this->actingAs($admin)->post("/inventory/{$materialId}/move", ['movement_type' => 'RECEIPT', 'quantity' => 20, 'unit_cost' => 90]);
+        $this->actingAs($admin)->post('/designs', ['project_id' => $projectId, 'title' => 'Main wall']);
+        $versionId = DesignVersion::value('id');
+        $this->actingAs($admin)->post("/design-versions/{$versionId}/bom", ['material_id' => $materialId, 'quantity' => 4]);
+        $this->actingAs($admin)->post("/design-versions/{$versionId}/submit");
+        $this->actingAs($admin)->post("/design-versions/{$versionId}/approve", ['client_approved_at' => now()->format('Y-m-d H:i')]);
+        $this->actingAs($admin)->post("/design-versions/{$versionId}/release");
+        $this->actingAs($admin)->post('/production', ['design_version_id' => $versionId]);
+        $orderId = ProductionOrder::value('id');
+        $this->actingAs($admin)->post("/production/{$orderId}/stage/IN_PROGRESS");
         $draft = $this->actingAs($admin)->postJson('/api/quotations', [
             'client_id' => $client->id, 'discount_amount' => 0,
             'lines' => [['description' => 'Kitchen', 'quantity' => 1, 'unit' => 'pc', 'unit_price' => 5000, 'studio_asset_id' => $assetId]],
@@ -70,6 +86,9 @@ class LocalizationTest extends ApiTestCase
             '/settings/rates', '/users', '/users/create', "/users/{$admin->id}/edit",
             '/roles', '/roles/create', "/roles/{$roleId}/edit",
             '/reports', '/settings/daftra',
+            '/inventory', '/inventory?g=category', '/inventory/create', "/inventory/{$materialId}", "/inventory/{$materialId}/edit",
+            '/designs', '/designs/create', "/design-versions/{$versionId}",
+            '/production', '/production?v=kanban', '/production/create', "/production/{$orderId}",
             '/studio', '/studio?v=list', '/studio?g=category', '/studio/create', "/studio/{$assetId}", "/studio/{$assetId}/edit", "/quotations/{$draft['id']}/edit", "/quotations/{$draft['id']}",
         ];
         foreach (['quotations', 'projects', 'profitability'] as $r) {

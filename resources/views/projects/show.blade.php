@@ -65,6 +65,29 @@
     <p class="hint">{{ __('الربح هنا ربح تشغيلي للمشروع قبل الضريبة، ولا يحل محل القوائم المالية في دفترة.') }}</p>
 </div>
 @endif
+@php($u = auth()->user())
+<div class="card">
+    <div class="section-title"><h2>{{ __('التصاميم وأوامر التصنيع') }}</h2>
+        <div class="actions">
+            @if($u->hasPermission('designs.manage') && ! in_array($project->status, ['COMPLETED', 'CANCELLED'], true))<a class="btn ghost sm" href="{{ route('designs.create', ['project_id' => $project->id]) }}">{{ __('تصميم جديد') }}</a>@endif
+        </div>
+    </div>
+    <div class="table-wrap"><table>
+        <tr><th>{{ __('التصميم') }}</th><th>{{ __('آخر نسخة') }}</th><th>{{ __('المُصدَر للإنتاج') }}</th><th>{{ __('أوامر التصنيع') }}</th></tr>
+        @forelse($project->designs as $d)
+            @php($last = $d->versions->first())
+            @php($rel = $d->versions->firstWhere('status', 'RELEASED_FOR_PRODUCTION'))
+            <tr>
+                <td><a href="{{ route('design-versions.show', $last) }}">{{ $d->title }}</a></td>
+                <td>v{{ $last->version_no }} @include('partials.badge', ['s' => $last->status])</td>
+                <td>{{ $rel ? 'v'.$rel->version_no : '—' }}</td>
+                <td>@foreach($project->productionOrders->filter(fn ($po) => $d->versions->contains('id', $po->design_version_id)) as $po)<a href="{{ route('production.show', $po) }}">{{ $po->order_no }}</a> ({{ __("rroka.status.$po->status") }}) @endforeach</td>
+            </tr>
+        @empty
+            <tr><td colspan="4" class="muted">{{ __('لا توجد تصاميم بعد.') }}</td></tr>
+        @endforelse
+    </table></div>
+</div>
 @include('partials.studio-strip', ['scope' => ['project_id' => $project->id]])
 @include('partials.chatter', ['activity' => $activity])
 @endsection

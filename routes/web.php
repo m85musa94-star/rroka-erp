@@ -5,7 +5,10 @@ use App\Http\Controllers\Web\ClientController;
 use App\Http\Controllers\Web\CostRateController;
 use App\Http\Controllers\Web\DaftraSettingsController;
 use App\Http\Controllers\Web\DashboardController;
+use App\Http\Controllers\Web\DesignController;
 use App\Http\Controllers\Web\LocaleController;
+use App\Http\Controllers\Web\MaterialController;
+use App\Http\Controllers\Web\ProductionController;
 use App\Http\Controllers\Web\ProjectController;
 use App\Http\Controllers\Web\QuotationController;
 use App\Http\Controllers\Web\ReportController;
@@ -73,6 +76,52 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::post('/machines/{machine}/rates', [CostRateController::class, 'storeMachineRate'])->name('machines.rate');
         Route::post('/overhead', [CostRateController::class, 'storeOverhead'])->name('overhead.store');
     });
+
+    // Manufacturing: inventory, designs and BOM, production orders. Stage order, stock
+    // limits and frozen BOMs are enforced by the database; these only gate who may act.
+    Route::middleware('permission:inventory.view|inventory.move')->group(function () {
+        Route::get('/inventory', [MaterialController::class, 'index'])->name('materials.index');
+        Route::get('/inventory/create', [MaterialController::class, 'create'])->name('materials.create')->middleware('permission:inventory.move');
+        Route::get('/inventory/{material}', [MaterialController::class, 'show'])->name('materials.show')->whereNumber('material');
+    });
+    Route::middleware('permission:inventory.move')->group(function () {
+        Route::post('/inventory', [MaterialController::class, 'store'])->name('materials.store');
+        Route::get('/inventory/{material}/edit', [MaterialController::class, 'edit'])->name('materials.edit')->whereNumber('material');
+        Route::put('/inventory/{material}', [MaterialController::class, 'update'])->name('materials.update')->whereNumber('material');
+        Route::post('/inventory/{material}/move', [MaterialController::class, 'move'])->name('materials.move')->whereNumber('material');
+    });
+
+    Route::middleware('permission:designs.manage|designs.release|bom.manage|production.manage|projects.view')->group(function () {
+        Route::get('/designs', [DesignController::class, 'index'])->name('designs.index');
+        Route::get('/designs/create', [DesignController::class, 'create'])->name('designs.create')->middleware('permission:designs.manage');
+        Route::get('/designs/{design}', [DesignController::class, 'show'])->name('designs.show')->whereNumber('design');
+        Route::get('/design-versions/{version}', [DesignController::class, 'version'])->name('design-versions.show')->whereNumber('version');
+        // Each action checks its own permission (designs.manage or designs.release).
+        Route::post('/design-versions/{version}/{action}', [DesignController::class, 'transition'])->name('design-versions.transition')
+            ->whereIn('action', ['submit', 'revise', 'approve', 'reject', 'release']);
+    });
+    Route::middleware('permission:designs.manage')->group(function () {
+        Route::post('/designs', [DesignController::class, 'store'])->name('designs.store');
+        Route::post('/designs/{design}/versions', [DesignController::class, 'newVersion'])->name('designs.versions.store')->whereNumber('design');
+        Route::put('/design-versions/{version}', [DesignController::class, 'updateVersion'])->name('design-versions.update')->whereNumber('version');
+    });
+    Route::middleware('permission:bom.manage')->group(function () {
+        Route::post('/design-versions/{version}/bom', [DesignController::class, 'bomStore'])->name('design-versions.bom')->whereNumber('version');
+        Route::delete('/bom-lines/{line}', [DesignController::class, 'bomDestroy'])->name('bom-lines.destroy')->whereNumber('line');
+    });
+
+    Route::middleware('permission:production.manage|production.log_time|quality.inspect|projects.view')->group(function () {
+        Route::get('/production', [ProductionController::class, 'index'])->name('production.index');
+        Route::get('/production/create', [ProductionController::class, 'create'])->name('production.create')->middleware('permission:production.manage');
+        Route::get('/production/{order}', [ProductionController::class, 'show'])->name('production.show')->whereNumber('order');
+    });
+    Route::post('/production', [ProductionController::class, 'store'])->name('production.store')->middleware('permission:production.manage');
+    Route::post('/production/{order}/stage/{to}', [ProductionController::class, 'transition'])->name('production.transition')->whereNumber('order')->middleware('permission:production.manage');
+    Route::post('/production/{order}/material', [ProductionController::class, 'material'])->name('production.material')->whereNumber('order')->middleware('permission:inventory.move');
+    Route::post('/production/{order}/reserve-all', [ProductionController::class, 'reserveAll'])->name('production.reserve-all')->whereNumber('order')->middleware('permission:inventory.move');
+    Route::post('/production/{order}/labor', [ProductionController::class, 'labor'])->name('production.labor')->whereNumber('order')->middleware('permission:production.log_time');
+    Route::post('/production/{order}/machine', [ProductionController::class, 'machine'])->name('production.machine')->whereNumber('order')->middleware('permission:production.log_time');
+    Route::post('/production/{order}/inspect', [ProductionController::class, 'inspect'])->name('production.inspect')->whereNumber('order')->middleware('permission:quality.inspect');
 
     // Studio: images are streamed only through these routes. A quotation may show one,
     // so anyone who can see quotations can load an image file (not browse the studio).

@@ -105,7 +105,7 @@ class ProjectController extends Controller
         }
 
         return view('projects.show', [
-            'project' => $project->load('client', 'quotation'),
+            'project' => $project->load('client', 'quotation', 'designs.versions', 'productionOrders'),
             'manager' => $project->manager_id ? DB::table('users')->where('id', $project->manager_id)->value('name') : null,
             'cost' => $cost,
             'activity' => ActivityLog::for(['projects' => [$project->id]]),

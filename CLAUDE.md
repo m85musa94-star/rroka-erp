@@ -46,3 +46,4 @@
 - التقارير: `app/Reports` (محرك جدول محوري واحد بـ GROUPING SETS، فالنسب لا تُجمع خطأً)، يُسجَّل كل تقرير في `ReportRegistry` مع أبعاده ومقاييسه وفلاتره وصلاحيته. القيمة غير القابلة للحساب تُعرض "—" لا صفرًا.
 - الاستوديو: `studio_assets` + `StudioStorage` (قرص `studio` خاص، مصغّرات GD، منع التكرار بـ SHA-256). الصور تُقدَّم عبر `studio.file` بعد فحص الصلاحية فقط.
   في الإنتاج يُرفض الرفع إن كان القرص محليًا (`StudioStorage::isReady`). صورة العميل لا تظهر إلا في عروض أسعاره (Trigger).
+- التصنيع: `ProductionController` (أوامر التصنيع: مكونات من قائمة مواد النسخة، حجز/صرف/إرجاع عبر `stock_movements`، ساعات، فحوصات)، `DesignController` (نسخ ومراحل وقائمة مواد)، `MaterialController` (المخزون). الحجز والصرف على مستوى المشروع (`fn_project_reserved`/`fn_project_issued`).

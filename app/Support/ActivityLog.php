@@ -80,6 +80,9 @@ class ActivityLog
         return $t === $key ? $field : $t;
     }
 
+    /** @var array<int|string, string> */
+    private static array $users = [];
+
     private static function value(string $field, mixed $v): string
     {
         if ($v === null || $v === '') {
@@ -87,6 +90,10 @@ class ActivityLog
         }
         if ($field === 'status') {
             return __("rroka.status.$v");
+        }
+        // Who did it: show the user's name, not their id.
+        if (in_array($field, ['approved_by', 'released_by', 'manager_id', 'created_by', 'inspector_id', 'uploaded_by'], true) && is_numeric($v)) {
+            return self::$users[$v] ??= (string) (DB::table('users')->where('id', $v)->value('name') ?? $v);
         }
         if ($field === 'category') {
             return __("rroka.studio_category.$v");

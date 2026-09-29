@@ -42,6 +42,8 @@ return [
         'RROKA_STUDIO_CLIENT_MISMATCH' => 'The selected project belongs to another customer.',
         'RROKA_STUDIO_PRIVATE_ASSET' => "This image belongs to another customer and can only appear in that customer's quotations.",
         'RROKA_STUDIO_ASSET_IN_USE' => 'The image is used in a quotation, so it cannot be deleted or moved away from its customer.',
+        'RROKA_DESIGN_TRANSITION' => 'This design version stage change is not allowed (draft → client review → approved → released).',
+        'RROKA_PRODUCTION_TRANSITION' => 'This manufacturing order stage change is not allowed (planned → in progress → done).',
         'CHECK_VIOLATION' => 'The entered data breaks one of the validity rules.',
         'DUPLICATE' => 'This record already exists.',
         'INVALID_REFERENCE' => 'Invalid reference.',
@@ -49,6 +51,7 @@ return [
     ],
 
     'status' => [
+        'CLIENT_REVIEW' => 'Client review', 'CLIENT_APPROVED' => 'Client approved', 'RELEASED_FOR_PRODUCTION' => 'Released', 'SUPERSEDED' => 'Superseded', 'PLANNED' => 'Planned', 'IN_PROGRESS' => 'In progress',
         'DRAFT' => 'Draft', 'SENT' => 'Sent', 'APPROVED' => 'Approved', 'REJECTED' => 'Rejected',
         'EXPIRED' => 'Expired', 'CANCELLED' => 'Cancelled', 'ACTIVE' => 'Active', 'IN_PRODUCTION' => 'In production',
         'INSTALLATION' => 'Installation', 'COMPLETED' => 'Completed', 'ON_HOLD' => 'On hold',
@@ -64,11 +67,13 @@ return [
     ],
 
     'entities' => [
+        'raw_materials' => 'material', 'designs' => 'design', 'design_versions' => 'design version', 'design_bom_lines' => 'BOM line', 'production_orders' => 'manufacturing order',
         'clients' => 'customer', 'quotations' => 'quotation', 'quotation_lines' => 'line', 'projects' => 'project',
         'studio_assets' => 'image', 'users' => 'user', 'roles' => 'role',
     ],
 
     'fields' => [
+        'code' => 'Code', 'name' => 'Name', 'uom' => 'Unit', 'is_active' => 'Active', 'file_url' => 'Design file', 'change_notes' => 'Version notes', 'planned_start' => 'Planned start', 'planned_end' => 'Planned end', 'started_at' => 'Started', 'client_approved_at' => 'Client approval', 'released_at' => 'Released on', 'released_by' => 'Released by', 'waste_pct' => 'Waste %', 'material_id' => 'Material',
         'category' => 'Category', 'tags' => 'Tags', 'project_id' => 'Project', 'studio_asset_id' => 'Image',
         'status' => 'Status', 'business_name' => 'Name', 'client_type' => 'Type', 'phone' => 'Mobile',
         'email' => 'Email', 'vat_number' => 'VAT number', 'commercial_reg_no' => 'Commercial registration',
@@ -82,6 +87,12 @@ return [
     ],
 
     'studio_category' => ['CLIENT_REFERENCE' => 'From customers', 'FINISHED_WORK' => 'Finished work', 'CATALOG' => 'Product catalogue', 'SITE' => 'Site photos', 'MATERIAL' => 'Materials & samples'],
+
+    'movement_type' => ['RECEIPT' => 'Receipt', 'RESERVE' => 'Reserve for project', 'UNRESERVE' => 'Unreserve', 'ISSUE' => 'Issue to production', 'RETURN' => 'Return to store', 'ADJUST_IN' => 'Adjustment in', 'ADJUST_OUT' => 'Adjustment out'],
+
+    'qc_stage' => ['IN_PROCESS' => 'In process', 'FINAL' => 'Final', 'PRE_DELIVERY' => 'Pre-delivery', 'POST_INSTALLATION' => 'Post-installation'],
+
+    'qc_result' => ['PASS' => 'Pass', 'FAIL' => 'Fail', 'REWORK' => 'Rework'],
 
     'client_type' => ['INDIVIDUAL' => 'Individual', 'COMPANY' => 'Company'],
 

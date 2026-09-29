@@ -19,9 +19,8 @@ class AppMenu
             ['key' => 'projects', 'label' => __('المشاريع'), 'route' => 'projects.index', 'match' => 'projects.*', 'permission' => 'projects.view', 'group' => 'ops'],
             ['key' => 'studio', 'label' => __('الاستوديو'), 'route' => 'studio.index', 'match' => 'studio.*', 'permission' => 'studio.view', 'group' => 'ops'],
             ['key' => 'reports', 'label' => __('التقارير'), 'route' => 'reports.index', 'match' => 'reports.*', 'permission' => ['quotations.view', 'projects.view', 'costing.view'], 'group' => 'reports'],
-            ['key' => 'designs', 'label' => __('التصاميم'), 'route' => null, 'match' => null, 'permission' => null, 'group' => 'ops'],
-            ['key' => 'inventory', 'label' => __('المخزون'), 'route' => null, 'match' => null, 'permission' => null, 'group' => 'ops'],
-            ['key' => 'production', 'label' => __('الإنتاج'), 'route' => null, 'match' => null, 'permission' => null, 'group' => 'ops'],
+            ['key' => 'production', 'label' => __('التصنيع'), 'route' => 'production.index', 'match' => ['production.*', 'designs.*', 'design-versions.*'], 'permission' => ['production.manage', 'production.log_time', 'quality.inspect', 'designs.manage', 'designs.release', 'bom.manage'], 'group' => 'mrp'],
+            ['key' => 'inventory', 'label' => __('المخزون'), 'route' => 'materials.index', 'match' => 'materials.*', 'permission' => ['inventory.view', 'inventory.move'], 'group' => 'mrp'],
             ['key' => 'quality', 'label' => __('الجودة'), 'route' => null, 'match' => null, 'permission' => null, 'group' => 'ops'],
             ['key' => 'installation', 'label' => __('التركيب'), 'route' => null, 'match' => null, 'permission' => null, 'group' => 'ops'],
             ['key' => 'rates', 'label' => __('معدلات التكلفة'), 'route' => 'rates.index', 'match' => 'rates.*', 'permission' => 'settings.cost_rates', 'group' => 'settings'],
@@ -67,6 +66,12 @@ class AppMenu
                 ['عروض الأسعار', 'reports.show', ['key' => 'quotations'], 'quotations.view'],
                 ['المشاريع', 'reports.show', ['key' => 'projects'], 'projects.view'],
                 ['الربحية', 'reports.show', ['key' => 'profitability'], 'costing.view'],
+            ],
+            'mrp' => [
+                ['أوامر التصنيع', 'production.index', [], ['production.manage', 'production.log_time', 'quality.inspect', 'projects.view']],
+                ['التصاميم وقوائم المواد', 'designs.index', [], ['designs.manage', 'designs.release', 'bom.manage', 'projects.view']],
+                ['الخامات والمخزون', 'materials.index', [], ['inventory.view', 'inventory.move']],
+                ['الآلات ومعدلات التكلفة', 'rates.index', [], 'settings.cost_rates'],
             ],
             'settings' => [
                 ['معدلات التكلفة', 'rates.index', [], 'settings.cost_rates'],
@@ -147,7 +152,7 @@ class AppMenu
     public static function current(): ?array
     {
         foreach (self::all() as $app) {
-            if ($app['match'] && request()->routeIs($app['match'])) {
+            if ($app['match'] && request()->routeIs(...(array) $app['match'])) {
                 return $app;
             }
         }

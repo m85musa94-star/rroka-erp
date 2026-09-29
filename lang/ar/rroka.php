@@ -42,6 +42,8 @@ return [
         'RROKA_STUDIO_CLIENT_MISMATCH' => 'المشروع المختار يتبع عميلًا آخر.',
         'RROKA_STUDIO_PRIVATE_ASSET' => 'هذه الصورة خاصة بعميل آخر، ولا تظهر إلا في عروض أسعاره.',
         'RROKA_STUDIO_ASSET_IN_USE' => 'الصورة مستخدمة في عرض سعر، فلا تُحذف ولا تُنقل عن عميلها.',
+        'RROKA_DESIGN_TRANSITION' => 'هذا الانتقال في مراحل نسخة التصميم غير مسموح (المسار: إعداد ← مراجعة العميل ← موافقة ← إصدار).',
+        'RROKA_PRODUCTION_TRANSITION' => 'هذا الانتقال في مراحل أمر التصنيع غير مسموح (مخطط ← قيد التنفيذ ← مكتمل).',
         'CHECK_VIOLATION' => 'البيانات المُدخلة تخالف أحد شروط الصحة.',
         'DUPLICATE' => 'هذا السجل موجود مسبقًا.',
         'INVALID_REFERENCE' => 'مرجع غير صالح.',
@@ -49,6 +51,7 @@ return [
     ],
 
     'status' => [
+        'CLIENT_REVIEW' => 'مراجعة العميل', 'CLIENT_APPROVED' => 'وافق العميل', 'RELEASED_FOR_PRODUCTION' => 'مُصدَر للإنتاج', 'SUPERSEDED' => 'مُستبدَل', 'PLANNED' => 'مخطط', 'IN_PROGRESS' => 'قيد التنفيذ',
         'DRAFT' => 'مسودة', 'SENT' => 'مُرسَل', 'APPROVED' => 'معتمد', 'REJECTED' => 'مرفوض',
         'EXPIRED' => 'منتهي', 'CANCELLED' => 'ملغى', 'ACTIVE' => 'نشط', 'IN_PRODUCTION' => 'قيد الإنتاج',
         'INSTALLATION' => 'قيد التركيب', 'COMPLETED' => 'مكتمل', 'ON_HOLD' => 'متوقف',
@@ -64,11 +67,13 @@ return [
     ],
 
     'entities' => [
+        'raw_materials' => 'الخامة', 'designs' => 'التصميم', 'design_versions' => 'نسخة التصميم', 'design_bom_lines' => 'بند قائمة المواد', 'production_orders' => 'أمر التصنيع',
         'clients' => 'العميل', 'quotations' => 'عرض السعر', 'quotation_lines' => 'بند', 'projects' => 'المشروع',
         'studio_assets' => 'الصورة', 'users' => 'المستخدم', 'roles' => 'الدور',
     ],
 
     'fields' => [
+        'code' => 'الرمز', 'name' => 'الاسم', 'uom' => 'الوحدة', 'is_active' => 'نشط', 'file_url' => 'ملف التصميم', 'change_notes' => 'ملاحظات النسخة', 'planned_start' => 'البدء المخطط', 'planned_end' => 'الانتهاء المخطط', 'started_at' => 'بدأ', 'client_approved_at' => 'موافقة العميل', 'released_at' => 'تاريخ الإصدار للإنتاج', 'released_by' => 'أصدرها', 'waste_pct' => 'نسبة الهالك', 'material_id' => 'الخامة',
         'category' => 'التصنيف', 'tags' => 'الوسوم', 'project_id' => 'المشروع', 'studio_asset_id' => 'الصورة',
         'status' => 'الحالة', 'business_name' => 'الاسم', 'client_type' => 'النوع', 'phone' => 'الجوال',
         'email' => 'البريد', 'vat_number' => 'الرقم الضريبي', 'commercial_reg_no' => 'السجل التجاري',
@@ -82,6 +87,12 @@ return [
     ],
 
     'studio_category' => ['CLIENT_REFERENCE' => 'صور من العملاء', 'FINISHED_WORK' => 'أعمال منجزة', 'CATALOG' => 'كتالوج المنتجات', 'SITE' => 'صور المواقع', 'MATERIAL' => 'خامات وعينات'],
+
+    'movement_type' => ['RECEIPT' => 'استلام', 'RESERVE' => 'حجز للمشروع', 'UNRESERVE' => 'فك حجز', 'ISSUE' => 'صرف للإنتاج', 'RETURN' => 'إرجاع للمخزن', 'ADJUST_IN' => 'تسوية بالزيادة', 'ADJUST_OUT' => 'تسوية بالنقص'],
+
+    'qc_stage' => ['IN_PROCESS' => 'أثناء التصنيع', 'FINAL' => 'فحص نهائي', 'PRE_DELIVERY' => 'قبل التسليم', 'POST_INSTALLATION' => 'بعد التركيب'],
+
+    'qc_result' => ['PASS' => 'ناجح', 'FAIL' => 'فاشل', 'REWORK' => 'يحتاج إعادة عمل'],
 
     'client_type' => ['INDIVIDUAL' => 'فرد', 'COMPANY' => 'منشأة'],
 
