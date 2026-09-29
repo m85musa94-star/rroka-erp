@@ -3,7 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Client;
+use App\Models\Department;
 use App\Models\DesignVersion;
+use App\Models\Employee;
+use App\Models\JobPosition;
 use App\Models\Permission;
 use App\Models\ProductionOrder;
 use App\Models\Project;
@@ -61,6 +64,12 @@ class LocalizationTest extends ApiTestCase
         $this->actingAs($admin)->post('/studio', ['category' => 'FINISHED_WORK', 'title' => 'Oak kitchen', 'project_id' => $projectId,
             'files' => [UploadedFile::fake()->image('k.jpg')]]);
         $assetId = StudioAsset::value('id');
+        // HR records in English.
+        $this->actingAs($admin)->post('/departments', ['name' => 'Workshop']);
+        $this->actingAs($admin)->post('/jobs', ['name' => 'Carpenter']);
+        $this->actingAs($admin)->post('/employees', ['name' => 'Sam Carpenter', 'department_id' => Department::value('id'), 'job_id' => JobPosition::value('id'), 'hire_date' => '2026-01-01']);
+        $employeeId = Employee::where('name', 'Sam Carpenter')->value('id');
+        $this->actingAs($admin)->post("/employees/{$employeeId}/documents", ['doc_type' => 'IQAMA', 'doc_number' => '21', 'expiry_date' => now()->addDays(10)->toDateString()]);
         // Manufacturing records in English.
         $this->actingAs($admin)->post('/inventory', ['code' => 'MDF18', 'name' => 'MDF board', 'uom' => 'sheet', 'is_active' => 1]);
         $materialId = RawMaterial::value('id');
@@ -86,6 +95,7 @@ class LocalizationTest extends ApiTestCase
             '/settings/rates', '/users', '/users/create', "/users/{$admin->id}/edit",
             '/roles', '/roles/create', "/roles/{$roleId}/edit",
             '/reports', '/settings/daftra',
+            '/employees', '/employees?v=list&g=department', '/employees/create', "/employees/{$employeeId}", "/employees/{$employeeId}/edit", '/departments',
             '/inventory', '/inventory?g=category', '/inventory/create', "/inventory/{$materialId}", "/inventory/{$materialId}/edit",
             '/designs', '/designs/create', "/design-versions/{$versionId}",
             '/production', '/production?v=kanban', '/production/create', "/production/{$orderId}",

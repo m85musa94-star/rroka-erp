@@ -21,6 +21,7 @@ class AppMenu
             ['key' => 'reports', 'label' => __('التقارير'), 'route' => 'reports.index', 'match' => 'reports.*', 'permission' => ['quotations.view', 'projects.view', 'costing.view'], 'group' => 'reports'],
             ['key' => 'production', 'label' => __('التصنيع'), 'route' => 'production.index', 'match' => ['production.*', 'designs.*', 'design-versions.*'], 'permission' => ['production.manage', 'production.log_time', 'quality.inspect', 'designs.manage', 'designs.release', 'bom.manage'], 'group' => 'mrp'],
             ['key' => 'inventory', 'label' => __('المخزون'), 'route' => 'materials.index', 'match' => 'materials.*', 'permission' => ['inventory.view', 'inventory.move'], 'group' => 'mrp'],
+            ['key' => 'employees', 'label' => __('الموظفون'), 'route' => 'employees.index', 'match' => ['employees.*', 'departments.*'], 'permission' => ['hr.view', 'hr.manage'], 'group' => 'hr'],
             ['key' => 'quality', 'label' => __('الجودة'), 'route' => null, 'match' => null, 'permission' => null, 'group' => 'ops'],
             ['key' => 'installation', 'label' => __('التركيب'), 'route' => null, 'match' => null, 'permission' => null, 'group' => 'ops'],
             ['key' => 'rates', 'label' => __('معدلات التكلفة'), 'route' => 'rates.index', 'match' => 'rates.*', 'permission' => 'settings.cost_rates', 'group' => 'settings'],
@@ -72,6 +73,11 @@ class AppMenu
                 ['التصاميم وقوائم المواد', 'designs.index', [], ['designs.manage', 'designs.release', 'bom.manage', 'projects.view']],
                 ['الخامات والمخزون', 'materials.index', [], ['inventory.view', 'inventory.move']],
                 ['الآلات ومعدلات التكلفة', 'rates.index', [], 'settings.cost_rates'],
+            ],
+            'hr' => [
+                ['الموظفون', 'employees.index', [], ['hr.view', 'hr.manage']],
+                ['الأقسام والمسميات الوظيفية', 'departments.index', [], ['hr.view', 'hr.manage']],
+                ['وثائق تحتاج تجديدًا', 'employees.index', ['f' => ['docs']], 'hr.manage'],
             ],
             'settings' => [
                 ['معدلات التكلفة', 'rates.index', [], 'settings.cost_rates'],

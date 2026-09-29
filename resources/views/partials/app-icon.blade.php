@@ -63,6 +63,14 @@
         <rect x="34" y="20" width="22" height="24" rx="5" fill="#5FD0BD"/>
         <path d="M24 32h16" stroke="#F2BD5B" stroke-width="6" stroke-linecap="round"/>
         @break
+    @case('employees')
+        <rect x="8" y="12" width="48" height="40" rx="6" fill="#5AB2F2"/>
+        <circle cx="24" cy="28" r="7" fill="#fff"/>
+        <path d="M13 46c1-7 5-11 11-11s10 4 11 11z" fill="#fff"/>
+        <rect x="38" y="24" width="12" height="4" rx="2" fill="#2A5F7E"/>
+        <rect x="38" y="33" width="9" height="4" rx="2" fill="#2A5F7E"/>
+        <rect x="26" y="6" width="12" height="10" rx="3" fill="#E8833A"/>
+        @break
     @case('users')
         <circle cx="32" cy="22" r="11" fill="#E8833A"/>
         <path d="M12 54c0-12 9-20 20-20s20 8 20 20z" fill="#F2BD5B"/>

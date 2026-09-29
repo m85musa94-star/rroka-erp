@@ -5,7 +5,9 @@ use App\Http\Controllers\Web\ClientController;
 use App\Http\Controllers\Web\CostRateController;
 use App\Http\Controllers\Web\DaftraSettingsController;
 use App\Http\Controllers\Web\DashboardController;
+use App\Http\Controllers\Web\DepartmentController;
 use App\Http\Controllers\Web\DesignController;
+use App\Http\Controllers\Web\EmployeeController;
 use App\Http\Controllers\Web\LocaleController;
 use App\Http\Controllers\Web\MaterialController;
 use App\Http\Controllers\Web\ProductionController;
@@ -122,6 +124,27 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
     Route::post('/production/{order}/labor', [ProductionController::class, 'labor'])->name('production.labor')->whereNumber('order')->middleware('permission:production.log_time');
     Route::post('/production/{order}/machine', [ProductionController::class, 'machine'])->name('production.machine')->whereNumber('order')->middleware('permission:production.log_time');
     Route::post('/production/{order}/inspect', [ProductionController::class, 'inspect'])->name('production.inspect')->whereNumber('order')->middleware('permission:quality.inspect');
+
+    // HR: the directory needs hr.view; personal data, documents and changes need hr.manage.
+    Route::middleware('permission:hr.view|hr.manage')->group(function () {
+        Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
+        Route::get('/employees/create', [EmployeeController::class, 'create'])->name('employees.create')->middleware('permission:hr.manage');
+        Route::get('/employees/{employee}', [EmployeeController::class, 'show'])->name('employees.show')->whereNumber('employee');
+        Route::get('/departments', [DepartmentController::class, 'index'])->name('departments.index');
+    });
+    Route::middleware('permission:hr.manage')->group(function () {
+        Route::post('/employees', [EmployeeController::class, 'store'])->name('employees.store');
+        Route::get('/employees/{employee}/edit', [EmployeeController::class, 'edit'])->name('employees.edit')->whereNumber('employee');
+        Route::put('/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update')->whereNumber('employee');
+        Route::post('/employees/{employee}/employment', [EmployeeController::class, 'employment'])->name('employees.employment')->whereNumber('employee');
+        Route::post('/employees/{employee}/documents', [EmployeeController::class, 'documentStore'])->name('employees.documents.store')->whereNumber('employee');
+        Route::put('/employee-documents/{document}', [EmployeeController::class, 'documentUpdate'])->name('employee-documents.update')->whereNumber('document');
+        Route::delete('/employee-documents/{document}', [EmployeeController::class, 'documentDestroy'])->name('employee-documents.destroy')->whereNumber('document');
+        Route::post('/departments', [DepartmentController::class, 'store'])->name('departments.store');
+        Route::put('/departments/{department}', [DepartmentController::class, 'update'])->name('departments.update')->whereNumber('department');
+        Route::post('/jobs', [DepartmentController::class, 'jobStore'])->name('jobs.store');
+        Route::put('/jobs/{job}', [DepartmentController::class, 'jobUpdate'])->name('jobs.update')->whereNumber('job');
+    });
 
     // Studio: images are streamed only through these routes. A quotation may show one,
     // so anyone who can see quotations can load an image file (not browse the studio).

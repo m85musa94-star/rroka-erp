@@ -44,6 +44,10 @@ return [
         'RROKA_STUDIO_ASSET_IN_USE' => 'الصورة مستخدمة في عرض سعر، فلا تُحذف ولا تُنقل عن عميلها.',
         'RROKA_DESIGN_TRANSITION' => 'هذا الانتقال في مراحل نسخة التصميم غير مسموح (المسار: إعداد ← مراجعة العميل ← موافقة ← إصدار).',
         'RROKA_PRODUCTION_TRANSITION' => 'هذا الانتقال في مراحل أمر التصنيع غير مسموح (مخطط ← قيد التنفيذ ← مكتمل).',
+        'RROKA_EMPLOYEE_IMMUTABLE' => 'رقم الموظف لا يتغير.',
+        'RROKA_EMPLOYEE_TERMINATION' => 'إنهاء الخدمة يتطلب تاريخ آخر يوم عمل وسببه.',
+        'RROKA_EMPLOYEE_MANAGER_LOOP' => 'لا يصح هذا المدير المباشر: يصنع حلقة في التسلسل الإداري.',
+        'RROKA_EMPLOYEE_NOT_EMPLOYED' => 'التاريخ خارج فترة عمل الموظف (قبل تعيينه أو بعد انتهاء خدمته).',
         'CHECK_VIOLATION' => 'البيانات المُدخلة تخالف أحد شروط الصحة.',
         'DUPLICATE' => 'هذا السجل موجود مسبقًا.',
         'INVALID_REFERENCE' => 'مرجع غير صالح.',
@@ -63,16 +67,18 @@ return [
         'projects' => 'المشاريع', 'designs' => 'التصاميم', 'bom' => 'قوائم المواد',
         'inventory' => 'المخزون', 'production' => 'الإنتاج', 'quality' => 'الجودة',
         'installations' => 'التركيب', 'costing' => 'التكلفة والربحية', 'settings' => 'الإعدادات',
-        'daftra' => 'دفترة', 'studio' => 'الاستوديو', 'users' => 'المستخدمون والأدوار', 'audit' => 'سجل التدقيق',
+        'daftra' => 'دفترة', 'hr' => 'الموارد البشرية', 'studio' => 'الاستوديو', 'users' => 'المستخدمون والأدوار', 'audit' => 'سجل التدقيق',
     ],
 
     'entities' => [
+        'workers' => 'الموظف', 'departments' => 'القسم', 'job_positions' => 'المسمى الوظيفي', 'employee_documents' => 'الوثيقة',
         'raw_materials' => 'الخامة', 'designs' => 'التصميم', 'design_versions' => 'نسخة التصميم', 'design_bom_lines' => 'بند قائمة المواد', 'production_orders' => 'أمر التصنيع',
         'clients' => 'العميل', 'quotations' => 'عرض السعر', 'quotation_lines' => 'بند', 'projects' => 'المشروع',
         'studio_assets' => 'الصورة', 'users' => 'المستخدم', 'roles' => 'الدور',
     ],
 
     'fields' => [
+        'department_id' => 'القسم', 'job_id' => 'المسمى الوظيفي', 'trade' => 'المهنة', 'work_phone' => 'هاتف العمل', 'work_email' => 'بريد العمل', 'mobile' => 'الجوال الشخصي', 'nationality' => 'الجنسية', 'id_type' => 'نوع الهوية', 'id_number' => 'رقم الهوية', 'birth_date' => 'تاريخ الميلاد', 'gender' => 'الجنس', 'hire_date' => 'تاريخ التعيين', 'employment_type' => 'نوع التوظيف', 'is_direct_labor' => 'عمالة مباشرة', 'termination_date' => 'انتهاء الخدمة', 'termination_reason' => 'سبب انتهاء الخدمة', 'iban' => 'الآيبان', 'emergency_contact' => 'جهة الطوارئ', 'emergency_phone' => 'هاتف الطوارئ', 'doc_type' => 'نوع الوثيقة', 'doc_number' => 'رقم الوثيقة', 'issue_date' => 'تاريخ الإصدار', 'expiry_date' => 'تاريخ الانتهاء', 'parent_id' => 'يتبع', 'user_id' => 'حساب المستخدم',
         'code' => 'الرمز', 'name' => 'الاسم', 'uom' => 'الوحدة', 'is_active' => 'نشط', 'file_url' => 'ملف التصميم', 'change_notes' => 'ملاحظات النسخة', 'planned_start' => 'البدء المخطط', 'planned_end' => 'الانتهاء المخطط', 'started_at' => 'بدأ', 'client_approved_at' => 'موافقة العميل', 'released_at' => 'تاريخ الإصدار للإنتاج', 'released_by' => 'أصدرها', 'waste_pct' => 'نسبة الهالك', 'material_id' => 'الخامة',
         'category' => 'التصنيف', 'tags' => 'الوسوم', 'project_id' => 'المشروع', 'studio_asset_id' => 'الصورة',
         'status' => 'الحالة', 'business_name' => 'الاسم', 'client_type' => 'النوع', 'phone' => 'الجوال',
@@ -93,6 +99,10 @@ return [
     'qc_stage' => ['IN_PROCESS' => 'أثناء التصنيع', 'FINAL' => 'فحص نهائي', 'PRE_DELIVERY' => 'قبل التسليم', 'POST_INSTALLATION' => 'بعد التركيب'],
 
     'qc_result' => ['PASS' => 'ناجح', 'FAIL' => 'فاشل', 'REWORK' => 'يحتاج إعادة عمل'],
+
+    'doc_type' => ['NATIONAL_ID' => 'هوية وطنية', 'IQAMA' => 'إقامة', 'PASSPORT' => 'جواز سفر', 'WORK_PERMIT' => 'رخصة عمل', 'HEALTH_CERT' => 'شهادة صحية', 'DRIVING_LICENSE' => 'رخصة قيادة', 'OTHER' => 'أخرى'],
+
+    'employment_type' => ['FULL_TIME' => 'دوام كامل', 'PART_TIME' => 'دوام جزئي', 'CONTRACTOR' => 'متعاقد مستقل'],
 
     'client_type' => ['INDIVIDUAL' => 'فرد', 'COMPANY' => 'منشأة'],
 

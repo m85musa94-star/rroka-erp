@@ -44,6 +44,10 @@ return [
         'RROKA_STUDIO_ASSET_IN_USE' => 'The image is used in a quotation, so it cannot be deleted or moved away from its customer.',
         'RROKA_DESIGN_TRANSITION' => 'This design version stage change is not allowed (draft → client review → approved → released).',
         'RROKA_PRODUCTION_TRANSITION' => 'This manufacturing order stage change is not allowed (planned → in progress → done).',
+        'RROKA_EMPLOYEE_IMMUTABLE' => 'The employee number cannot change.',
+        'RROKA_EMPLOYEE_TERMINATION' => 'Ending employment needs the last working day and a reason.',
+        'RROKA_EMPLOYEE_MANAGER_LOOP' => 'This manager is not allowed: it creates a loop in the reporting line.',
+        'RROKA_EMPLOYEE_NOT_EMPLOYED' => "The date is outside the employee's employment period (before hire or after the end of service).",
         'CHECK_VIOLATION' => 'The entered data breaks one of the validity rules.',
         'DUPLICATE' => 'This record already exists.',
         'INVALID_REFERENCE' => 'Invalid reference.',
@@ -63,16 +67,18 @@ return [
         'projects' => 'Projects', 'designs' => 'Designs', 'bom' => 'Bills of materials',
         'inventory' => 'Inventory', 'production' => 'Production', 'quality' => 'Quality',
         'installations' => 'Installation', 'costing' => 'Costing & profitability', 'settings' => 'Settings',
-        'daftra' => 'Daftra', 'studio' => 'Studio', 'users' => 'Users & roles', 'audit' => 'Audit log',
+        'daftra' => 'Daftra', 'hr' => 'Human resources', 'studio' => 'Studio', 'users' => 'Users & roles', 'audit' => 'Audit log',
     ],
 
     'entities' => [
+        'workers' => 'employee', 'departments' => 'department', 'job_positions' => 'job position', 'employee_documents' => 'document',
         'raw_materials' => 'material', 'designs' => 'design', 'design_versions' => 'design version', 'design_bom_lines' => 'BOM line', 'production_orders' => 'manufacturing order',
         'clients' => 'customer', 'quotations' => 'quotation', 'quotation_lines' => 'line', 'projects' => 'project',
         'studio_assets' => 'image', 'users' => 'user', 'roles' => 'role',
     ],
 
     'fields' => [
+        'department_id' => 'Department', 'job_id' => 'Job position', 'trade' => 'Trade', 'work_phone' => 'Work phone', 'work_email' => 'Work email', 'mobile' => 'Personal mobile', 'nationality' => 'Nationality', 'id_type' => 'ID type', 'id_number' => 'ID number', 'birth_date' => 'Date of birth', 'gender' => 'Gender', 'hire_date' => 'Hire date', 'employment_type' => 'Employment type', 'is_direct_labor' => 'Direct labour', 'termination_date' => 'End of service', 'termination_reason' => 'End of service reason', 'iban' => 'IBAN', 'emergency_contact' => 'Emergency contact', 'emergency_phone' => 'Emergency phone', 'doc_type' => 'Document type', 'doc_number' => 'Document number', 'issue_date' => 'Issue date', 'expiry_date' => 'Expiry date', 'parent_id' => 'Parent', 'user_id' => 'User account',
         'code' => 'Code', 'name' => 'Name', 'uom' => 'Unit', 'is_active' => 'Active', 'file_url' => 'Design file', 'change_notes' => 'Version notes', 'planned_start' => 'Planned start', 'planned_end' => 'Planned end', 'started_at' => 'Started', 'client_approved_at' => 'Client approval', 'released_at' => 'Released on', 'released_by' => 'Released by', 'waste_pct' => 'Waste %', 'material_id' => 'Material',
         'category' => 'Category', 'tags' => 'Tags', 'project_id' => 'Project', 'studio_asset_id' => 'Image',
         'status' => 'Status', 'business_name' => 'Name', 'client_type' => 'Type', 'phone' => 'Mobile',
@@ -93,6 +99,10 @@ return [
     'qc_stage' => ['IN_PROCESS' => 'In process', 'FINAL' => 'Final', 'PRE_DELIVERY' => 'Pre-delivery', 'POST_INSTALLATION' => 'Post-installation'],
 
     'qc_result' => ['PASS' => 'Pass', 'FAIL' => 'Fail', 'REWORK' => 'Rework'],
+
+    'doc_type' => ['NATIONAL_ID' => 'National ID', 'IQAMA' => 'Iqama', 'PASSPORT' => 'Passport', 'WORK_PERMIT' => 'Work permit', 'HEALTH_CERT' => 'Health certificate', 'DRIVING_LICENSE' => 'Driving licence', 'OTHER' => 'Other'],
+
+    'employment_type' => ['FULL_TIME' => 'Full time', 'PART_TIME' => 'Part time', 'CONTRACTOR' => 'Contractor'],
 
     'client_type' => ['INDIVIDUAL' => 'Individual', 'COMPANY' => 'Company'],
 

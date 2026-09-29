@@ -355,6 +355,38 @@ SELECT pg_temp.expect_eq('studio: uploads are audited',
     (SELECT count(*) FROM audit_log WHERE table_name = 'studio_assets' AND row_id = 9), 2::bigint);
 
 -- ---------------------------------------------------------------------
+-- HR core
+-- ---------------------------------------------------------------------
+INSERT INTO departments (id, name) VALUES (1, 'TEST workshop'), (2, 'TEST office');
+SELECT pg_temp.expect_eq('hr: existing workers got employee numbers',
+    (SELECT count(*) FROM workers WHERE employee_no IS NULL), 0::bigint);
+SELECT pg_temp.expect_error('hr: employee number is fixed',
+    'UPDATE workers SET employee_no = ''X'' WHERE id = 1', 'RROKA_EMPLOYEE_IMMUTABLE');
+SELECT pg_temp.expect_ok('hr: reporting line 2 -> 1',
+    'UPDATE workers SET manager_id = 1, department_id = 1 WHERE id = 2');
+SELECT pg_temp.expect_error('hr: reporting line cannot loop',
+    'UPDATE workers SET manager_id = 2 WHERE id = 1', 'RROKA_EMPLOYEE_MANAGER_LOOP');
+SELECT pg_temp.expect_error('hr: IBAN must be a Saudi IBAN',
+    'UPDATE workers SET iban = ''DE89370400440532013000'' WHERE id = 1', 'workers_iban_format');
+SELECT pg_temp.expect_ok('hr: valid Saudi IBAN shape',
+    'UPDATE workers SET iban = ''SA0380000000608010167519'' WHERE id = 1');
+SELECT pg_temp.expect_error('hr: ending employment needs date and reason',
+    'UPDATE workers SET is_active = false WHERE id = 2', 'RROKA_EMPLOYEE_TERMINATION');
+SELECT pg_temp.expect_error('hr: same ID number twice refused',
+    'UPDATE workers SET id_type = ''IQAMA'', id_number = ''2000000001'' WHERE id IN (1, 2)', 'ux_workers_id_number');
+SELECT pg_temp.expect_error('hr: document expiry after issue',
+    'INSERT INTO employee_documents (employee_id, doc_type, issue_date, expiry_date) VALUES (1, ''IQAMA'', ''2026-05-01'', ''2026-01-01'')', 'check constraint');
+SELECT pg_temp.expect_ok('hr: document with expiry',
+    'INSERT INTO employee_documents (employee_id, doc_type, doc_number, issue_date, expiry_date) VALUES (1, ''IQAMA'', ''2000000001'', ''2026-01-01'', ''2027-01-01'')');
+UPDATE workers SET hire_date = '2026-03-01' WHERE id = 2;
+SELECT pg_temp.expect_error('hr: no hours before hire date',
+    'INSERT INTO labor_logs (production_order_id, worker_id, work_date, hours) VALUES (1, 2, ''2026-02-15'', 1)', 'RROKA_EMPLOYEE_NOT_EMPLOYED');
+SELECT pg_temp.expect_ok('hr: end employment with date and reason',
+    'UPDATE workers SET is_active = false, termination_date = ''2026-06-30'', termination_reason = ''TEST end of contract'' WHERE id = 2');
+SELECT pg_temp.expect_error('hr: termination before hire refused',
+    'UPDATE workers SET termination_date = ''2026-01-01'' WHERE id = 2', 'workers_termination_after_hire');
+
+-- ---------------------------------------------------------------------
 -- Report
 -- ---------------------------------------------------------------------
 \pset footer off
