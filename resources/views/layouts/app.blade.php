@@ -1,7 +1,7 @@
 <!doctype html>
-<html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
+<html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}"{!! \App\Support\Theme::attr() !!}>
 <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8"><meta name="color-scheme" content="light dark">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title') {{ __('— إر روكا') }}</title>
@@ -31,6 +31,7 @@
     @endif
     <div class="tb-spacer"></div>
     <div class="tb-user">
+        @include('partials.theme-toggle')
         @include('partials.lang-toggle')
         <span class="tb-avatar">{{ mb_substr($u->name, 0, 1) }}</span>
         <span class="tb-name">{{ $u->name }}</span>

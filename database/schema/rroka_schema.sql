@@ -64,6 +64,12 @@ DO $$ BEGIN
     ALTER TABLE users ADD CONSTRAINT users_locale_check CHECK (locale IN ('ar', 'en'));
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
+-- Per-user colour theme: follow the device (system), or always light / dark.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS theme text NOT NULL DEFAULT 'system';
+DO $$ BEGIN
+    ALTER TABLE users ADD CONSTRAINT users_theme_check CHECK (theme IN ('system', 'light', 'dark'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE roles (
     id          bigserial PRIMARY KEY,

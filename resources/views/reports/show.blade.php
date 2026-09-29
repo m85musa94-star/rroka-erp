@@ -20,7 +20,8 @@
     $m = $measures[$measure];
     $fmt = fn ($v) => \App\Reports\Report::format($v, $m['format']);
     $base = request()->except(['export']);
-    $palette = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#4a3aa7'];
+    // Validated categorical palette; the light/dark steps live in app.css (--series-1..7).
+    $palette = array_map(fn ($i) => "var(--series-$i)", range(1, 7));
 @endphp
 
 <p class="report-range">
@@ -83,7 +84,7 @@
         @if(count($series) > 1)
             <div class="legend">
                 @foreach($series as $i => $s)<span><i style="background:{{ $palette[$i] }}"></i>{{ $s['label'] }}</span>@endforeach
-                @if(count($pivot['cols']) > 7)<span><i style="background:#9a948d"></i>{{ __('أخرى') }}</span>@endif
+                @if(count($pivot['cols']) > 7)<span><i style="background: var(--series-other)"></i>{{ __('أخرى') }}</span>@endif
             </div>
         @endif
         <div class="bars" role="img" aria-label="{{ $m['label'] }} {{ __('حسب') }} {{ $dims[$row]['label'] }}">
@@ -104,7 +105,7 @@
                                     @if($sv > 0)<span class="seg" style="flex: {{ $sv }}; background: {{ $palette[$i] }}" title="{{ $s['label'] }}: {{ $fmt($sv) }}"></span>@endif
                                     @php($acc += $sv)
                                 @endforeach
-                                @if($v - $acc > 0.0001)<span class="seg" style="flex: {{ $v - $acc }}; background:#9a948d" title="{{ __('أخرى:') }} {{ $fmt($v - $acc) }}"></span>@endif
+                                @if($v - $acc > 0.0001)<span class="seg" style="flex: {{ $v - $acc }}; background: var(--series-other)" title="{{ __('أخرى:') }} {{ $fmt($v - $acc) }}"></span>@endif
                             </div>
                         @else
                             <div @class(['bar', 'neg' => $v < 0]) title="{{ $r['label'] }}: {{ $fmt($v) }}"

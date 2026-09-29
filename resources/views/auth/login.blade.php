@@ -1,7 +1,7 @@
 <!doctype html>
-<html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
+<html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}"{!! \App\Support\Theme::attr() !!}>
 <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8"><meta name="color-scheme" content="light dark">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ __('تسجيل الدخول — إر روكا') }}</title>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
@@ -10,7 +10,7 @@
 <body>
 <div class="login">
     <div class="card">
-        <div style="display:flex;justify-content:flex-end;margin-bottom:6px">@include('partials.lang-toggle')</div>
+        <div style="display:flex;justify-content:flex-end;gap:6px;margin-bottom:6px">@include('partials.theme-toggle')@include('partials.lang-toggle')</div>
         <h1>{{ __('إر روكا للأثاث') }}</h1>
         <p class="muted" style="margin-top:0">{{ __('نظام التشغيل والتكلفة') }}</p>
         @if($errors->any())

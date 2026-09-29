@@ -22,11 +22,13 @@ use App\Http\Controllers\Web\ReportController;
 use App\Http\Controllers\Web\RoleController;
 use App\Http\Controllers\Web\StudioController;
 use App\Http\Controllers\Web\SupplierController;
+use App\Http\Controllers\Web\ThemeController;
 use App\Http\Controllers\Web\UserController;
 use Illuminate\Support\Facades\Route;
 
 // Language switch works for guests (login page) and signed-in users alike.
 Route::post('/locale/{locale}', LocaleController::class)->whereIn('locale', ['ar', 'en'])->name('locale')->middleware('throttle:30,1');
+Route::post('/theme', ThemeController::class)->name('theme')->middleware('throttle:30,1');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'show'])->name('login');
