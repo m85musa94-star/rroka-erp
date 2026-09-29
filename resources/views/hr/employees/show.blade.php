@@ -47,6 +47,53 @@
     </div>
 </div>
 
+@if($u->hasPermission('hr.contracts'))
+<div class="card">
+    <div class="section-title"><h2>{{ __('العقود') }}</h2><a class="btn ghost sm" href="{{ route('contracts.create', ['employee_id' => $e->id]) }}">{{ __('عقد جديد') }}</a></div>
+    <div class="table-wrap"><table>
+        <tr><th>{{ __('الرقم') }}</th><th>{{ __('النوع') }}</th><th>{{ __('البداية') }}</th><th>{{ __('النهاية') }}</th><th class="num">{{ __('الإجمالي الشهري') }}</th><th>{{ __('الحالة') }}</th></tr>
+        @forelse($e->contracts as $c)
+            <tr><td><a href="{{ route('contracts.show', $c) }}">{{ $c->contract_no }}</a></td><td>{{ __("rroka.contract_type.$c->contract_type") }}</td>
+                <td class="num">{{ $c->start_date->format('Y-m-d') }}</td><td class="num">{{ $c->end_date?->format('Y-m-d') ?? '—' }}</td>
+                <td class="num">{{ number_format($c->monthlyGross(), 2) }}</td><td>@include('partials.badge', ['s' => $c->status])</td></tr>
+        @empty
+            <tr><td colspan="6" class="muted">{{ __('لا عقود مسجلة.') }}</td></tr>
+        @endforelse
+    </table></div>
+</div>
+@endif
+
+@if($u->hasPermission('hr.leave_approve') || $full)
+<div class="card">
+    <div class="section-title"><h2>{{ __('الإجازات') }}</h2><a class="btn ghost sm" href="{{ route('leaves.create', ['employee_id' => $e->id]) }}">{{ __('طلب إجازة') }}</a></div>
+    @if($balances->isNotEmpty())
+        <div class="stats" style="margin:0 0 10px">@foreach($balances as $b)<div class="stat"><div class="k">{{ __('رصيد :type', ['type' => $b->type->name]) }}</div><div class="v">{{ $b->balance + 0 }}</div></div>@endforeach</div>
+    @endif
+    <div class="table-wrap"><table>
+        <tr><th>{{ __('النوع') }}</th><th>{{ __('من') }}</th><th>{{ __('إلى') }}</th><th class="num">{{ __('الأيام') }}</th><th>{{ __('الحالة') }}</th></tr>
+        @forelse($e->leaveRequests->take(10) as $r)
+            <tr><td>{{ $r->type->name }}</td><td class="num">{{ $r->date_from->format('Y-m-d') }}</td><td class="num">{{ $r->date_to->format('Y-m-d') }}</td><td class="num">{{ $r->days + 0 }}</td><td>@include('partials.badge', ['s' => $r->status])</td></tr>
+        @empty
+            <tr><td colspan="5" class="muted">{{ __('لا طلبات إجازة.') }}</td></tr>
+        @endforelse
+    </table></div>
+</div>
+@endif
+
+@if($u->hasPermission('hr.attendance'))
+<div class="card">
+    <div class="section-title"><h2>{{ __('الحضور') }}</h2><span class="muted">{{ __('هذا الشهر: :h ساعة', ['h' => number_format($monthHours, 2)]) }}</span></div>
+    <div class="table-wrap"><table>
+        <tr><th>{{ __('الحضور') }}</th><th>{{ __('الانصراف') }}</th><th class="num">{{ __('الساعات') }}</th></tr>
+        @forelse($e->attendances->take(7) as $a)
+            <tr><td class="num">{{ $a->check_in->timezone(config('app.timezone'))->format('Y-m-d H:i') }}</td><td class="num">{{ $a->check_out?->timezone(config('app.timezone'))->format('Y-m-d H:i') ?? '—' }}</td><td class="num">{{ $a->worked_hours !== null ? number_format($a->worked_hours, 2) : '—' }}</td></tr>
+        @empty
+            <tr><td colspan="3" class="muted">{{ __('لا سجلات حضور.') }}</td></tr>
+        @endforelse
+    </table></div>
+</div>
+@endif
+
 @if($full)
 <div class="card">
     <h2>{{ __('البيانات الشخصية') }}</h2>

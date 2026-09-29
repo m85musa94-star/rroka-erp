@@ -47,3 +47,4 @@
 - الاستوديو: `studio_assets` + `StudioStorage` (قرص `studio` خاص، مصغّرات GD، منع التكرار بـ SHA-256). الصور تُقدَّم عبر `studio.file` بعد فحص الصلاحية فقط.
   في الإنتاج يُرفض الرفع إن كان القرص محليًا (`StudioStorage::isReady`). صورة العميل لا تظهر إلا في عروض أسعاره (Trigger).
 - التصنيع: `ProductionController` (أوامر التصنيع: مكونات من قائمة مواد النسخة، حجز/صرف/إرجاع عبر `stock_movements`، ساعات، فحوصات)، `DesignController` (نسخ ومراحل وقائمة مواد)، `MaterialController` (المخزون). الحجز والصرف على مستوى المشروع (`fn_project_reserved`/`fn_project_issued`).
+- الموارد البشرية: `Employee` (جدول `workers` نفسه الذي يستخدمه `Worker` للتكلفة)، `EmployeeController` (الدليل `hr.view` بلا بيانات شخصية)، `ContractController` (`hr.contracts`)، `AttendanceController` (`hr.attendance`)، `LeaveController` (خدمة ذاتية عبر `workers.user_id`؛ الاعتماد `hr.leave_approve`). صلاحية القائمة الوهمية `self.employee` في `AppMenu::can`. لا احتساب رواتب.

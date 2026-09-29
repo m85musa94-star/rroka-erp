@@ -71,6 +71,18 @@
         <rect x="38" y="33" width="9" height="4" rx="2" fill="#2A5F7E"/>
         <rect x="26" y="6" width="12" height="10" rx="3" fill="#E8833A"/>
         @break
+    @case('attendance')
+        <circle cx="32" cy="34" r="22" fill="#5FD0BD"/>
+        <circle cx="32" cy="34" r="16" fill="#fff"/>
+        <path d="M32 22v12l8 6" stroke="#2A5F7E" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="26" y="6" width="12" height="7" rx="3" fill="#E8833A"/>
+        @break
+    @case('timeoff')
+        <rect x="8" y="12" width="48" height="42" rx="6" fill="#F2BD5B"/>
+        <rect x="8" y="12" width="48" height="12" rx="6" fill="#E8833A"/>
+        <rect x="18" y="6" width="5" height="12" rx="2" fill="#8E5486"/><rect x="41" y="6" width="5" height="12" rx="2" fill="#8E5486"/>
+        <path d="M22 40l7 7 14-15" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        @break
     @case('users')
         <circle cx="32" cy="22" r="11" fill="#E8833A"/>
         <path d="M12 54c0-12 9-20 20-20s20 8 20 20z" fill="#F2BD5B"/>

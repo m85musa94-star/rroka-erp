@@ -48,6 +48,17 @@ return [
         'RROKA_EMPLOYEE_TERMINATION' => 'إنهاء الخدمة يتطلب تاريخ آخر يوم عمل وسببه.',
         'RROKA_EMPLOYEE_MANAGER_LOOP' => 'لا يصح هذا المدير المباشر: يصنع حلقة في التسلسل الإداري.',
         'RROKA_EMPLOYEE_NOT_EMPLOYED' => 'التاريخ خارج فترة عمل الموظف (قبل تعيينه أو بعد انتهاء خدمته).',
+        'RROKA_CONTRACT_TRANSITION' => 'هذا الانتقال في حالة العقد غير مسموح (مسودة ← ساري ← منتهٍ).',
+        'RROKA_CONTRACT_LOCKED' => 'شروط العقد الساري أو المنتهي لا تُعدَّل؛ أنشئ عقدًا جديدًا.',
+        'RROKA_LEAVE_TRANSITION' => 'هذا الانتقال في حالة طلب الإجازة غير مسموح.',
+        'RROKA_LEAVE_LOCKED' => 'طلب الإجازة المحسوم لا يُعدَّل.',
+        'RROKA_LEAVE_OVERLAP' => 'يوجد طلب إجازة آخر يغطي هذه التواريخ.',
+        'RROKA_LEAVE_SELF_APPROVAL' => 'لا يعتمد أحد إجازته بنفسه (فصل الصلاحيات).',
+        'RROKA_LEAVE_BALANCE' => 'الأيام المطلوبة أكثر من الرصيد المتاح.',
+        'RROKA_ALLOCATION_IMMUTABLE' => 'الرصيد الممنوح لا يُعدَّل؛ سجّل قيدًا جديدًا.',
+        'RROKA_ATTENDANCE_OVERLAP' => 'يتداخل هذا السجل مع سجل حضور آخر للموظف (أو لم يُسجَّل انصرافه السابق).',
+        'RROKA_ATTENDANCE_FUTURE' => 'لا يُسجَّل حضور بوقت في المستقبل.',
+        'RROKA_EMPLOYEE_ON_LEAVE' => 'الموظف في إجازة معتمدة في هذا اليوم.',
         'CHECK_VIOLATION' => 'البيانات المُدخلة تخالف أحد شروط الصحة.',
         'DUPLICATE' => 'هذا السجل موجود مسبقًا.',
         'INVALID_REFERENCE' => 'مرجع غير صالح.',
@@ -55,6 +66,7 @@ return [
     ],
 
     'status' => [
+        'EXPIRED' => 'منتهٍ', 'RUNNING' => 'ساري', 'SUBMITTED' => 'بانتظار الاعتماد', 'REFUSED' => 'مرفوض',
         'CLIENT_REVIEW' => 'مراجعة العميل', 'CLIENT_APPROVED' => 'وافق العميل', 'RELEASED_FOR_PRODUCTION' => 'مُصدَر للإنتاج', 'SUPERSEDED' => 'مُستبدَل', 'PLANNED' => 'مخطط', 'IN_PROGRESS' => 'قيد التنفيذ',
         'DRAFT' => 'مسودة', 'SENT' => 'مُرسَل', 'APPROVED' => 'معتمد', 'REJECTED' => 'مرفوض',
         'EXPIRED' => 'منتهي', 'CANCELLED' => 'ملغى', 'ACTIVE' => 'نشط', 'IN_PRODUCTION' => 'قيد الإنتاج',
@@ -71,6 +83,7 @@ return [
     ],
 
     'entities' => [
+        'employee_contracts' => 'العقد', 'leave_requests' => 'طلب الإجازة', 'leave_allocations' => 'رصيد الإجازة', 'attendances' => 'سجل الحضور', 'leave_types' => 'نوع الإجازة',
         'workers' => 'الموظف', 'departments' => 'القسم', 'job_positions' => 'المسمى الوظيفي', 'employee_documents' => 'الوثيقة',
         'raw_materials' => 'الخامة', 'designs' => 'التصميم', 'design_versions' => 'نسخة التصميم', 'design_bom_lines' => 'بند قائمة المواد', 'production_orders' => 'أمر التصنيع',
         'clients' => 'العميل', 'quotations' => 'عرض السعر', 'quotation_lines' => 'بند', 'projects' => 'المشروع',
@@ -78,6 +91,7 @@ return [
     ],
 
     'fields' => [
+        'contract_type' => 'نوع العقد', 'end_date' => 'تاريخ النهاية', 'basic_salary' => 'الراتب الأساسي', 'housing_allowance' => 'بدل السكن', 'transport_allowance' => 'بدل النقل', 'other_allowance' => 'بدلات أخرى', 'weekly_hours' => 'الساعات الأسبوعية', 'check_in' => 'الحضور', 'check_out' => 'الانصراف', 'date_from' => 'من', 'date_to' => 'إلى', 'days' => 'الأيام', 'refusal_reason' => 'سبب الرفض',
         'department_id' => 'القسم', 'job_id' => 'المسمى الوظيفي', 'trade' => 'المهنة', 'work_phone' => 'هاتف العمل', 'work_email' => 'بريد العمل', 'mobile' => 'الجوال الشخصي', 'nationality' => 'الجنسية', 'id_type' => 'نوع الهوية', 'id_number' => 'رقم الهوية', 'birth_date' => 'تاريخ الميلاد', 'gender' => 'الجنس', 'hire_date' => 'تاريخ التعيين', 'employment_type' => 'نوع التوظيف', 'is_direct_labor' => 'عمالة مباشرة', 'termination_date' => 'انتهاء الخدمة', 'termination_reason' => 'سبب انتهاء الخدمة', 'iban' => 'الآيبان', 'emergency_contact' => 'جهة الطوارئ', 'emergency_phone' => 'هاتف الطوارئ', 'doc_type' => 'نوع الوثيقة', 'doc_number' => 'رقم الوثيقة', 'issue_date' => 'تاريخ الإصدار', 'expiry_date' => 'تاريخ الانتهاء', 'parent_id' => 'يتبع', 'user_id' => 'حساب المستخدم',
         'code' => 'الرمز', 'name' => 'الاسم', 'uom' => 'الوحدة', 'is_active' => 'نشط', 'file_url' => 'ملف التصميم', 'change_notes' => 'ملاحظات النسخة', 'planned_start' => 'البدء المخطط', 'planned_end' => 'الانتهاء المخطط', 'started_at' => 'بدأ', 'client_approved_at' => 'موافقة العميل', 'released_at' => 'تاريخ الإصدار للإنتاج', 'released_by' => 'أصدرها', 'waste_pct' => 'نسبة الهالك', 'material_id' => 'الخامة',
         'category' => 'التصنيف', 'tags' => 'الوسوم', 'project_id' => 'المشروع', 'studio_asset_id' => 'الصورة',
@@ -103,6 +117,8 @@ return [
     'doc_type' => ['NATIONAL_ID' => 'هوية وطنية', 'IQAMA' => 'إقامة', 'PASSPORT' => 'جواز سفر', 'WORK_PERMIT' => 'رخصة عمل', 'HEALTH_CERT' => 'شهادة صحية', 'DRIVING_LICENSE' => 'رخصة قيادة', 'OTHER' => 'أخرى'],
 
     'employment_type' => ['FULL_TIME' => 'دوام كامل', 'PART_TIME' => 'دوام جزئي', 'CONTRACTOR' => 'متعاقد مستقل'],
+
+    'contract_type' => ['FIXED_TERM' => 'محدد المدة', 'INDEFINITE' => 'غير محدد المدة'],
 
     'client_type' => ['INDIVIDUAL' => 'فرد', 'COMPANY' => 'منشأة'],
 

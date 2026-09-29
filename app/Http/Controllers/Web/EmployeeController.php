@@ -7,6 +7,7 @@ use App\Models\Department;
 use App\Models\Employee;
 use App\Models\EmployeeDocument;
 use App\Models\JobPosition;
+use App\Models\LeaveType;
 use App\Models\User;
 use App\Support\ActivityLog;
 use App\Support\ListView;
@@ -78,9 +79,17 @@ class EmployeeController extends Controller
     {
         $full = $request->user()->hasPermission('hr.manage');
 
+        $employee->load('department', 'job', 'manager', 'user', 'subordinates', 'contracts', 'leaveRequests.type', 'attendances');
+        if ($full) {
+            $employee->load('documents');
+        }
+
         return view('hr.employees.show', [
-            'e' => $employee->load('department', 'job', 'manager', 'user', 'subordinates', $full ? 'documents' : 'department'),
+            'e' => $employee,
             'full' => $full,
+            'balances' => LeaveType::where('requires_allocation', true)->where('is_active', true)->orderBy('name')->get()
+                ->map(fn ($t) => (object) ['type' => $t, 'balance' => (float) DB::scalar('select fn_leave_balance(?, ?, ?)', [$employee->id, $t->id, today()->toDateString()])]),
+            'monthHours' => (float) $employee->attendances()->reorder()->where('check_in', '>=', now()->startOfMonth())->sum('worked_hours'),
             'activity' => $full ? ActivityLog::for([
                 'workers' => [$employee->id],
                 'employee_documents' => DB::table('audit_log')->where('table_name', 'employee_documents')

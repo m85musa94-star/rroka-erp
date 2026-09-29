@@ -1,13 +1,16 @@
 <?php
 
+use App\Http\Controllers\Web\AttendanceController;
 use App\Http\Controllers\Web\AuthController;
 use App\Http\Controllers\Web\ClientController;
+use App\Http\Controllers\Web\ContractController;
 use App\Http\Controllers\Web\CostRateController;
 use App\Http\Controllers\Web\DaftraSettingsController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\DepartmentController;
 use App\Http\Controllers\Web\DesignController;
 use App\Http\Controllers\Web\EmployeeController;
+use App\Http\Controllers\Web\LeaveController;
 use App\Http\Controllers\Web\LocaleController;
 use App\Http\Controllers\Web\MaterialController;
 use App\Http\Controllers\Web\ProductionController;
@@ -144,6 +147,34 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::put('/departments/{department}', [DepartmentController::class, 'update'])->name('departments.update')->whereNumber('department');
         Route::post('/jobs', [DepartmentController::class, 'jobStore'])->name('jobs.store');
         Route::put('/jobs/{job}', [DepartmentController::class, 'jobUpdate'])->name('jobs.update')->whereNumber('job');
+    });
+
+    Route::middleware('permission:hr.contracts')->group(function () {
+        Route::get('/contracts', [ContractController::class, 'index'])->name('contracts.index');
+        Route::get('/contracts/create', [ContractController::class, 'create'])->name('contracts.create');
+        Route::post('/contracts', [ContractController::class, 'store'])->name('contracts.store');
+        Route::get('/contracts/{contract}', [ContractController::class, 'show'])->name('contracts.show')->whereNumber('contract');
+        Route::get('/contracts/{contract}/edit', [ContractController::class, 'edit'])->name('contracts.edit')->whereNumber('contract');
+        Route::put('/contracts/{contract}', [ContractController::class, 'update'])->name('contracts.update')->whereNumber('contract');
+        Route::post('/contracts/{contract}/{action}', [ContractController::class, 'transition'])->name('contracts.transition')->whereNumber('contract')->whereIn('action', ['start', 'close', 'cancel']);
+    });
+    Route::middleware('permission:hr.attendance')->group(function () {
+        Route::get('/attendance', [AttendanceController::class, 'board'])->name('attendance.index');
+        Route::get('/attendance/records', [AttendanceController::class, 'index'])->name('attendance.records');
+        Route::post('/attendance/toggle/{employee}', [AttendanceController::class, 'toggle'])->name('attendance.toggle')->whereNumber('employee');
+        Route::post('/attendance', [AttendanceController::class, 'store'])->name('attendance.store');
+        Route::put('/attendance/{attendance}', [AttendanceController::class, 'update'])->name('attendance.update')->whereNumber('attendance');
+    });
+    // Time off: employees request their own; the controller checks who may act for whom.
+    Route::get('/leaves', [LeaveController::class, 'index'])->name('leaves.index');
+    Route::get('/leaves/create', [LeaveController::class, 'create'])->name('leaves.create');
+    Route::post('/leaves', [LeaveController::class, 'store'])->name('leaves.store');
+    Route::post('/leaves/{leave}/{action}', [LeaveController::class, 'decide'])->name('leaves.decide')->whereNumber('leave')->whereIn('action', ['approve', 'refuse', 'cancel']);
+    Route::middleware('permission:hr.leave_approve')->group(function () {
+        Route::get('/leaves/settings', [LeaveController::class, 'settings'])->name('leaves.settings');
+        Route::post('/leave-types', [LeaveController::class, 'typeStore'])->name('leave-types.store');
+        Route::put('/leave-types/{type}', [LeaveController::class, 'typeUpdate'])->name('leave-types.update')->whereNumber('type');
+        Route::post('/leave-allocations', [LeaveController::class, 'allocationStore'])->name('leave-allocations.store');
     });
 
     // Studio: images are streamed only through these routes. A quotation may show one,

@@ -79,9 +79,9 @@ form.inline { display: inline; }
 
 .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: #eee; color: #444; }
 .b-DRAFT, .b-PLANNED, .b-SUPERSEDED { background: #eceae6; color: #555; }
-.b-SENT, .b-PENDING, .b-IN_PRODUCTION, .b-INSTALLATION, .b-CLIENT_REVIEW, .b-IN_PROGRESS { background: var(--info-soft); color: var(--info); }
-.b-APPROVED, .b-ACTIVE, .b-COMPLETED, .b-SUCCESS, .b-CLIENT_APPROVED, .b-RELEASED_FOR_PRODUCTION { background: var(--ok-soft); color: var(--ok); }
-.b-REJECTED, .b-CANCELLED, .b-EXPIRED, .b-FAILED { background: var(--bad-soft); color: var(--bad); }
+.b-SENT, .b-PENDING, .b-IN_PRODUCTION, .b-INSTALLATION, .b-CLIENT_REVIEW, .b-IN_PROGRESS, .b-SUBMITTED { background: var(--info-soft); color: var(--info); }
+.b-APPROVED, .b-ACTIVE, .b-COMPLETED, .b-SUCCESS, .b-CLIENT_APPROVED, .b-RELEASED_FOR_PRODUCTION, .b-RUNNING { background: var(--ok-soft); color: var(--ok); }
+.b-REJECTED, .b-CANCELLED, .b-EXPIRED, .b-FAILED, .b-REFUSED { background: var(--bad-soft); color: var(--bad); }
 .b-ON_HOLD { background: var(--warn-soft); color: var(--warn); }
 
 .alert { padding: 12px 14px; border-radius: 8px; margin-bottom: 16px; }

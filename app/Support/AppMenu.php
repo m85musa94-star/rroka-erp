@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\Employee;
 use App\Models\User;
 
 /**
@@ -21,7 +22,9 @@ class AppMenu
             ['key' => 'reports', 'label' => __('التقارير'), 'route' => 'reports.index', 'match' => 'reports.*', 'permission' => ['quotations.view', 'projects.view', 'costing.view'], 'group' => 'reports'],
             ['key' => 'production', 'label' => __('التصنيع'), 'route' => 'production.index', 'match' => ['production.*', 'designs.*', 'design-versions.*'], 'permission' => ['production.manage', 'production.log_time', 'quality.inspect', 'designs.manage', 'designs.release', 'bom.manage'], 'group' => 'mrp'],
             ['key' => 'inventory', 'label' => __('المخزون'), 'route' => 'materials.index', 'match' => 'materials.*', 'permission' => ['inventory.view', 'inventory.move'], 'group' => 'mrp'],
-            ['key' => 'employees', 'label' => __('الموظفون'), 'route' => 'employees.index', 'match' => ['employees.*', 'departments.*'], 'permission' => ['hr.view', 'hr.manage'], 'group' => 'hr'],
+            ['key' => 'employees', 'label' => __('الموظفون'), 'route' => 'employees.index', 'match' => ['employees.*', 'departments.*', 'contracts.*'], 'permission' => ['hr.view', 'hr.manage', 'hr.contracts'], 'group' => 'hr'],
+            ['key' => 'attendance', 'label' => __('الحضور'), 'route' => 'attendance.index', 'match' => 'attendance.*', 'permission' => 'hr.attendance', 'group' => 'hr'],
+            ['key' => 'timeoff', 'label' => __('الإجازات'), 'route' => 'leaves.index', 'match' => 'leaves.*', 'permission' => ['hr.leave_approve', 'hr.manage', 'self.employee'], 'group' => 'hr'],
             ['key' => 'quality', 'label' => __('الجودة'), 'route' => null, 'match' => null, 'permission' => null, 'group' => 'ops'],
             ['key' => 'installation', 'label' => __('التركيب'), 'route' => null, 'match' => null, 'permission' => null, 'group' => 'ops'],
             ['key' => 'rates', 'label' => __('معدلات التكلفة'), 'route' => 'rates.index', 'match' => 'rates.*', 'permission' => 'settings.cost_rates', 'group' => 'settings'],
@@ -40,11 +43,14 @@ class AppMenu
         return array_values([...$built, ...$planned]);
     }
 
-    /** A string permission, or any of an array of permissions. */
+    /**
+     * A string permission, or any of an array of permissions. "self.employee" means
+     * the user has an employee file (self-service such as requesting time off).
+     */
     public static function can(User $user, string|array $permission): bool
     {
         foreach ((array) $permission as $p) {
-            if ($user->hasPermission($p)) {
+            if ($p === 'self.employee' ? Employee::where('user_id', $user->id)->exists() : $user->hasPermission($p)) {
                 return true;
             }
         }
@@ -74,11 +80,6 @@ class AppMenu
                 ['الخامات والمخزون', 'materials.index', [], ['inventory.view', 'inventory.move']],
                 ['الآلات ومعدلات التكلفة', 'rates.index', [], 'settings.cost_rates'],
             ],
-            'hr' => [
-                ['الموظفون', 'employees.index', [], ['hr.view', 'hr.manage']],
-                ['الأقسام والمسميات الوظيفية', 'departments.index', [], ['hr.view', 'hr.manage']],
-                ['وثائق تحتاج تجديدًا', 'employees.index', ['f' => ['docs']], 'hr.manage'],
-            ],
             'settings' => [
                 ['معدلات التكلفة', 'rates.index', [], 'settings.cost_rates'],
                 ['الربط مع دفترة', 'daftra.index', [], 'daftra.sync'],
@@ -104,6 +105,20 @@ class AppMenu
                     ['مراحل المشاريع', 'projects.index', ['v' => 'kanban'], 'projects.view'],
                     ['التقارير', 'reports.show', ['key' => 'projects'], 'projects.view'],
                     ['الربحية', 'reports.show', ['key' => 'profitability'], 'costing.view'],
+                ],
+                'employees' => [
+                    ['الموظفون', 'employees.index', [], ['hr.view', 'hr.manage']],
+                    ['الأقسام والمسميات الوظيفية', 'departments.index', [], ['hr.view', 'hr.manage']],
+                    ['العقود', 'contracts.index', [], 'hr.contracts'],
+                    ['وثائق تحتاج تجديدًا', 'employees.index', ['f' => ['docs']], 'hr.manage'],
+                ],
+                'attendance' => [
+                    ['اليوم', 'attendance.index', [], 'hr.attendance'],
+                    ['سجلات الحضور', 'attendance.records', [], 'hr.attendance'],
+                ],
+                'timeoff' => [
+                    ['الإجازات', 'leaves.index', [], ['hr.leave_approve', 'hr.manage', 'self.employee']],
+                    ['أنواع الإجازات والأرصدة', 'leaves.settings', [], 'hr.leave_approve'],
                 ],
                 'studio' => [
                     ['كل الصور', 'studio.index', [], 'studio.view'],

@@ -6,7 +6,9 @@ use App\Models\Client;
 use App\Models\Department;
 use App\Models\DesignVersion;
 use App\Models\Employee;
+use App\Models\EmployeeContract;
 use App\Models\JobPosition;
+use App\Models\LeaveType;
 use App\Models\Permission;
 use App\Models\ProductionOrder;
 use App\Models\Project;
@@ -70,6 +72,15 @@ class LocalizationTest extends ApiTestCase
         $this->actingAs($admin)->post('/employees', ['name' => 'Sam Carpenter', 'department_id' => Department::value('id'), 'job_id' => JobPosition::value('id'), 'hire_date' => '2026-01-01']);
         $employeeId = Employee::where('name', 'Sam Carpenter')->value('id');
         $this->actingAs($admin)->post("/employees/{$employeeId}/documents", ['doc_type' => 'IQAMA', 'doc_number' => '21', 'expiry_date' => now()->addDays(10)->toDateString()]);
+        $this->actingAs($admin)->post('/contracts', ['employee_id' => $employeeId, 'contract_type' => 'INDEFINITE', 'start_date' => '2026-01-01',
+            'basic_salary' => 4000, 'housing_allowance' => 1000, 'transport_allowance' => 400, 'other_allowance' => 0]);
+        $contractId = EmployeeContract::value('id');
+        $this->actingAs($admin)->post("/attendance/toggle/{$employeeId}");
+        $this->actingAs($admin)->post('/leave-types', ['name' => 'Annual', 'is_paid' => 1, 'requires_allocation' => 1]);
+        $this->actingAs($admin)->post('/leave-allocations', ['employee_id' => $employeeId, 'leave_type_id' => LeaveType::value('id'), 'days' => 21,
+            'valid_from' => now()->startOfYear()->toDateString(), 'valid_to' => now()->endOfYear()->toDateString(), 'reason' => 'Yearly']);
+        $this->actingAs($admin)->post('/leaves', ['employee_id' => $employeeId, 'leave_type_id' => LeaveType::value('id'),
+            'date_from' => now()->addMonth()->toDateString(), 'date_to' => now()->addMonth()->addDay()->toDateString(), 'days' => 2]);
         // Manufacturing records in English.
         $this->actingAs($admin)->post('/inventory', ['code' => 'MDF18', 'name' => 'MDF board', 'uom' => 'sheet', 'is_active' => 1]);
         $materialId = RawMaterial::value('id');
@@ -96,6 +107,8 @@ class LocalizationTest extends ApiTestCase
             '/roles', '/roles/create', "/roles/{$roleId}/edit",
             '/reports', '/settings/daftra',
             '/employees', '/employees?v=list&g=department', '/employees/create', "/employees/{$employeeId}", "/employees/{$employeeId}/edit", '/departments',
+            '/contracts', '/contracts/create', "/contracts/{$contractId}", "/contracts/{$contractId}/edit",
+            '/attendance', '/attendance/records', '/attendance/records?g=employee', '/leaves', '/leaves/create', '/leaves/settings',
             '/inventory', '/inventory?g=category', '/inventory/create', "/inventory/{$materialId}", "/inventory/{$materialId}/edit",
             '/designs', '/designs/create', "/design-versions/{$versionId}",
             '/production', '/production?v=kanban', '/production/create', "/production/{$orderId}",

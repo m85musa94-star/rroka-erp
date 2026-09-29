@@ -57,6 +57,26 @@ class Employee extends Model
         return $this->hasMany(Employee::class, 'manager_id')->where('is_active', true)->orderBy('name');
     }
 
+    public function contracts(): HasMany
+    {
+        return $this->hasMany(EmployeeContract::class)->orderByDesc('start_date');
+    }
+
+    public function leaveRequests(): HasMany
+    {
+        return $this->hasMany(LeaveRequest::class)->orderByDesc('date_from');
+    }
+
+    public function allocations(): HasMany
+    {
+        return $this->hasMany(LeaveAllocation::class)->orderByDesc('valid_from');
+    }
+
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(Attendance::class)->orderByDesc('check_in');
+    }
+
     public function rates(): HasMany
     {
         return $this->hasMany(WorkerRate::class, 'worker_id')->orderByDesc('effective_from');

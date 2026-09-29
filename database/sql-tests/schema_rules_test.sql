@@ -387,6 +387,70 @@ SELECT pg_temp.expect_error('hr: termination before hire refused',
     'UPDATE workers SET termination_date = ''2026-01-01'' WHERE id = 2', 'workers_termination_after_hire');
 
 -- ---------------------------------------------------------------------
+-- HR contracts, time off, attendance
+-- ---------------------------------------------------------------------
+INSERT INTO workers (id, name, hire_date, user_id) VALUES (10, 'TEST staff', '2026-01-01', 1), (11, 'TEST staff 2', '2026-01-01', NULL);
+SELECT pg_temp.expect_error('contract: fixed term needs an end date',
+    'INSERT INTO employee_contracts (employee_id, contract_type, start_date, basic_salary, housing_allowance, transport_allowance, other_allowance) VALUES (10, ''FIXED_TERM'', ''2026-01-01'', 3000, 0, 0, 0)',
+    'check constraint');
+SELECT pg_temp.expect_ok('contract: running contract',
+    'INSERT INTO employee_contracts (id, employee_id, contract_type, start_date, end_date, basic_salary, housing_allowance, transport_allowance, other_allowance, status) VALUES (1, 10, ''FIXED_TERM'', ''2026-01-01'', ''2026-12-31'', 3000, 750, 300, 0, ''RUNNING'')');
+SELECT pg_temp.expect_eq('contract: monthly gross = 4050', (SELECT monthly_gross FROM v_contract_totals WHERE contract_id = 1), 4050.00::numeric);
+SELECT pg_temp.expect_error('contract: one running contract per employee',
+    'INSERT INTO employee_contracts (employee_id, contract_type, start_date, basic_salary, housing_allowance, transport_allowance, other_allowance, status) VALUES (10, ''INDEFINITE'', ''2026-02-01'', 3500, 0, 0, 0, ''RUNNING'')',
+    'ux_contract_one_running');
+SELECT pg_temp.expect_error('contract: running terms are fixed',
+    'UPDATE employee_contracts SET basic_salary = 9000 WHERE id = 1', 'RROKA_CONTRACT_LOCKED');
+SELECT pg_temp.expect_error('contract: expired cannot run again',
+    'UPDATE employee_contracts SET status = ''EXPIRED'' WHERE id = 1; UPDATE employee_contracts SET status = ''RUNNING'' WHERE id = 1', 'RROKA_CONTRACT_TRANSITION');
+
+INSERT INTO leave_types (id, name, is_paid, requires_allocation) VALUES (1, 'TEST annual', true, true), (2, 'TEST unpaid', false, false);
+INSERT INTO leave_allocations (employee_id, leave_type_id, days, valid_from, valid_to, reason, approved_by)
+    VALUES (10, 1, 5, '2026-01-01', '2026-12-31', 'TEST', 2);
+SELECT pg_temp.expect_error('allocation: zero days refused',
+    'INSERT INTO leave_allocations (employee_id, leave_type_id, days, valid_from, valid_to, reason, approved_by) VALUES (10, 1, 0, ''2026-01-01'', ''2026-12-31'', ''x'', 2)', 'check constraint');
+SELECT pg_temp.expect_error('allocations are a ledger',
+    'UPDATE leave_allocations SET days = 50', 'RROKA_ALLOCATION_IMMUTABLE');
+INSERT INTO leave_requests (id, employee_id, leave_type_id, date_from, date_to, days) VALUES (1, 10, 1, '2026-04-05', '2026-04-08', 4);
+SELECT pg_temp.expect_error('leave: days cannot exceed the date span',
+    'INSERT INTO leave_requests (employee_id, leave_type_id, date_from, date_to, days) VALUES (11, 2, ''2026-04-05'', ''2026-04-06'', 3)', 'check constraint');
+SELECT pg_temp.expect_error('leave: overlapping request refused',
+    'INSERT INTO leave_requests (employee_id, leave_type_id, date_from, date_to, days) VALUES (10, 2, ''2026-04-07'', ''2026-04-10'', 4)', 'RROKA_LEAVE_OVERLAP');
+SELECT pg_temp.expect_error('leave: nobody approves their own leave',
+    'UPDATE leave_requests SET status = ''APPROVED'', approved_by = 1, approved_at = now() WHERE id = 1', 'RROKA_LEAVE_SELF_APPROVAL');
+SELECT pg_temp.expect_ok('leave: approved by someone else within balance',
+    'UPDATE leave_requests SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 1');
+SELECT pg_temp.expect_eq('leave: balance 5 - 4 = 1', fn_leave_balance(10, 1, '2026-06-01'), 1.00::numeric);
+INSERT INTO leave_requests (id, employee_id, leave_type_id, date_from, date_to, days) VALUES (2, 10, 1, '2026-05-10', '2026-05-11', 2);
+SELECT pg_temp.expect_error('leave: cannot approve beyond balance',
+    'UPDATE leave_requests SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 2', 'RROKA_LEAVE_BALANCE');
+INSERT INTO leave_allocations (employee_id, leave_type_id, days, valid_from, valid_to, reason, approved_by)
+    VALUES (10, 1, 2, '2026-01-01', '2026-12-31', 'TEST extra', 2), (10, 1, -1, '2026-01-01', '2026-12-31', 'TEST correction', 2);
+SELECT pg_temp.expect_eq('leave: balance after extra 2 and correction -1 = 2', fn_leave_balance(10, 1, '2026-06-01'), 2.00::numeric);
+SELECT pg_temp.expect_error('leave: refusal needs a reason',
+    'UPDATE leave_requests SET status = ''REFUSED'' WHERE id = 2', 'check constraint');
+SELECT pg_temp.expect_error('leave: decided request is locked',
+    'UPDATE leave_requests SET days = 1 WHERE id = 1', 'RROKA_LEAVE_LOCKED');
+
+SELECT pg_temp.expect_ok('attendance: check in and out',
+    'INSERT INTO attendances (employee_id, check_in, check_out) VALUES (11, ''2026-03-01 07:00+03'', ''2026-03-01 16:00+03'')');
+SELECT pg_temp.expect_eq('attendance: worked hours computed', (SELECT worked_hours FROM attendances WHERE employee_id = 11), 9.00::numeric);
+SELECT pg_temp.expect_error('attendance: overlapping record refused',
+    'INSERT INTO attendances (employee_id, check_in, check_out) VALUES (11, ''2026-03-01 15:00+03'', ''2026-03-01 18:00+03'')', 'RROKA_ATTENDANCE_OVERLAP');
+SELECT pg_temp.expect_error('attendance: check-out after check-in',
+    'INSERT INTO attendances (employee_id, check_in, check_out) VALUES (11, ''2026-03-02 16:00+03'', ''2026-03-02 07:00+03'')', 'check constraint');
+SELECT pg_temp.expect_error('attendance: not on an approved leave day',
+    'INSERT INTO attendances (employee_id, check_in) VALUES (10, ''2026-04-06 07:00+03'')', 'RROKA_EMPLOYEE_ON_LEAVE');
+SELECT pg_temp.expect_error('attendance: not in the future',
+    'INSERT INTO attendances (employee_id, check_in) VALUES (11, now() + interval ''2 days'')', 'RROKA_ATTENDANCE_FUTURE');
+SELECT pg_temp.expect_ok('attendance: open record',
+    'INSERT INTO attendances (employee_id, check_in) VALUES (11, ''2026-03-03 07:00+03'')');
+SELECT pg_temp.expect_error('attendance: an open record blocks a new check-in until check-out',
+    'INSERT INTO attendances (employee_id, check_in) VALUES (11, ''2026-03-04 07:00+03'')', 'RROKA_ATTENDANCE_OVERLAP');
+SELECT pg_temp.expect_error('time: no production hours on a leave day',
+    'INSERT INTO labor_logs (production_order_id, worker_id, work_date, hours) VALUES (1, 10, ''2026-04-06'', 2)', 'RROKA_EMPLOYEE_ON_LEAVE');
+
+-- ---------------------------------------------------------------------
 -- Report
 -- ---------------------------------------------------------------------
 \pset footer off

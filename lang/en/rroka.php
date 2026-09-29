@@ -48,6 +48,17 @@ return [
         'RROKA_EMPLOYEE_TERMINATION' => 'Ending employment needs the last working day and a reason.',
         'RROKA_EMPLOYEE_MANAGER_LOOP' => 'This manager is not allowed: it creates a loop in the reporting line.',
         'RROKA_EMPLOYEE_NOT_EMPLOYED' => "The date is outside the employee's employment period (before hire or after the end of service).",
+        'RROKA_CONTRACT_TRANSITION' => 'This contract status change is not allowed (draft → running → expired).',
+        'RROKA_CONTRACT_LOCKED' => 'The terms of a running or closed contract cannot change; create a new contract.',
+        'RROKA_LEAVE_TRANSITION' => 'This time-off status change is not allowed.',
+        'RROKA_LEAVE_LOCKED' => 'A decided time-off request cannot change.',
+        'RROKA_LEAVE_OVERLAP' => 'Another time-off request covers these dates.',
+        'RROKA_LEAVE_SELF_APPROVAL' => 'Nobody approves their own time off (segregation of duties).',
+        'RROKA_LEAVE_BALANCE' => 'The requested days exceed the available balance.',
+        'RROKA_ALLOCATION_IMMUTABLE' => 'A granted allocation cannot change; record a new entry.',
+        'RROKA_ATTENDANCE_OVERLAP' => 'This record overlaps another attendance record of the employee (or the previous check-out is missing).',
+        'RROKA_ATTENDANCE_FUTURE' => 'Attendance cannot be recorded in the future.',
+        'RROKA_EMPLOYEE_ON_LEAVE' => 'The employee is on approved leave that day.',
         'CHECK_VIOLATION' => 'The entered data breaks one of the validity rules.',
         'DUPLICATE' => 'This record already exists.',
         'INVALID_REFERENCE' => 'Invalid reference.',
@@ -55,6 +66,7 @@ return [
     ],
 
     'status' => [
+        'EXPIRED' => 'Expired', 'RUNNING' => 'Running', 'SUBMITTED' => 'To approve', 'REFUSED' => 'Refused',
         'CLIENT_REVIEW' => 'Client review', 'CLIENT_APPROVED' => 'Client approved', 'RELEASED_FOR_PRODUCTION' => 'Released', 'SUPERSEDED' => 'Superseded', 'PLANNED' => 'Planned', 'IN_PROGRESS' => 'In progress',
         'DRAFT' => 'Draft', 'SENT' => 'Sent', 'APPROVED' => 'Approved', 'REJECTED' => 'Rejected',
         'EXPIRED' => 'Expired', 'CANCELLED' => 'Cancelled', 'ACTIVE' => 'Active', 'IN_PRODUCTION' => 'In production',
@@ -71,6 +83,7 @@ return [
     ],
 
     'entities' => [
+        'employee_contracts' => 'contract', 'leave_requests' => 'time-off request', 'leave_allocations' => 'allocation', 'attendances' => 'attendance', 'leave_types' => 'time-off type',
         'workers' => 'employee', 'departments' => 'department', 'job_positions' => 'job position', 'employee_documents' => 'document',
         'raw_materials' => 'material', 'designs' => 'design', 'design_versions' => 'design version', 'design_bom_lines' => 'BOM line', 'production_orders' => 'manufacturing order',
         'clients' => 'customer', 'quotations' => 'quotation', 'quotation_lines' => 'line', 'projects' => 'project',
@@ -78,6 +91,7 @@ return [
     ],
 
     'fields' => [
+        'contract_type' => 'Contract type', 'end_date' => 'End date', 'basic_salary' => 'Basic salary', 'housing_allowance' => 'Housing allowance', 'transport_allowance' => 'Transport allowance', 'other_allowance' => 'Other allowances', 'weekly_hours' => 'Weekly hours', 'check_in' => 'Check in', 'check_out' => 'Check out', 'date_from' => 'From', 'date_to' => 'To', 'days' => 'Days', 'refusal_reason' => 'Refusal reason',
         'department_id' => 'Department', 'job_id' => 'Job position', 'trade' => 'Trade', 'work_phone' => 'Work phone', 'work_email' => 'Work email', 'mobile' => 'Personal mobile', 'nationality' => 'Nationality', 'id_type' => 'ID type', 'id_number' => 'ID number', 'birth_date' => 'Date of birth', 'gender' => 'Gender', 'hire_date' => 'Hire date', 'employment_type' => 'Employment type', 'is_direct_labor' => 'Direct labour', 'termination_date' => 'End of service', 'termination_reason' => 'End of service reason', 'iban' => 'IBAN', 'emergency_contact' => 'Emergency contact', 'emergency_phone' => 'Emergency phone', 'doc_type' => 'Document type', 'doc_number' => 'Document number', 'issue_date' => 'Issue date', 'expiry_date' => 'Expiry date', 'parent_id' => 'Parent', 'user_id' => 'User account',
         'code' => 'Code', 'name' => 'Name', 'uom' => 'Unit', 'is_active' => 'Active', 'file_url' => 'Design file', 'change_notes' => 'Version notes', 'planned_start' => 'Planned start', 'planned_end' => 'Planned end', 'started_at' => 'Started', 'client_approved_at' => 'Client approval', 'released_at' => 'Released on', 'released_by' => 'Released by', 'waste_pct' => 'Waste %', 'material_id' => 'Material',
         'category' => 'Category', 'tags' => 'Tags', 'project_id' => 'Project', 'studio_asset_id' => 'Image',
@@ -103,6 +117,8 @@ return [
     'doc_type' => ['NATIONAL_ID' => 'National ID', 'IQAMA' => 'Iqama', 'PASSPORT' => 'Passport', 'WORK_PERMIT' => 'Work permit', 'HEALTH_CERT' => 'Health certificate', 'DRIVING_LICENSE' => 'Driving licence', 'OTHER' => 'Other'],
 
     'employment_type' => ['FULL_TIME' => 'Full time', 'PART_TIME' => 'Part time', 'CONTRACTOR' => 'Contractor'],
+
+    'contract_type' => ['FIXED_TERM' => 'Fixed term', 'INDEFINITE' => 'Indefinite'],
 
     'client_type' => ['INDIVIDUAL' => 'Individual', 'COMPANY' => 'Company'],
 
