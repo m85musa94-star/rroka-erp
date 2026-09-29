@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\StudioStorage;
+use App\Support\Asset;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -36,6 +37,8 @@ class HealthController extends Controller
                 $ok = $this->safe(fn () => Schema::hasTable($table));
                 $checks[] = [$label, $ok, $ok ? 'موجود' : 'غير موجود — لم يُنفَّذ أمر php artisan migrate --force'];
             }
+            $theme = $this->safe(fn () => Schema::hasColumn('users', 'theme'));
+            $checks[] = ['تحديث قاعدة البيانات الأخير (المظهر الداكن)', $theme, $theme ? 'منفَّذ' : 'غير منفَّذ — لم يُنفَّذ أمر php artisan migrate --force بعد آخر نشر'];
             $users = $this->safe(fn () => Schema::hasTable('users') && DB::table('users')->exists());
             $checks[] = ['حساب المدير', $users, $users ? 'موجود' : 'غير موجود — لم يُنفَّذ أمر php artisan rroka:bootstrap-admin أو متغيراته ناقصة'];
         }
@@ -45,6 +48,8 @@ class HealthController extends Controller
         foreach ($checks as [$label, $ok, $detail]) {
             $lines[] = ($ok ? '[سليم] ' : '[فاشل] ').$label.': '.$detail;
         }
+        // Informational: which stylesheet the pages link to (changes with every CSS update).
+        $lines[] = '[معلومة] إصدار ملف الألوان: '.substr((string) strrchr(Asset::url('css/app.css'), '='), 1);
         // Informational: the site works without it, only studio uploads are refused.
         $studio = (string) config('filesystems.disks.studio.driver');
         $lines[] = (StudioStorage::isReady() ? '[سليم] ' : '[تنبيه] ').'مخزن صور الاستوديو: '.$studio

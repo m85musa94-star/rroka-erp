@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\SetLocale;
+use App\Support\Theme;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -43,6 +44,11 @@ class AuthController extends Controller
         $locale = $request->session()->get('locale');
         if (in_array($locale, SetLocale::SUPPORTED, true) && $request->user()->locale !== $locale) {
             $request->user()->forceFill(['locale' => $locale])->saveQuietly();
+        }
+        // Likewise the colour theme picked on the sign-in page.
+        $theme = $request->session()->get('theme');
+        if (in_array($theme, Theme::MODES, true) && $request->user()->theme !== $theme) {
+            $request->user()->forceFill(['theme' => $theme])->saveQuietly();
         }
 
         return redirect()->intended(route('dashboard'));

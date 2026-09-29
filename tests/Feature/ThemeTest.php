@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
+
 class ThemeTest extends ApiTestCase
 {
     public function test_theme_choice_is_saved_and_stamped_on_the_page(): void
@@ -21,10 +23,25 @@ class ThemeTest extends ApiTestCase
         $this->assertSame('light', $user->fresh()->theme);
     }
 
-    public function test_sign_in_page_follows_session_theme(): void
+    public function test_sign_in_page_follows_session_theme_and_keeps_it_after_sign_in(): void
     {
         $this->post('/theme', ['mode' => 'dark']);
         $this->get('/login')->assertOk()->assertSee('data-theme="dark"', false);
+
+        $user = User::factory()->create(['email' => 'dark@rroka.test']);
+        $this->assertSame('system', $user->fresh()->theme);
+        $this->post('/login', ['email' => 'dark@rroka.test', 'password' => 'password'])->assertRedirect();
+        $this->assertSame('dark', $user->fresh()->theme);
+        $this->get('/')->assertSee('data-theme="dark"', false);
+    }
+
+    public function test_stylesheet_url_changes_with_its_content(): void
+    {
+        // A fixed URL let browsers keep the old stylesheet (no dark theme in it).
+        $hash = substr(md5_file(public_path('css/app.css')), 0, 12);
+        $this->get('/login')->assertSee('css/app.css?v='.$hash, false);
+        $this->get('/api/health')->assertSee($hash);
+        $this->actingAs($this->admin())->get('/')->assertSee('css/app.css?v='.$hash, false);
     }
 
     public function test_stylesheet_defines_dark_theme_for_both_scopes(): void
