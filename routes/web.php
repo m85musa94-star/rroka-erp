@@ -10,6 +10,7 @@ use App\Http\Controllers\Web\ProjectController;
 use App\Http\Controllers\Web\QuotationController;
 use App\Http\Controllers\Web\ReportController;
 use App\Http\Controllers\Web\RoleController;
+use App\Http\Controllers\Web\StudioController;
 use App\Http\Controllers\Web\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -71,6 +72,25 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::post('/machines', [CostRateController::class, 'storeMachine'])->name('machines.store');
         Route::post('/machines/{machine}/rates', [CostRateController::class, 'storeMachineRate'])->name('machines.rate');
         Route::post('/overhead', [CostRateController::class, 'storeOverhead'])->name('overhead.store');
+    });
+
+    // Studio: images are streamed only through these routes. A quotation may show one,
+    // so anyone who can see quotations can load an image file (not browse the studio).
+    Route::middleware('permission:studio.view|quotations.view')->group(function () {
+        Route::get('/studio/{asset}/file/{variant}', [StudioController::class, 'file'])->name('studio.file')->whereNumber('asset')->whereIn('variant', ['thumb', 'full']);
+    });
+    Route::middleware('permission:studio.view')->group(function () {
+        Route::get('/studio', [StudioController::class, 'index'])->name('studio.index');
+        Route::get('/studio/picker', [StudioController::class, 'picker'])->name('studio.picker');
+        Route::get('/studio/create', [StudioController::class, 'create'])->name('studio.create')->middleware('permission:studio.manage');
+        Route::get('/studio/{asset}', [StudioController::class, 'show'])->name('studio.show')->whereNumber('asset');
+    });
+    Route::middleware('permission:studio.manage')->group(function () {
+        // Files are written to storage inside the request; the upload also needs time for large photos.
+        Route::post('/studio', [StudioController::class, 'store'])->name('studio.store')->middleware('throttle:30,1');
+        Route::get('/studio/{asset}/edit', [StudioController::class, 'edit'])->name('studio.edit')->whereNumber('asset');
+        Route::put('/studio/{asset}', [StudioController::class, 'update'])->name('studio.update')->whereNumber('asset');
+        Route::delete('/studio/{asset}', [StudioController::class, 'destroy'])->name('studio.destroy')->whereNumber('asset');
     });
 
     Route::middleware('permission:daftra.sync')->prefix('settings/daftra')->name('daftra.')->group(function () {

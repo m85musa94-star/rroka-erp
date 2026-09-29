@@ -38,6 +38,18 @@ return [
             'report' => false,
         ],
 
+        // Studio images. Private: served only through StudioController after a
+        // permission check. On Laravel Cloud, a bucket attached with the disk
+        // name "studio" replaces this local definition (LARAVEL_CLOUD_DISK_CONFIG);
+        // the local disk is refused in production because its files do not survive a deploy.
+        'studio' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/studio'),
+            'visibility' => 'private',
+            'throw' => true,
+            'report' => false,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

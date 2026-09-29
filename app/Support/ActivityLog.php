@@ -88,6 +88,9 @@ class ActivityLog
         if ($field === 'status') {
             return __("rroka.status.$v");
         }
+        if ($field === 'category') {
+            return __("rroka.studio_category.$v");
+        }
         if (is_bool($v)) {
             return $v ? __('نعم') : __('لا');
         }

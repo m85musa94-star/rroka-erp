@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\StudioStorage;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -44,6 +45,10 @@ class HealthController extends Controller
         foreach ($checks as [$label, $ok, $detail]) {
             $lines[] = ($ok ? '[سليم] ' : '[فاشل] ').$label.': '.$detail;
         }
+        // Informational: the site works without it, only studio uploads are refused.
+        $studio = (string) config('filesystems.disks.studio.driver');
+        $lines[] = (StudioStorage::isReady() ? '[سليم] ' : '[تنبيه] ').'مخزن صور الاستوديو: '.$studio
+            .(StudioStorage::isReady() ? '' : ' — لم يُربط مخزن ملفات باسم studio، فرفع الصور موقوف');
 
         return response(implode("\n", $lines)."\n", $allOk ? 200 : 503)
             ->header('Content-Type', 'text/plain; charset=utf-8')

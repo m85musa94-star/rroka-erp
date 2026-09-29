@@ -65,5 +65,6 @@
     <p class="hint">{{ __('الربح هنا ربح تشغيلي للمشروع قبل الضريبة، ولا يحل محل القوائم المالية في دفترة.') }}</p>
 </div>
 @endif
+@include('partials.studio-strip', ['scope' => ['project_id' => $project->id]])
 @include('partials.chatter', ['activity' => $activity])
 @endsection

@@ -50,8 +50,9 @@ class QuotationController extends Controller
         $data = $this->validated($request);
 
         DB::transaction(function () use ($quotation, $data) {
-            $quotation->update(collect($data)->except('lines')->all());
+            // Lines first: a customer's photo on an old line must not block changing the customer.
             $quotation->lines()->delete();
+            $quotation->update(collect($data)->except('lines')->all());
             $this->writeLines($quotation, $data['lines']);
         });
 
@@ -104,6 +105,7 @@ class QuotationController extends Controller
             'lines.*.quantity' => ['required', 'numeric', 'gt:0'],
             'lines.*.unit' => ['sometimes', 'string', 'max:30'],
             'lines.*.unit_price' => ['required', 'numeric', 'min:0'],
+            'lines.*.studio_asset_id' => ['nullable', 'integer', 'exists:studio_assets,id'],
         ]);
     }
 

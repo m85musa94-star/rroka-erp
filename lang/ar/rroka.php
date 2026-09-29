@@ -38,6 +38,10 @@ return [
         'DAFTRA_ESTIMATE_MAPPING_NOT_VERIFIED' => 'إرسال عروض الأسعار إلى دفترة موقوف حتى التحقق من حقول واجهة دفترة.',
         'DAFTRA_QUOTATION_NOT_ISSUED' => 'لا يُرسل إلى دفترة إلا عرض سعر مُرسَل أو معتمد.',
         'DAFTRA_CLIENT_NOT_SYNCED' => 'أرسل العميل إلى دفترة أولًا.',
+        'RROKA_STUDIO_FILE_IMMUTABLE' => 'ملف الصورة لا يُستبدل؛ ارفع صورة جديدة بدلًا منه.',
+        'RROKA_STUDIO_CLIENT_MISMATCH' => 'المشروع المختار يتبع عميلًا آخر.',
+        'RROKA_STUDIO_PRIVATE_ASSET' => 'هذه الصورة خاصة بعميل آخر، ولا تظهر إلا في عروض أسعاره.',
+        'RROKA_STUDIO_ASSET_IN_USE' => 'الصورة مستخدمة في عرض سعر، فلا تُحذف ولا تُنقل عن عميلها.',
         'CHECK_VIOLATION' => 'البيانات المُدخلة تخالف أحد شروط الصحة.',
         'DUPLICATE' => 'هذا السجل موجود مسبقًا.',
         'INVALID_REFERENCE' => 'مرجع غير صالح.',
@@ -56,15 +60,16 @@ return [
         'projects' => 'المشاريع', 'designs' => 'التصاميم', 'bom' => 'قوائم المواد',
         'inventory' => 'المخزون', 'production' => 'الإنتاج', 'quality' => 'الجودة',
         'installations' => 'التركيب', 'costing' => 'التكلفة والربحية', 'settings' => 'الإعدادات',
-        'daftra' => 'دفترة', 'users' => 'المستخدمون والأدوار', 'audit' => 'سجل التدقيق',
+        'daftra' => 'دفترة', 'studio' => 'الاستوديو', 'users' => 'المستخدمون والأدوار', 'audit' => 'سجل التدقيق',
     ],
 
     'entities' => [
         'clients' => 'العميل', 'quotations' => 'عرض السعر', 'quotation_lines' => 'بند', 'projects' => 'المشروع',
-        'users' => 'المستخدم', 'roles' => 'الدور',
+        'studio_assets' => 'الصورة', 'users' => 'المستخدم', 'roles' => 'الدور',
     ],
 
     'fields' => [
+        'category' => 'التصنيف', 'tags' => 'الوسوم', 'project_id' => 'المشروع', 'studio_asset_id' => 'الصورة',
         'status' => 'الحالة', 'business_name' => 'الاسم', 'client_type' => 'النوع', 'phone' => 'الجوال',
         'email' => 'البريد', 'vat_number' => 'الرقم الضريبي', 'commercial_reg_no' => 'السجل التجاري',
         'city' => 'المدينة', 'address' => 'العنوان', 'notes' => 'ملاحظات', 'daftra_client_id' => 'رقم العميل في دفترة',
@@ -75,6 +80,8 @@ return [
         'completed_at' => 'تاريخ الإكمال', 'manager_id' => 'مدير المشروع', 'contract_value' => 'قيمة العقد',
         'description' => 'الوصف', 'quantity' => 'الكمية', 'unit_price' => 'سعر الوحدة', 'unit' => 'الوحدة',
     ],
+
+    'studio_category' => ['CLIENT_REFERENCE' => 'صور من العملاء', 'FINISHED_WORK' => 'أعمال منجزة', 'CATALOG' => 'كتالوج المنتجات', 'SITE' => 'صور المواقع', 'MATERIAL' => 'خامات وعينات'],
 
     'client_type' => ['INDIVIDUAL' => 'فرد', 'COMPANY' => 'منشأة'],
 

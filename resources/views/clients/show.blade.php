@@ -56,5 +56,6 @@
 </div>
 
 @include('partials.sync-log', ['log' => $syncLog])
+@include('partials.studio-strip', ['scope' => ['client_id' => $client->id]])
 @include('partials.chatter', ['activity' => $activity])
 @endsection

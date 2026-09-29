@@ -58,14 +58,17 @@
 <div class="card">
     <h2>{{ __('البنود') }}</h2>
     <div class="table-wrap"><table>
-        <tr><th>#</th><th>{{ __('الوصف') }}</th><th class="num">{{ __('الكمية') }}</th><th>{{ __('الوحدة') }}</th><th class="num">{{ __('سعر الوحدة') }}</th><th class="num">{{ __('الإجمالي') }}</th></tr>
+        @php($hasImg = $q->lines->contains(fn ($l) => $l->studio_asset_id))
+        <tr><th>#</th>@if($hasImg)<th>{{ __('الصورة') }}</th>@endif<th>{{ __('الوصف') }}</th><th class="num">{{ __('الكمية') }}</th><th>{{ __('الوحدة') }}</th><th class="num">{{ __('سعر الوحدة') }}</th><th class="num">{{ __('الإجمالي') }}</th></tr>
         @foreach($q->lines as $l)
-            <tr><td>{{ $l->line_no }}</td><td>{{ $l->description }}</td><td class="num">{{ rtrim(rtrim($l->quantity, '0'), '.') }}</td>
+            <tr><td>{{ $l->line_no }}</td>
+                @if($hasImg)<td>@if($l->studioAsset)<a href="{{ auth()->user()->hasPermission('studio.view') ? route('studio.show', $l->studioAsset) : $l->studioAsset->url(false) }}"><img class="q-line-img" src="{{ $l->studioAsset->url() }}" alt="{{ $l->studioAsset->title }}"></a>@endif</td>@endif
+                <td>{{ $l->description }}</td><td class="num">{{ rtrim(rtrim($l->quantity, '0'), '.') }}</td>
                 <td>{{ $l->unit }}</td><td class="num">{{ number_format($l->unit_price, 2) }}</td><td class="num">{{ number_format($l->line_total, 2) }}</td></tr>
         @endforeach
-        <tr><td colspan="5">{{ __('المجموع') }}</td><td class="num">{{ number_format($totals['subtotal'], 2) }}</td></tr>
-        <tr><td colspan="5">{{ __('الخصم') }}</td><td class="num">{{ number_format($totals['discount_amount'], 2) }}</td></tr>
-        <tr><th colspan="5">{{ __('الصافي قبل ضريبة القيمة المضافة') }}</th><th class="num">{{ number_format($totals['net_before_vat'], 2) }}</th></tr>
+        <tr><td colspan="{{ $hasImg ? 6 : 5 }}">{{ __('المجموع') }}</td><td class="num">{{ number_format($totals['subtotal'], 2) }}</td></tr>
+        <tr><td colspan="{{ $hasImg ? 6 : 5 }}">{{ __('الخصم') }}</td><td class="num">{{ number_format($totals['discount_amount'], 2) }}</td></tr>
+        <tr><th colspan="{{ $hasImg ? 6 : 5 }}">{{ __('الصافي قبل ضريبة القيمة المضافة') }}</th><th class="num">{{ number_format($totals['net_before_vat'], 2) }}</th></tr>
     </table></div>
     <p class="hint">{{ __('ضريبة القيمة المضافة والفاتورة الرسمية تصدران من دفترة.') }}</p>
 </div>

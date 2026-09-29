@@ -6,7 +6,10 @@ use App\Models\Client;
 use App\Models\Permission;
 use App\Models\Project;
 use App\Models\Role;
+use App\Models\StudioAsset;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 class LocalizationTest extends ApiTestCase
 {
@@ -51,6 +54,14 @@ class LocalizationTest extends ApiTestCase
         ]);
         $projectId = Project::value('id');
         $roleId = Role::value('id');
+        Storage::fake('studio');
+        $this->actingAs($admin)->post('/studio', ['category' => 'FINISHED_WORK', 'title' => 'Oak kitchen', 'project_id' => $projectId,
+            'files' => [UploadedFile::fake()->image('k.jpg')]]);
+        $assetId = StudioAsset::value('id');
+        $draft = $this->actingAs($admin)->postJson('/api/quotations', [
+            'client_id' => $client->id, 'discount_amount' => 0,
+            'lines' => [['description' => 'Kitchen', 'quantity' => 1, 'unit' => 'pc', 'unit_price' => 5000, 'studio_asset_id' => $assetId]],
+        ])->assertCreated()->json();
 
         $pages = [
             '/', '/clients', '/clients?v=kanban', '/clients?g=city', '/clients/create', "/clients/{$client->id}", "/clients/{$client->id}/edit",
@@ -59,6 +70,7 @@ class LocalizationTest extends ApiTestCase
             '/settings/rates', '/users', '/users/create', "/users/{$admin->id}/edit",
             '/roles', '/roles/create', "/roles/{$roleId}/edit",
             '/reports', '/settings/daftra',
+            '/studio', '/studio?v=list', '/studio?g=category', '/studio/create', "/studio/{$assetId}", "/studio/{$assetId}/edit", "/quotations/{$draft['id']}/edit", "/quotations/{$draft['id']}",
         ];
         foreach (['quotations', 'projects', 'profitability'] as $r) {
             $pages[] = "/reports/$r";

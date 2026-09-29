@@ -300,6 +300,51 @@ SELECT pg_temp.expect_error('project stage: completed project is final',
     'UPDATE projects SET status = ''ACTIVE'' WHERE id = 1', 'RROKA_PROJECT_TRANSITION');
 
 -- ---------------------------------------------------------------------
+-- Studio (image library)
+-- ---------------------------------------------------------------------
+INSERT INTO quotations (id, client_id) VALUES (20, 1), (21, 2);
+INSERT INTO studio_assets (id, title, category, client_id, disk, path, mime_type, size_bytes, sha256) VALUES
+    (1, 'TEST client A photo', 'CLIENT_REFERENCE', 1, 'studio', 't/1.jpg', 'image/jpeg', 100, repeat('a', 64)),
+    (2, 'TEST finished wardrobe', 'FINISHED_WORK', NULL, 'studio', 't/2.jpg', 'image/jpeg', 100, repeat('b', 64));
+
+SELECT pg_temp.expect_error('studio: customer photo must name the customer',
+    'INSERT INTO studio_assets (title, category, disk, path, mime_type, size_bytes, sha256) VALUES (''x'', ''CLIENT_REFERENCE'', ''studio'', ''t/3.jpg'', ''image/jpeg'', 1, repeat(''c'', 64))',
+    'studio_client_reference_has_client');
+SELECT pg_temp.expect_error('studio: same file cannot be uploaded twice',
+    'INSERT INTO studio_assets (title, category, disk, path, mime_type, size_bytes, sha256) VALUES (''x'', ''CATALOG'', ''studio'', ''t/4.jpg'', ''image/jpeg'', 1, repeat(''b'', 64))',
+    'duplicate key');
+SELECT pg_temp.expect_error('studio: only jpeg/png/webp images',
+    'INSERT INTO studio_assets (title, category, disk, path, mime_type, size_bytes, sha256) VALUES (''x'', ''CATALOG'', ''studio'', ''t/5.pdf'', ''application/pdf'', 1, repeat(''d'', 64))',
+    'check constraint');
+SELECT pg_temp.expect_error('studio: file identity is immutable',
+    'UPDATE studio_assets SET path = ''t/other.jpg'' WHERE id = 2', 'RROKA_STUDIO_FILE_IMMUTABLE');
+SELECT pg_temp.expect_ok('studio: title and tags are editable',
+    'UPDATE studio_assets SET title = ''TEST wardrobe, oak'', tags = ''oak'' WHERE id = 2');
+SELECT pg_temp.expect_ok('studio: linking a project fills its customer',
+    'UPDATE studio_assets SET project_id = 1 WHERE id = 2');
+SELECT pg_temp.expect_eq('studio: customer taken from project', (SELECT client_id FROM studio_assets WHERE id = 2), 1::bigint);
+SELECT pg_temp.expect_error('studio: project and customer must agree',
+    'UPDATE studio_assets SET client_id = 2 WHERE id = 2', 'RROKA_STUDIO_CLIENT_MISMATCH');
+
+SELECT pg_temp.expect_ok('studio: customer photo in that customer''s quotation',
+    'INSERT INTO quotation_lines (quotation_id, line_no, description, quantity, unit_price, studio_asset_id) VALUES (20, 1, ''TEST'', 1, 100, 1)');
+SELECT pg_temp.expect_error('studio: customer photo refused in another customer''s quotation',
+    'INSERT INTO quotation_lines (quotation_id, line_no, description, quantity, unit_price, studio_asset_id) VALUES (21, 1, ''TEST'', 1, 100, 1)',
+    'RROKA_STUDIO_PRIVATE_ASSET');
+SELECT pg_temp.expect_ok('studio: finished-work photo usable in any quotation',
+    'INSERT INTO quotation_lines (quotation_id, line_no, description, quantity, unit_price, studio_asset_id) VALUES (21, 1, ''TEST'', 1, 100, 2)');
+SELECT pg_temp.expect_error('studio: quotation cannot move to another customer while showing a customer photo',
+    'UPDATE quotations SET client_id = 2 WHERE id = 20', 'RROKA_STUDIO_PRIVATE_ASSET');
+SELECT pg_temp.expect_error('studio: image used in a quotation cannot be deleted',
+    'DELETE FROM studio_assets WHERE id = 1', 'RROKA_STUDIO_ASSET_IN_USE');
+SELECT pg_temp.expect_error('studio: used customer photo keeps its customer',
+    'UPDATE studio_assets SET category = ''CATALOG'' WHERE id = 1', 'RROKA_STUDIO_ASSET_IN_USE');
+SELECT pg_temp.expect_ok('studio: unused image can be deleted',
+    'INSERT INTO studio_assets (id, title, category, disk, path, mime_type, size_bytes, sha256) VALUES (9, ''x'', ''CATALOG'', ''studio'', ''t/9.jpg'', ''image/png'', 1, repeat(''e'', 64)); DELETE FROM studio_assets WHERE id = 9');
+SELECT pg_temp.expect_eq('studio: uploads are audited',
+    (SELECT count(*) FROM audit_log WHERE table_name = 'studio_assets' AND row_id = 9), 2::bigint);
+
+-- ---------------------------------------------------------------------
 -- Report
 -- ---------------------------------------------------------------------
 \pset footer off

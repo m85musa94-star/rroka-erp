@@ -93,7 +93,7 @@ class QuotationController extends Controller
     public function show(Quotation $quotation): View
     {
         return view('quotations.show', [
-            'q' => $quotation->load('lines', 'client', 'project'),
+            'q' => $quotation->load('lines.studioAsset', 'client', 'project'),
             'totals' => $quotation->totals(),
             'syncLog' => DaftraSyncLog::where(['entity_type' => 'QUOTATION', 'entity_id' => $quotation->id])->orderByDesc('id')->get(),
             'approver' => $quotation->approved_by ? DB::table('users')->where('id', $quotation->approved_by)->value('name') : null,
@@ -114,7 +114,7 @@ class QuotationController extends Controller
 
         return view('quotations.form', [
             'quotation' => $quotation,
-            'lines' => $quotation->lines->map->only('description', 'quantity', 'unit', 'unit_price')->all(),
+            'lines' => $quotation->lines->map->only('description', 'quantity', 'unit', 'unit_price', 'studio_asset_id')->all(),
             'clients' => Client::orderBy('business_name')->get(['id', 'business_name', 'client_no']),
         ]);
     }
@@ -124,8 +124,9 @@ class QuotationController extends Controller
         $data = $this->validated($request);
 
         DB::transaction(function () use ($quotation, $data) {
-            $quotation->update(collect($data)->except('lines')->all());
+            // Lines first: a customer's photo on an old line must not block changing the customer.
             $quotation->lines()->delete();
+            $quotation->update(collect($data)->except('lines')->all());
             $this->writeLines($quotation, $data['lines']);
         });
 
@@ -174,6 +175,7 @@ class QuotationController extends Controller
             'lines.*.quantity' => ['required', 'numeric', 'gt:0'],
             'lines.*.unit' => ['required', 'string', 'max:30'],
             'lines.*.unit_price' => ['required', 'numeric', 'min:0'],
+            'lines.*.studio_asset_id' => ['nullable', 'integer', 'exists:studio_assets,id'],
         ]);
         $data['lines'] = array_values($data['lines']);
 

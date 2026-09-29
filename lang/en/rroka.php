@@ -38,6 +38,10 @@ return [
         'DAFTRA_ESTIMATE_MAPPING_NOT_VERIFIED' => 'Sending quotations to Daftra is disabled until the Daftra API fields are verified.',
         'DAFTRA_QUOTATION_NOT_ISSUED' => 'Only a sent or approved quotation can be sent to Daftra.',
         'DAFTRA_CLIENT_NOT_SYNCED' => 'Send the customer to Daftra first.',
+        'RROKA_STUDIO_FILE_IMMUTABLE' => 'An image file cannot be replaced; upload a new image instead.',
+        'RROKA_STUDIO_CLIENT_MISMATCH' => 'The selected project belongs to another customer.',
+        'RROKA_STUDIO_PRIVATE_ASSET' => "This image belongs to another customer and can only appear in that customer's quotations.",
+        'RROKA_STUDIO_ASSET_IN_USE' => 'The image is used in a quotation, so it cannot be deleted or moved away from its customer.',
         'CHECK_VIOLATION' => 'The entered data breaks one of the validity rules.',
         'DUPLICATE' => 'This record already exists.',
         'INVALID_REFERENCE' => 'Invalid reference.',
@@ -56,15 +60,16 @@ return [
         'projects' => 'Projects', 'designs' => 'Designs', 'bom' => 'Bills of materials',
         'inventory' => 'Inventory', 'production' => 'Production', 'quality' => 'Quality',
         'installations' => 'Installation', 'costing' => 'Costing & profitability', 'settings' => 'Settings',
-        'daftra' => 'Daftra', 'users' => 'Users & roles', 'audit' => 'Audit log',
+        'daftra' => 'Daftra', 'studio' => 'Studio', 'users' => 'Users & roles', 'audit' => 'Audit log',
     ],
 
     'entities' => [
         'clients' => 'customer', 'quotations' => 'quotation', 'quotation_lines' => 'line', 'projects' => 'project',
-        'users' => 'user', 'roles' => 'role',
+        'studio_assets' => 'image', 'users' => 'user', 'roles' => 'role',
     ],
 
     'fields' => [
+        'category' => 'Category', 'tags' => 'Tags', 'project_id' => 'Project', 'studio_asset_id' => 'Image',
         'status' => 'Status', 'business_name' => 'Name', 'client_type' => 'Type', 'phone' => 'Mobile',
         'email' => 'Email', 'vat_number' => 'VAT number', 'commercial_reg_no' => 'Commercial registration',
         'city' => 'City', 'address' => 'Address', 'notes' => 'Notes', 'daftra_client_id' => 'Daftra customer ID',
@@ -75,6 +80,8 @@ return [
         'completed_at' => 'Completed at', 'manager_id' => 'Project manager', 'contract_value' => 'Contract value',
         'description' => 'Description', 'quantity' => 'Quantity', 'unit_price' => 'Unit price', 'unit' => 'Unit',
     ],
+
+    'studio_category' => ['CLIENT_REFERENCE' => 'From customers', 'FINISHED_WORK' => 'Finished work', 'CATALOG' => 'Product catalogue', 'SITE' => 'Site photos', 'MATERIAL' => 'Materials & samples'],
 
     'client_type' => ['INDIVIDUAL' => 'Individual', 'COMPANY' => 'Company'],
 
