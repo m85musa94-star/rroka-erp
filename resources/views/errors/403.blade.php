@@ -1,3 +1,3 @@
 @extends('errors.layout')
-@section('title', 'غير مصرّح')
-@section('message', 'ليست لديك صلاحية لهذه الصفحة أو العملية.')
+@section('title', __('غير مصرّح'))
+@section('message', __('ليست لديك صلاحية لهذه الصفحة أو العملية.'))

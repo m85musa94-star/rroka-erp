@@ -4,12 +4,16 @@ use App\Http\Controllers\Web\AuthController;
 use App\Http\Controllers\Web\ClientController;
 use App\Http\Controllers\Web\CostRateController;
 use App\Http\Controllers\Web\DashboardController;
+use App\Http\Controllers\Web\LocaleController;
 use App\Http\Controllers\Web\ProjectController;
 use App\Http\Controllers\Web\QuotationController;
 use App\Http\Controllers\Web\ReportController;
 use App\Http\Controllers\Web\RoleController;
 use App\Http\Controllers\Web\UserController;
 use Illuminate\Support\Facades\Route;
+
+// Language switch works for guests (login page) and signed-in users alike.
+Route::post('/locale/{locale}', LocaleController::class)->whereIn('locale', ['ar', 'en'])->name('locale')->middleware('throttle:30,1');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'show'])->name('login');

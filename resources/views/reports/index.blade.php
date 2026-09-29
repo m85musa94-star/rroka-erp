@@ -1,7 +1,7 @@
 @extends('layouts.app')
-@section('title', 'التقارير')
+@section('title', __('التقارير'))
 @section('cp')
-    @include('partials.control-panel', ['crumbs' => [['التقارير', null]]])
+    @include('partials.control-panel', ['crumbs' => [[__('التقارير'), null]]])
 @endsection
 @section('content')
 <div class="report-list">

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\SetLocale;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -26,17 +27,23 @@ class AuthController extends Controller
 
         if (RateLimiter::tooManyAttempts($key, 5)) {
             throw ValidationException::withMessages([
-                'email' => 'محاولات كثيرة. حاول بعد '.RateLimiter::availableIn($key).' ثانية.',
+                'email' => __('محاولات كثيرة. حاول بعد :s ثانية.', ['s' => RateLimiter::availableIn($key)]),
             ]);
         }
 
         if (! Auth::attempt($data + ['is_active' => true], $request->boolean('remember'))) {
             RateLimiter::hit($key, 60);
-            throw ValidationException::withMessages(['email' => 'البريد الإلكتروني أو كلمة المرور غير صحيحة.']);
+            throw ValidationException::withMessages(['email' => __('البريد الإلكتروني أو كلمة المرور غير صحيحة.')]);
         }
 
         RateLimiter::clear($key);
         $request->session()->regenerate();
+
+        // A language picked on the sign-in page becomes the account's language.
+        $locale = $request->session()->get('locale');
+        if (in_array($locale, SetLocale::SUPPORTED, true) && $request->user()->locale !== $locale) {
+            $request->user()->forceFill(['locale' => $locale])->saveQuietly();
+        }
 
         return redirect()->intended(route('dashboard'));
     }

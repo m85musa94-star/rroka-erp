@@ -17,12 +17,12 @@ class ProfitabilityReport extends Report
 
     public function title(): string
     {
-        return 'ربحية المشاريع';
+        return __('ربحية المشاريع');
     }
 
     public function description(): string
     {
-        return 'التكلفة الفعلية ومجمل الربح والهامش — للمشاريع مكتملة التكلفة فقط.';
+        return __('التكلفة الفعلية ومجمل الربح والهامش — للمشاريع مكتملة التكلفة فقط.');
     }
 
     public function dateColumn(): string
@@ -32,7 +32,7 @@ class ProfitabilityReport extends Report
 
     public function dateLabel(): string
     {
-        return 'تاريخ بدء المشروع';
+        return __('تاريخ بدء المشروع');
     }
 
     public function permissions(): array
@@ -55,10 +55,10 @@ class ProfitabilityReport extends Report
     public function dimensions(): array
     {
         return [
-            'project' => ['label' => 'المشروع', 'expr' => 'r.project_name'],
-            'client' => ['label' => 'العميل', 'expr' => 'r.client_name'],
-            'status' => ['label' => 'المرحلة', 'expr' => 'r.status', 'labeler' => fn ($k) => __("rroka.status.$k")],
-            'month' => ['label' => 'شهر البدء', 'expr' => "to_char(r.start_date, 'YYYY-MM')"],
+            'project' => ['label' => __('المشروع'), 'expr' => 'r.project_name'],
+            'client' => ['label' => __('العميل'), 'expr' => 'r.client_name'],
+            'status' => ['label' => __('المرحلة'), 'expr' => 'r.status', 'labeler' => fn ($k) => __("rroka.status.$k")],
+            'month' => ['label' => __('شهر البدء'), 'expr' => "to_char(r.start_date, 'YYYY-MM')"],
         ];
     }
 
@@ -67,13 +67,13 @@ class ProfitabilityReport extends Report
         $done = 'FILTER (WHERE r.complete)';
 
         return [
-            'profit' => ['label' => 'مجمل الربح', 'agg' => "sum(r.gross_profit) {$done}", 'format' => 'money', 'additive' => true],
-            'margin' => ['label' => 'هامش مجمل الربح', 'agg' => "round(100.0 * sum(r.gross_profit) {$done} / nullif(sum(r.contract_value) {$done}, 0), 1)", 'format' => 'pct', 'additive' => false],
-            'cost' => ['label' => 'إجمالي التكلفة الفعلية', 'agg' => "sum(r.total_cost) {$done}", 'format' => 'money', 'additive' => true],
-            'revenue' => ['label' => 'قيمة العقود (مكتملة التكلفة)', 'agg' => "sum(r.contract_value) {$done}", 'format' => 'money', 'additive' => true],
-            'materials' => ['label' => 'تكلفة الخامات', 'agg' => "sum(r.material_cost) {$done}", 'format' => 'money', 'additive' => true],
-            'labor' => ['label' => 'تكلفة العمالة', 'agg' => "sum(r.labor_cost) {$done}", 'format' => 'money', 'additive' => true],
-            'incomplete' => ['label' => 'مشاريع تكلفتها غير مكتملة', 'agg' => 'count(*) FILTER (WHERE NOT r.complete)', 'format' => 'int', 'additive' => true],
+            'profit' => ['label' => __('مجمل الربح'), 'agg' => "sum(r.gross_profit) {$done}", 'format' => 'money', 'additive' => true],
+            'margin' => ['label' => __('هامش مجمل الربح'), 'agg' => "round(100.0 * sum(r.gross_profit) {$done} / nullif(sum(r.contract_value) {$done}, 0), 1)", 'format' => 'pct', 'additive' => false],
+            'cost' => ['label' => __('إجمالي التكلفة الفعلية'), 'agg' => "sum(r.total_cost) {$done}", 'format' => 'money', 'additive' => true],
+            'revenue' => ['label' => __('قيمة العقود (مكتملة التكلفة)'), 'agg' => "sum(r.contract_value) {$done}", 'format' => 'money', 'additive' => true],
+            'materials' => ['label' => __('تكلفة الخامات'), 'agg' => "sum(r.material_cost) {$done}", 'format' => 'money', 'additive' => true],
+            'labor' => ['label' => __('تكلفة العمالة'), 'agg' => "sum(r.labor_cost) {$done}", 'format' => 'money', 'additive' => true],
+            'incomplete' => ['label' => __('مشاريع تكلفتها غير مكتملة'), 'agg' => 'count(*) FILTER (WHERE NOT r.complete)', 'format' => 'int', 'additive' => true],
         ];
     }
 
@@ -85,8 +85,8 @@ class ProfitabilityReport extends Report
     public function filters(): array
     {
         return [
-            'completed' => ['label' => 'المشاريع المكتملة', 'group' => 'status', 'sql' => "r.status = 'COMPLETED'"],
-            'open' => ['label' => 'الجارية', 'group' => 'status', 'sql' => "r.status IN ('ACTIVE', 'IN_PRODUCTION', 'INSTALLATION')"],
+            'completed' => ['label' => __('المشاريع المكتملة'), 'group' => 'status', 'sql' => "r.status = 'COMPLETED'"],
+            'open' => ['label' => __('الجارية'), 'group' => 'status', 'sql' => "r.status IN ('ACTIVE', 'IN_PRODUCTION', 'INSTALLATION')"],
         ];
     }
 
@@ -100,7 +100,7 @@ class ProfitabilityReport extends Report
         $excluded = $row->total - $row->complete;
 
         return $excluded > 0
-            ? "الربح والهامش محسوبان على {$row->complete} من {$row->total} مشروعًا فقط؛ {$excluded} مشروعًا مستبعد لأن تكلفته غير مكتملة (معدلات ناقصة). لا يُقدَّر أي رقم."
-            : 'كل المشاريع مكتملة التكلفة.';
+            ? __('الربح والهامش محسوبان على :complete من :total مشروعًا فقط؛ :excluded مشروعًا مستبعد لأن تكلفته غير مكتملة (معدلات ناقصة). لا يُقدَّر أي رقم.', ['complete' => $row->complete, 'total' => $row->total, 'excluded' => $excluded])
+            : __('كل المشاريع مكتملة التكلفة.');
     }
 }

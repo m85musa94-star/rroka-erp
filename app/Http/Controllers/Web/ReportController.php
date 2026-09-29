@@ -15,7 +15,7 @@ class ReportController extends Controller
     public function index(Request $request): View
     {
         $reports = ReportRegistry::forUser($request->user());
-        abort_if($reports === [], 403, 'ليست لديك صلاحية على أي تقرير.');
+        abort_if($reports === [], 403, __('ليست لديك صلاحية على أي تقرير.'));
 
         return view('reports.index', ['reports' => $reports]);
     }
@@ -23,7 +23,7 @@ class ReportController extends Controller
     public function show(Request $request, string $key): View|StreamedResponse
     {
         $report = ReportRegistry::all()[$key] ?? abort(404);
-        abort_unless(ReportRegistry::allowed($report, $request->user()), 403, 'ليست لديك صلاحية لهذا التقرير.');
+        abort_unless(ReportRegistry::allowed($report, $request->user()), 403, __('ليست لديك صلاحية لهذا التقرير.'));
 
         $dims = $report->dimensions();
         $measures = $report->measures();
@@ -69,9 +69,9 @@ class ReportController extends Controller
     private function rangeText(?string $from, ?string $to): ?string
     {
         return match (true) {
-            $from && $to => "من {$from} إلى {$to}",
-            (bool) $from => "من {$from}",
-            (bool) $to => "حتى {$to}",
+            $from && $to => __('من :from إلى :to', ['from' => $from, 'to' => $to]),
+            (bool) $from => __('من :from', ['from' => $from]),
+            (bool) $to => __('حتى :to', ['to' => $to]),
             default => null,
         };
     }
@@ -87,12 +87,12 @@ class ReportController extends Controller
             $out = fopen('php://output', 'w');
             fwrite($out, "\xEF\xBB\xBF");
             fputcsv($out, [$report->title().' — '.$report->measures()[$measure]['label']]);
-            fputcsv($out, [$report->dateLabel().': '.($range ?? 'كل الفترات')]);
+            fputcsv($out, [$report->dateLabel().': '.($range ?? __('كل الفترات'))]);
             $header = [$report->dimensions()[$row]['label']];
             foreach ($p['cols'] as $c) {
                 $header[] = $c['label'];
             }
-            $header[] = 'الإجمالي';
+            $header[] = __('الإجمالي');
             fputcsv($out, $header);
             foreach ($p['rows'] as $r) {
                 $line = [$r['label']];
@@ -102,7 +102,7 @@ class ReportController extends Controller
                 $line[] = $num($p['rowTotals'][$r['key']] ?? null);
                 fputcsv($out, $line);
             }
-            $total = ['الإجمالي'];
+            $total = [__('الإجمالي')];
             foreach ($p['cols'] as $c) {
                 $total[] = $num($p['colTotals'][$c['key']] ?? null);
             }

@@ -34,7 +34,7 @@ class UserController extends Controller
         $user = User::create($data);
         $user->roles()->sync($data['roles'] ?? []);
 
-        return redirect()->route('users.index')->with('ok', 'تم إنشاء المستخدم.');
+        return redirect()->route('users.index')->with('ok', __('تم إنشاء المستخدم.'));
     }
 
     public function edit(User $user): View
@@ -55,7 +55,7 @@ class UserController extends Controller
 
         // Guard against locking everyone out.
         if ($user->is($request->user()) && ! $request->boolean('is_active')) {
-            return back()->withErrors(['is_active' => 'لا يمكنك إيقاف حسابك أنت.']);
+            return back()->withErrors(['is_active' => __('لا يمكنك إيقاف حسابك أنت.')]);
         }
 
         $user->fill(collect($data)->only('name', 'email')->all());
@@ -66,6 +66,6 @@ class UserController extends Controller
         $user->save();
         $user->roles()->sync($data['roles'] ?? []);
 
-        return redirect()->route('users.index')->with('ok', 'تم تحديث المستخدم.');
+        return redirect()->route('users.index')->with('ok', __('تم تحديث المستخدم.'));
     }
 }

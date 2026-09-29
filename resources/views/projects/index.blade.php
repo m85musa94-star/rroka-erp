@@ -1,13 +1,13 @@
 @extends('layouts.app')
-@section('title', 'المشاريع')
+@section('title', __('المشاريع'))
 @section('cp')
     @include('partials.control-panel', [
-        'crumbs' => [['المشاريع', null]],
+        'crumbs' => [[__('المشاريع'), null]],
         'lv' => $lv,
         'newUrl' => auth()->user()->hasPermission('projects.manage') ? route('projects.create') : null,
         'paginator' => $projects,
         'total' => $groups?->flatten()->count() ?? $columns?->flatten()->count(),
-        'placeholder' => 'بحث بعنوان المشروع أو رقمه أو العميل…',
+        'placeholder' => __('بحث بعنوان المشروع أو رقمه أو العميل…'),
     ])
 @endsection
 @section('content')
@@ -25,26 +25,26 @@
                         <div class="kb-title">{{ $p->title }}</div>
                         <div class="kb-meta"><span>{{ $p->client->business_name }}</span><span dir="ltr">{{ number_format($p->contract_value, 2) }}</span></div>
                         <div class="kb-meta"><span>{{ $p->project_no }}</span>
-                            <span @class(['na' => $late])>{{ $p->target_date ? 'التسليم '.$p->target_date->format('Y-m-d') : '' }}</span></div>
+                            <span @class(['na' => $late])>{{ $p->target_date ? __('التسليم ').$p->target_date->format('Y-m-d') : '' }}</span></div>
                     </a>
                 @empty
-                    <div class="kb-empty">لا مشاريع</div>
+                    <div class="kb-empty">{{ __('لا مشاريع') }}</div>
                 @endforelse
             </div>
         @endforeach
     </div>
-    <p class="hint">المشروع يُنشأ من عرض سعر معتمد فقط.</p>
+    <p class="hint">{{ __('المشروع يُنشأ من عرض سعر معتمد فقط.') }}</p>
 @else
     @php($rows = $projects ?? $groups->flatten())
     @if($rows->isEmpty())
         <div class="card empty-state">
-            <strong>{{ $lv->isFiltered() ? 'لا نتائج مطابقة' : 'لا توجد مشاريع بعد' }}</strong>
-            {{ $lv->isFiltered() ? 'غيّر البحث أو أزل الفلاتر.' : 'المشروع يُنشأ من عرض سعر معتمد.' }}
+            <strong>{{ $lv->isFiltered() ? __('لا نتائج مطابقة') : __('لا توجد مشاريع بعد') }}</strong>
+            {{ $lv->isFiltered() ? __('غيّر البحث أو أزل الفلاتر.') : __('المشروع يُنشأ من عرض سعر معتمد.') }}
         </div>
     @else
     <div class="card" style="padding:0">
         <div class="table-wrap"><table>
-            <tr><th>الرقم</th><th>العنوان</th><th>العميل</th><th class="num">قيمة العقد</th><th>البدء</th><th>التسليم المستهدف</th><th>المرحلة</th></tr>
+            <tr><th>{{ __('الرقم') }}</th><th>{{ __('العنوان') }}</th><th>{{ __('العميل') }}</th><th class="num">{{ __('قيمة العقد') }}</th><th>{{ __('البدء') }}</th><th>{{ __('التسليم المستهدف') }}</th><th>{{ __('المرحلة') }}</th></tr>
             @foreach($groups ?? ['' => $projects] as $title => $items)
                 @if($groups)<tr class="grp"><td colspan="3">{{ $title }}<span class="grp-count">({{ $items->count() }})</span></td><td class="num">{{ number_format($items->sum('contract_value'), 2) }}</td><td colspan="3"></td></tr>@endif
                 @foreach($items as $p)

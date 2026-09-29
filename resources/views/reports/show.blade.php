@@ -2,7 +2,7 @@
 @section('title', $report->title())
 @section('cp')
     @include('partials.control-panel', [
-        'crumbs' => [['التقارير', route('reports.index')], [$report->title(), null]],
+        'crumbs' => [[__('التقارير'), route('reports.index')], [$report->title(), null]],
         'lv' => $lv,
         'noSearch' => true,
         'total' => null,
@@ -12,9 +12,9 @@
 @php
     $d = fn ($x) => '<bdi dir="ltr">'.e($x).'</bdi>';
     $rangeHtml = match (true) {
-        $from && $to => 'من '.$d($from).' إلى '.$d($to),
-        (bool) $from => 'من '.$d($from),
-        (bool) $to => 'حتى '.$d($to),
+        $from && $to => __('من ').$d($from).__(' إلى ').$d($to),
+        (bool) $from => __('من ').$d($from),
+        (bool) $to => __('حتى ').$d($to),
         default => null,
     };
     $m = $measures[$measure];
@@ -24,47 +24,47 @@
 @endphp
 
 <p class="report-range">
-    {{ $report->dateLabel() }}: <strong>{!! $rangeHtml ?? 'كل الفترات' !!}</strong>
-    @if($swapped)<span class="muted">— عُكس التاريخان لأن تاريخ البداية كان بعد تاريخ النهاية.</span>@endif
+    {{ $report->dateLabel() }}: <strong>{!! $rangeHtml ?? __('كل الفترات') !!}</strong>
+    @if($swapped)<span class="muted">{{ __('— عُكس التاريخان لأن تاريخ البداية كان بعد تاريخ النهاية.') }}</span>@endif
 </p>
 <form method="get" class="card report-bar">
     @foreach($lv->active as $f)<input type="hidden" name="f[]" value="{{ $f }}">@endforeach
     <input type="hidden" name="v" value="{{ $lv->view }}">
-    <label>من تاريخ
-        <input type="date" name="from" value="{{ $from }}" onchange="this.form.submit()" aria-label="من تاريخ">
+    <label>{{ __('من تاريخ') }}
+        <input type="date" name="from" value="{{ $from }}" onchange="this.form.submit()" aria-label="{{ __('من تاريخ') }}">
     </label>
-    <label>إلى تاريخ
-        <input type="date" name="to" value="{{ $to }}" onchange="this.form.submit()" aria-label="إلى تاريخ">
+    <label>{{ __('إلى تاريخ') }}
+        <input type="date" name="to" value="{{ $to }}" onchange="this.form.submit()" aria-label="{{ __('إلى تاريخ') }}">
     </label>
-    <label>القيمة
+    <label>{{ __('القيمة') }}
         <select name="m" onchange="this.form.submit()">
             @foreach($measures as $k => $def)<option value="{{ $k }}" @selected($k === $measure)>{{ $def['label'] }}</option>@endforeach
         </select>
     </label>
-    <label>الصفوف
+    <label>{{ __('الصفوف') }}
         <select name="rows" onchange="this.form.submit()">
             @foreach($dims as $k => $d)<option value="{{ $k }}" @selected($k === $row)>{{ $d['label'] }}</option>@endforeach
         </select>
     </label>
-    <label>الأعمدة
+    <label>{{ __('الأعمدة') }}
         <select name="cols" onchange="this.form.submit()">
-            <option value="">— بلا —</option>
+            <option value="">{{ __('— بلا —') }}</option>
             @foreach($dims as $k => $d)@if($k !== $row)<option value="{{ $k }}" @selected($k === $col)>{{ $d['label'] }}</option>@endif @endforeach
         </select>
     </label>
     <div class="actions" style="margin-inline-start:auto">
         @if($from || $to)
-            <a class="btn ghost sm" href="{{ request()->fullUrlWithQuery(['from' => null, 'to' => null]) }}">مسح التاريخ</a>
+            <a class="btn ghost sm" href="{{ request()->fullUrlWithQuery(['from' => null, 'to' => null]) }}">{{ __('مسح التاريخ') }}</a>
         @endif
         @if($col)
-            <a class="btn ghost sm" href="{{ request()->fullUrlWithQuery(['rows' => $col, 'cols' => $row]) }}" title="تبديل الصفوف والأعمدة">⇄ تبديل</a>
+            <a class="btn ghost sm" href="{{ request()->fullUrlWithQuery(['rows' => $col, 'cols' => $row]) }}" title="{{ __('تبديل الصفوف والأعمدة') }}">{{ __('⇄ تبديل') }}</a>
         @endif
-        <a class="btn ghost sm" href="{{ request()->fullUrlWithQuery(['export' => 'csv']) }}">تصدير إلى إكسل</a>
+        <a class="btn ghost sm" href="{{ request()->fullUrlWithQuery(['export' => 'csv']) }}">{{ __('تصدير إلى إكسل') }}</a>
     </div>
 </form>
 
 @if(! $pivot['rows'])
-    <div class="card empty-state"><strong>لا توجد بيانات</strong>لا توجد سجلات تطابق الفلاتر المختارة.</div>
+    <div class="card empty-state"><strong>{{ __('لا توجد بيانات') }}</strong>{{ __('لا توجد سجلات تطابق الفلاتر المختارة.') }}</div>
 @elseif($lv->view === 'graph')
     @php
         $series = $col && $m['additive'] ? array_slice($pivot['cols'], 0, 7) : [];
@@ -77,16 +77,16 @@
         $zero = -$min / $span * 100;
     @endphp
     <div class="card viz">
-        <h2 style="margin-bottom:4px">{{ $m['label'] }} حسب {{ $dims[$row]['label'] }}@if($rangeHtml) <span class="muted" style="font-weight:400;font-size:14px">({!! $rangeHtml !!})</span>@endif</h2>
-        @if($col && ! $m['additive'])<p class="hint" style="margin-top:0">القيمة المختارة نسبة لا تُجمع، فالرسم يعرض الإجمالي لكل صف؛ التفصيل حسب {{ $dims[$col]['label'] }} في الجدول المحوري.</p>@endif
-        @if($hasNeg && $col)<p class="hint" style="margin-top:0">توجد قيم سالبة، فالرسم يعرض الإجمالي لكل صف دون تقسيم.</p>@endif
+        <h2 style="margin-bottom:4px">{{ $m['label'] }} {{ __('حسب') }} {{ $dims[$row]['label'] }}@if($rangeHtml) <span class="muted" style="font-weight:400;font-size:14px">({!! $rangeHtml !!})</span>@endif</h2>
+        @if($col && ! $m['additive'])<p class="hint" style="margin-top:0">{{ __('القيمة المختارة نسبة لا تُجمع، فالرسم يعرض الإجمالي لكل صف؛ التفصيل حسب') }} {{ $dims[$col]['label'] }} {{ __('في الجدول المحوري.') }}</p>@endif
+        @if($hasNeg && $col)<p class="hint" style="margin-top:0">{{ __('توجد قيم سالبة، فالرسم يعرض الإجمالي لكل صف دون تقسيم.') }}</p>@endif
         @if(count($series) > 1)
             <div class="legend">
                 @foreach($series as $i => $s)<span><i style="background:{{ $palette[$i] }}"></i>{{ $s['label'] }}</span>@endforeach
-                @if(count($pivot['cols']) > 7)<span><i style="background:#9a948d"></i>أخرى</span>@endif
+                @if(count($pivot['cols']) > 7)<span><i style="background:#9a948d"></i>{{ __('أخرى') }}</span>@endif
             </div>
         @endif
-        <div class="bars" role="img" aria-label="{{ $m['label'] }} حسب {{ $dims[$row]['label'] }}">
+        <div class="bars" role="img" aria-label="{{ $m['label'] }} {{ __('حسب') }} {{ $dims[$row]['label'] }}">
             @foreach($pivot['rows'] as $r)
                 @php($raw = $pivot['rowTotals'][$r['key']] ?? null)
                 @php($v = (float) $raw)
@@ -95,7 +95,7 @@
                     <div class="bar-track">
                         @if($zero > 0)<span class="bar-zero" style="inset-inline-start: {{ $zero }}%"></span>@endif
                         @if($raw === null)
-                            <span class="bar-value" style="inset-inline-start: calc({{ $zero }}% + 6px)" title="لا يمكن حسابها لهذا الصف">— غير قابل للحساب</span>
+                            <span class="bar-value" style="inset-inline-start: calc({{ $zero }}% + 6px)" title="{{ __('لا يمكن حسابها لهذا الصف') }}">{{ __('— غير قابل للحساب') }}</span>
                         @elseif($series)
                             @php($acc = 0)
                             <div class="bar-stack" style="inset-inline-start: {{ $zero }}%; width: {{ $v / $span * 100 }}%">
@@ -104,7 +104,7 @@
                                     @if($sv > 0)<span class="seg" style="flex: {{ $sv }}; background: {{ $palette[$i] }}" title="{{ $s['label'] }}: {{ $fmt($sv) }}"></span>@endif
                                     @php($acc += $sv)
                                 @endforeach
-                                @if($v - $acc > 0.0001)<span class="seg" style="flex: {{ $v - $acc }}; background:#9a948d" title="أخرى: {{ $fmt($v - $acc) }}"></span>@endif
+                                @if($v - $acc > 0.0001)<span class="seg" style="flex: {{ $v - $acc }}; background:#9a948d" title="{{ __('أخرى:') }} {{ $fmt($v - $acc) }}"></span>@endif
                             </div>
                         @else
                             <div @class(['bar', 'neg' => $v < 0]) title="{{ $r['label'] }}: {{ $fmt($v) }}"
@@ -117,7 +117,7 @@
                 </div>
             @endforeach
         </div>
-        <p class="hint">مرّر المؤشر على الأعمدة لرؤية القيم؛ الأرقام كاملة في عرض الجدول المحوري.</p>
+        <p class="hint">{{ __('مرّر المؤشر على الأعمدة لرؤية القيم؛ الأرقام كاملة في عرض الجدول المحوري.') }}</p>
     </div>
 @else
     <div class="card" style="padding:0">
@@ -126,7 +126,7 @@
                 <tr>
                     <th>{{ $dims[$row]['label'] }} @if($col)<span class="muted">/ {{ $dims[$col]['label'] }}</span>@endif</th>
                     @foreach($pivot['cols'] as $c)<th class="num">{{ $c['label'] }}</th>@endforeach
-                    <th class="num">الإجمالي</th>
+                    <th class="num">{{ __('الإجمالي') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -140,7 +140,7 @@
             </tbody>
             <tfoot>
                 <tr>
-                    <th>الإجمالي</th>
+                    <th>{{ __('الإجمالي') }}</th>
                     @foreach($pivot['cols'] as $c)<th class="num">{{ $fmt($pivot['colTotals'][$c['key']] ?? null) }}</th>@endforeach
                     <th class="num">{{ $fmt($pivot['grand']) }}</th>
                 </tr>

@@ -19,14 +19,14 @@ class ClientController extends Controller
     {
         $lv = new ListView($request,
             filters: [
-                'company' => ['label' => 'منشآت', 'group' => 'type', 'apply' => fn ($q) => $q->where('client_type', 'COMPANY')],
-                'individual' => ['label' => 'أفراد', 'group' => 'type', 'apply' => fn ($q) => $q->where('client_type', 'INDIVIDUAL')],
-                'daftra' => ['label' => 'مرتبط بدفترة', 'group' => 'daftra', 'apply' => fn ($q) => $q->whereNotNull('daftra_client_id')],
-                'no_daftra' => ['label' => 'غير مرتبط بدفترة', 'group' => 'daftra', 'apply' => fn ($q) => $q->whereNull('daftra_client_id')],
+                'company' => ['label' => __('منشآت'), 'group' => 'type', 'apply' => fn ($q) => $q->where('client_type', 'COMPANY')],
+                'individual' => ['label' => __('أفراد'), 'group' => 'type', 'apply' => fn ($q) => $q->where('client_type', 'INDIVIDUAL')],
+                'daftra' => ['label' => __('مرتبط بدفترة'), 'group' => 'daftra', 'apply' => fn ($q) => $q->whereNotNull('daftra_client_id')],
+                'no_daftra' => ['label' => __('غير مرتبط بدفترة'), 'group' => 'daftra', 'apply' => fn ($q) => $q->whereNull('daftra_client_id')],
             ],
             groups: [
-                'type' => ['label' => 'النوع', 'key' => fn ($c) => $c->client_type, 'title' => fn ($c) => __("rroka.client_type.$c->client_type")],
-                'city' => ['label' => 'المدينة', 'key' => fn ($c) => $c->city ?? '', 'title' => fn ($c) => $c->city ?: 'بلا مدينة'],
+                'type' => ['label' => __('النوع'), 'key' => fn ($c) => $c->client_type, 'title' => fn ($c) => __("rroka.client_type.$c->client_type")],
+                'city' => ['label' => __('المدينة'), 'key' => fn ($c) => $c->city ?? '', 'title' => fn ($c) => $c->city ?: __('بلا مدينة')],
             ],
             views: ['list', 'kanban'],
         );
@@ -58,7 +58,7 @@ class ClientController extends Controller
         $client->created_by = $request->user()->id;
         $client->save();
 
-        return redirect()->route('clients.show', $client)->with('ok', 'تم حفظ العميل.');
+        return redirect()->route('clients.show', $client)->with('ok', __('تم حفظ العميل.'));
     }
 
     public function show(Client $client): View
@@ -80,14 +80,14 @@ class ClientController extends Controller
     {
         $client->update($this->validated($request));
 
-        return redirect()->route('clients.show', $client)->with('ok', 'تم تحديث بيانات العميل.');
+        return redirect()->route('clients.show', $client)->with('ok', __('تم تحديث بيانات العميل.'));
     }
 
     public function sync(Request $request, Client $client, DaftraSyncService $sync): RedirectResponse
     {
         $sync->syncClient($client, $request->user());
 
-        return back()->with('ok', 'تم إنشاء العميل في دفترة.');
+        return back()->with('ok', __('تم إنشاء العميل في دفترة.'));
     }
 
     private function validated(Request $request): array

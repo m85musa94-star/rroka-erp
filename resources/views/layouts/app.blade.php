@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
+<html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title') — إر روكا</title>
+    <title>@yield('title') {{ __('— إر روكا') }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
@@ -13,7 +13,7 @@
 @php($u = auth()->user())
 @php($app = \App\Support\AppMenu::current())
 <header class="topbar">
-    <a href="{{ route('dashboard') }}" class="tb-home" title="التطبيقات" aria-label="التطبيقات">
+    <a href="{{ route('dashboard') }}" class="tb-home" title="{{ __('التطبيقات') }}" aria-label="{{ __('التطبيقات') }}">
         @include('partials.app-icon', ['key' => 'home', 'size' => 22])
     </a>
     @if($app)
@@ -21,25 +21,26 @@
             @include('partials.app-icon', ['key' => $app['key'], 'size' => 26])
             <span>{{ $app['label'] }}</span>
         </a>
-        <nav class="tb-menu" aria-label="أقسام التطبيق">
+        <nav class="tb-menu" aria-label="{{ __('أقسام التطبيق') }}">
             @foreach(\App\Support\AppMenu::menu($app, $u) as [$label, $url, $on])
                 <a href="{{ $url }}" @class(['on' => $on])>{{ $label }}</a>
             @endforeach
         </nav>
     @else
-        <span class="tb-app"><span>إر روكا للأثاث</span></span>
+        <span class="tb-app"><span>{{ __('إر روكا للأثاث') }}</span></span>
     @endif
     <div class="tb-spacer"></div>
     <div class="tb-user">
+        @include('partials.lang-toggle')
         <span class="tb-avatar">{{ mb_substr($u->name, 0, 1) }}</span>
         <span class="tb-name">{{ $u->name }}</span>
         <form method="post" action="{{ route('logout') }}" class="inline">@csrf
-            <button class="btn ghost sm tb-logout">خروج</button>
+            <button class="btn ghost sm tb-logout">{{ __('خروج') }}</button>
         </form>
     </div>
 </header>
 @if($app)
-    <nav class="tb-menu-m" aria-label="أقسام التطبيق">
+    <nav class="tb-menu-m" aria-label="{{ __('أقسام التطبيق') }}">
         @foreach(\App\Support\AppMenu::menu($app, $u) as [$label, $url, $on])
             <a href="{{ $url }}" @class(['on' => $on])>{{ $label }}</a>
         @endforeach
@@ -63,6 +64,13 @@
         @yield('content')
     </main>
 </div>
+<script>
+// One confirmation mechanism for every form: <form data-confirm="...">.
+document.addEventListener('submit', e => {
+    const msg = e.target.dataset && e.target.dataset.confirm;
+    if (msg && !confirm(msg)) { e.preventDefault(); }
+});
+</script>
 @stack('scripts')
 </body>
 </html>

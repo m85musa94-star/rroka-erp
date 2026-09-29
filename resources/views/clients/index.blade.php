@@ -1,14 +1,14 @@
 @extends('layouts.app')
-@section('title', 'العملاء')
+@section('title', __('العملاء'))
 @section('cp')
     @include('partials.control-panel', [
-        'crumbs' => [['العملاء', null]],
+        'crumbs' => [[__('العملاء'), null]],
         'lv' => $lv,
         'newUrl' => auth()->user()->hasPermission('clients.manage') ? route('clients.create') : null,
-        'newLabel' => 'جديد',
+        'newLabel' => __('جديد'),
         'paginator' => $clients,
         'total' => $groups?->flatten()->count(),
-        'placeholder' => 'بحث بالاسم أو الجوال أو المدينة أو الرقم…',
+        'placeholder' => __('بحث بالاسم أو الجوال أو المدينة أو الرقم…'),
     ])
 @endsection
 @section('content')
@@ -16,8 +16,8 @@
 @php($rows = $clients ?? $groups->flatten())
 @if($rows->isEmpty())
     <div class="card empty-state">
-        <strong>{{ $lv->isFiltered() ? 'لا نتائج مطابقة' : 'لا يوجد عملاء بعد' }}</strong>
-        {{ $lv->isFiltered() ? 'غيّر البحث أو أزل الفلاتر.' : 'ابدأ بإضافة أول عميل من زر «جديد».' }}
+        <strong>{{ $lv->isFiltered() ? __('لا نتائج مطابقة') : __('لا يوجد عملاء بعد') }}</strong>
+        {{ $lv->isFiltered() ? __('غيّر البحث أو أزل الفلاتر.') : __('ابدأ بإضافة أول عميل من زر «جديد».') }}
     </div>
 @elseif($lv->view === 'kanban')
     <div class="kb-cards">
@@ -27,7 +27,7 @@
                 <span style="min-width:0">
                     <span class="kb-title" style="display:block">{{ $c->business_name }}</span>
                     <span class="kb-meta"><span dir="ltr">{{ $c->phone ?? '—' }}</span><span>{{ $c->city ?? '' }}</span></span>
-                    <span class="kb-meta"><span>{{ __("rroka.client_type.$c->client_type") }}</span>@if($c->daftra_client_id)<span class="badge b-SUCCESS">دفترة</span>@endif</span>
+                    <span class="kb-meta"><span>{{ __("rroka.client_type.$c->client_type") }}</span>@if($c->daftra_client_id)<span class="badge b-SUCCESS">{{ __('دفترة') }}</span>@endif</span>
                 </span>
             </a>
         @endforeach
@@ -35,7 +35,7 @@
 @else
     <div class="card" style="padding:0">
         <div class="table-wrap"><table>
-            <tr><th>الرقم</th><th>الاسم</th><th>النوع</th><th>الجوال</th><th>المدينة</th><th>دفترة</th></tr>
+            <tr><th>{{ __('الرقم') }}</th><th>{{ __('الاسم') }}</th><th>{{ __('النوع') }}</th><th>{{ __('الجوال') }}</th><th>{{ __('المدينة') }}</th><th>{{ __('دفترة') }}</th></tr>
             @foreach($groups ?? ['' => $clients] as $title => $items)
                 @if($groups)<tr class="grp"><td colspan="6">{{ $title }}<span class="grp-count">({{ $items->count() }})</span></td></tr>@endif
                 @foreach($items as $c)
@@ -45,7 +45,7 @@
                         <td>{{ __("rroka.client_type.$c->client_type") }}</td>
                         <td class="num">{{ $c->phone ?? '—' }}</td>
                         <td>{{ $c->city ?? '—' }}</td>
-                        <td>{!! $c->daftra_client_id ? '<span class="badge b-SUCCESS">مرتبط</span>' : '<span class="muted">—</span>' !!}</td>
+                        <td>{!! $c->daftra_client_id ? __('<span class="badge b-SUCCESS">مرتبط</span>') : '<span class="muted">—</span>' !!}</td>
                     </tr>
                 @endforeach
             @endforeach

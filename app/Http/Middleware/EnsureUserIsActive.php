@@ -16,7 +16,7 @@ class EnsureUserIsActive
             Auth::guard('web')->logout();
             $request->session()->invalidate();
 
-            return redirect()->route('login')->withErrors(['email' => 'تم إيقاف هذا الحساب.']);
+            return redirect()->route('login')->withErrors(['email' => __('تم إيقاف هذا الحساب.')]);
         }
 
         return $next($request);

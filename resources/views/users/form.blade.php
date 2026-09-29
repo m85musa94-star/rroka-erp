@@ -1,7 +1,7 @@
 @extends('layouts.app')
-@section('title', $user->exists ? 'تعديل '.$user->name : 'مستخدم جديد')
+@section('title', $user->exists ? __('تعديل ').$user->name : __('مستخدم جديد'))
 @section('cp')
-    @include('partials.control-panel', ['crumbs' => [['المستخدمون', route('users.index')], [$user->exists ? $user->name : 'جديد', null]]])
+    @include('partials.control-panel', ['crumbs' => [[__('المستخدمون'), route('users.index')], [$user->exists ? $user->name : __('جديد'), null]]])
 @endsection
 @section('content')
 @php($chosen = old('roles', $user->exists ? $user->roles->pluck('id')->all() : []))
@@ -9,26 +9,26 @@
     @csrf
     @if($user->exists) @method('put') @endif
     <div class="grid g2">
-        <div class="field"><label>الاسم *</label><input name="name" value="{{ old('name', $user->name) }}" required></div>
-        <div class="field"><label>البريد الإلكتروني (اسم الدخول) *</label><input name="email" type="email" value="{{ old('email', $user->email) }}" required dir="ltr"></div>
-        <div class="field"><label>كلمة المرور {{ $user->exists ? '(اتركها فارغة لعدم التغيير)' : '*' }}</label><input name="password" type="password" {{ $user->exists ? '' : 'required' }} minlength="10" dir="ltr" autocomplete="new-password"><div class="hint">١٠ أحرف على الأقل.</div></div>
-        <div class="field"><label>تأكيد كلمة المرور</label><input name="password_confirmation" type="password" dir="ltr" autocomplete="new-password"></div>
+        <div class="field"><label>{{ __('الاسم *') }}</label><input name="name" value="{{ old('name', $user->name) }}" required></div>
+        <div class="field"><label>{{ __('البريد الإلكتروني (اسم الدخول) *') }}</label><input name="email" type="email" value="{{ old('email', $user->email) }}" required dir="ltr"></div>
+        <div class="field"><label>{{ __('كلمة المرور') }} {{ $user->exists ? __('(اتركها فارغة لعدم التغيير)') : '*' }}</label><input name="password" type="password" {{ $user->exists ? '' : 'required' }} minlength="10" dir="ltr" autocomplete="new-password"><div class="hint">{{ __('١٠ أحرف على الأقل.') }}</div></div>
+        <div class="field"><label>{{ __('تأكيد كلمة المرور') }}</label><input name="password_confirmation" type="password" dir="ltr" autocomplete="new-password"></div>
     </div>
     @if($user->exists)
         <div class="field"><label style="display:flex;gap:6px;align-items:center;color:var(--ink)">
             <input type="hidden" name="is_active" value="0">
-            <input type="checkbox" name="is_active" value="1" style="width:auto" @checked(old('is_active', $user->is_active))> الحساب نشط
+            <input type="checkbox" name="is_active" value="1" style="width:auto" @checked(old('is_active', $user->is_active))> {{ __('الحساب نشط') }}
         </label></div>
     @endif
-    <div class="field"><label>الأدوار</label>
+    <div class="field"><label>{{ __('الأدوار') }}</label>
         @forelse($roles as $r)
             <label style="display:flex;gap:6px;align-items:center;color:var(--ink)">
-                <input type="checkbox" name="roles[]" value="{{ $r->id }}" style="width:auto" @checked(in_array($r->id, $chosen))> {{ $r->name_ar }}
+                <input type="checkbox" name="roles[]" value="{{ $r->id }}" style="width:auto" @checked(in_array($r->id, $chosen))> {{ __($r->name_ar) }}
             </label>
         @empty
-            <p class="muted">لا توجد أدوار بعد. <a href="{{ route('roles.create') }}">أنشئ دورًا أولًا</a> ثم ارجع إلى هنا.</p>
+            <p class="muted">{{ __('لا توجد أدوار بعد.') }} <a href="{{ route('roles.create') }}">{{ __('أنشئ دورًا أولًا') }}</a> {{ __('ثم ارجع إلى هنا.') }}</p>
         @endforelse
     </div>
-    <div class="actions"><button class="btn">حفظ</button><a class="btn ghost" href="{{ route('users.index') }}">إلغاء</a></div>
+    <div class="actions"><button class="btn">{{ __('حفظ') }}</button><a class="btn ghost" href="{{ route('users.index') }}">{{ __('إلغاء') }}</a></div>
 </form>
 @endsection

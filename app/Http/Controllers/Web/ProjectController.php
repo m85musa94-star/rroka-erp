@@ -20,14 +20,14 @@ class ProjectController extends Controller
         $status = fn (array $st) => fn ($q) => $q->whereIn('status', $st);
         $lv = new ListView($request,
             filters: [
-                'open' => ['label' => 'الجارية', 'group' => 'status', 'apply' => $status(['ACTIVE', 'IN_PRODUCTION', 'INSTALLATION'])],
-                'on_hold' => ['label' => 'المتوقفة', 'group' => 'status', 'apply' => $status(['ON_HOLD'])],
-                'completed' => ['label' => 'المكتملة', 'group' => 'status', 'apply' => $status(['COMPLETED'])],
-                'late' => ['label' => 'متأخرة عن موعد التسليم', 'group' => 'late', 'apply' => fn ($q) => $q->whereNotIn('status', ['COMPLETED', 'CANCELLED'])->whereDate('target_date', '<', today())],
+                'open' => ['label' => __('الجارية'), 'group' => 'status', 'apply' => $status(['ACTIVE', 'IN_PRODUCTION', 'INSTALLATION'])],
+                'on_hold' => ['label' => __('المتوقفة'), 'group' => 'status', 'apply' => $status(['ON_HOLD'])],
+                'completed' => ['label' => __('المكتملة'), 'group' => 'status', 'apply' => $status(['COMPLETED'])],
+                'late' => ['label' => __('متأخرة عن موعد التسليم'), 'group' => 'late', 'apply' => fn ($q) => $q->whereNotIn('status', ['COMPLETED', 'CANCELLED'])->whereDate('target_date', '<', today())],
             ],
             groups: [
-                'status' => ['label' => 'المرحلة', 'key' => fn ($p) => $p->status, 'title' => fn ($p) => __("rroka.status.$p->status")],
-                'client' => ['label' => 'العميل', 'key' => fn ($p) => $p->client_id, 'title' => fn ($p) => $p->client->business_name],
+                'status' => ['label' => __('المرحلة'), 'key' => fn ($p) => $p->status, 'title' => fn ($p) => __("rroka.status.$p->status")],
+                'client' => ['label' => __('العميل'), 'key' => fn ($p) => $p->client_id, 'title' => fn ($p) => $p->client->business_name],
             ],
             views: ['list', 'kanban'],
         );
@@ -82,7 +82,7 @@ class ProjectController extends Controller
         $project->created_by = $request->user()->id;
         $project->save();
 
-        return redirect()->route('projects.show', $project)->with('ok', 'تم إنشاء المشروع.');
+        return redirect()->route('projects.show', $project)->with('ok', __('تم إنشاء المشروع.'));
     }
 
     /** Stage change; allowed transitions are enforced by the database. */
@@ -92,7 +92,7 @@ class ProjectController extends Controller
 
         $project->forceFill(['status' => $to, 'completed_at' => $to === 'COMPLETED' ? now() : $project->completed_at])->save();
 
-        return back()->with('ok', 'نُقل المشروع إلى مرحلة: '.__("rroka.status.$to"));
+        return back()->with('ok', __('نُقل المشروع إلى مرحلة: ').__("rroka.status.$to"));
     }
 
     public function show(Request $request, Project $project): View

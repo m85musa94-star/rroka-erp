@@ -1,7 +1,7 @@
 {{-- Activity feed from the audit log. Params: $activity (Collection) --}}
 @if(auth()->user()->hasPermission('audit.view'))
 <div class="card chatter">
-    <h2>سجل النشاط</h2>
+    <h2>{{ __('سجل النشاط') }}</h2>
     @forelse($activity as $a)
         <div class="chat-item">
             <span @class(['chat-av', 'sys' => $a['system']])>{{ mb_substr($a['user'], 0, 1) }}</span>
@@ -12,7 +12,7 @@
                     @if($a['changes'])
                         <ul>
                             @foreach($a['changes'] as [$field, $from, $to])
-                                <li>{{ $field }}: <del>{{ $from }}</del> ← {{ $to }}</li>
+                                <li>{{ $field }}: <del>{{ $from }}</del> {{ app()->getLocale() === 'ar' ? '←' : '→' }} {{ $to }}</li>
                             @endforeach
                         </ul>
                     @endif
@@ -20,7 +20,7 @@
             </div>
         </div>
     @empty
-        <p class="muted">لا يوجد نشاط مسجّل.</p>
+        <p class="muted">{{ __('لا يوجد نشاط مسجّل.') }}</p>
     @endforelse
 </div>
 @endif

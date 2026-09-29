@@ -26,8 +26,8 @@ a.tb-app:hover { background: rgba(255,255,255,.12); }
 .tb-spacer { flex: 1; }
 .tb-user { display: flex; align-items: center; gap: 10px; font-size: 14px; }
 .tb-avatar { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: #E8833A; color: #fff; font-weight: 700; }
-.topbar .btn.tb-logout { color: #f4ede6; border-color: rgba(255,255,255,.45); background: transparent; }
-.topbar .btn.tb-logout:hover { background: rgba(255,255,255,.12); }
+.topbar .btn.tb-logout, .topbar .btn.lang-toggle { color: #f4ede6; border-color: rgba(255,255,255,.45); background: transparent; }
+.topbar .btn.tb-logout:hover, .topbar .btn.lang-toggle:hover { background: rgba(255,255,255,.12); }
 .kpis { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
 
 .launcher { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 28px 18px; padding: 28px 8px 36px; max-width: 1000px; margin: 0 auto; }
@@ -52,9 +52,13 @@ a.app-tile:hover .app-icon { transform: translateY(-3px); box-shadow: 0 2px 4px 
 .kpi .value { font-size: 26px; font-weight: 700; }
 
 table { width: 100%; border-collapse: collapse; }
-th, td { text-align: right; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th, td { text-align: start; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
 th { font-size: 13px; color: var(--muted); font-weight: 600; background: #faf9f7; }
-td.num, th.num { text-align: left; direction: ltr; font-variant-numeric: tabular-nums; }
+td.num, th.num { direction: ltr; font-variant-numeric: tabular-nums; }
+[dir="rtl"] .num { text-align: left; }
+[dir="ltr"] .num { text-align: right; }
+[dir="rtl"] .ltr-in { text-align: right; }
+[dir="ltr"] .ltr-in { text-align: left; }
 .table-wrap { overflow-x: auto; }
 
 label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
@@ -191,7 +195,7 @@ tr.row-link:hover td { background: #faf8f5; }
 /* ---------- Record (form) view ---------- */
 .rec-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--line); border-bottom: 0; border-radius: var(--radius) var(--radius) 0 0; padding: 10px 14px; }
 .rec-bar + .card { border-radius: 0 0 var(--radius) var(--radius); }
-.statusbar { display: flex; direction: rtl; }
+.statusbar { display: flex; }
 .statusbar span { position: relative; padding: 6px 14px 6px 22px; background: #f1eee9; color: var(--muted); font-size: 13px; font-weight: 600; clip-path: polygon(0 50%, 12px 0, 100% 0, 100% 100%, 12px 100%); margin-inline-start: -8px; }
 .statusbar span:first-child { margin-inline-start: 0; clip-path: polygon(0 50%, 12px 0, 100% 0, 100% 100%, 12px 100%); border-radius: 0 6px 6px 0; }
 .statusbar span.done { background: #e4dbd1; color: #6b5a4c; }
@@ -264,3 +268,9 @@ td.strong { font-weight: 700; }
 }
 .report-range { margin: -4px 2px 10px; font-size: 14px; color: var(--ink); }
 .report-bar input[type=date] { min-width: 160px; }
+
+[dir="ltr"] .statusbar span { padding: 6px 22px 6px 14px; clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%, 12px 50%); }
+[dir="ltr"] .statusbar span:first-child { clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%); border-radius: 6px 0 0 6px; }
+/* bars: square at the baseline, rounded at the data end (inline-end), in both directions */
+.bar, .bar-stack .seg:last-child { border-radius: 0; border-start-end-radius: 4px; border-end-end-radius: 4px; }
+.bar.neg { border-radius: 0; border-start-start-radius: 4px; border-end-start-radius: 4px; }

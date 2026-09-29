@@ -122,7 +122,7 @@ abstract class Report
     public function label(string $dim, ?string $key): string
     {
         if ($key === null || $key === '') {
-            return 'غير محدد';
+            return __('غير محدد');
         }
         $labeler = $this->dimensions()[$dim]['labeler'] ?? null;
 

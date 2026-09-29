@@ -35,7 +35,7 @@ class CostRateController extends Controller
             'trade' => ['nullable', 'string', 'max:100'],
         ]));
 
-        return back()->with('ok', 'تمت إضافة العامل. أدخل أجر ساعته حين يتوفر الرقم الحقيقي.');
+        return back()->with('ok', __('تمت إضافة العامل. أدخل أجر ساعته حين يتوفر الرقم الحقيقي.'));
     }
 
     public function storeMachine(Request $request): RedirectResponse
@@ -45,21 +45,21 @@ class CostRateController extends Controller
             'name' => ['required', 'string', 'max:255'],
         ]));
 
-        return back()->with('ok', 'تمت إضافة الآلة.');
+        return back()->with('ok', __('تمت إضافة الآلة.'));
     }
 
     public function storeWorkerRate(Request $request, Worker $worker): RedirectResponse
     {
         WorkerRate::create($this->rate($request) + ['worker_id' => $worker->id]);
 
-        return back()->with('ok', "تم تسجيل أجر الساعة للعامل {$worker->name}.");
+        return back()->with('ok', __('تم تسجيل أجر الساعة للعامل :name.', ['name' => $worker->name]));
     }
 
     public function storeMachineRate(Request $request, Machine $machine): RedirectResponse
     {
         MachineRate::create($this->rate($request) + ['machine_id' => $machine->id]);
 
-        return back()->with('ok', "تم تسجيل تكلفة الساعة للآلة {$machine->name}.");
+        return back()->with('ok', __('تم تسجيل تكلفة الساعة للآلة :name.', ['name' => $machine->name]));
     }
 
     public function storeOverhead(Request $request): RedirectResponse
@@ -71,7 +71,7 @@ class CostRateController extends Controller
             'basis_note' => ['required', 'string', 'max:1000'],
         ]) + ['entered_by' => $request->user()->id]);
 
-        return back()->with('ok', 'تم تسجيل نسبة المصروفات غير المباشرة.');
+        return back()->with('ok', __('تم تسجيل نسبة المصروفات غير المباشرة.'));
     }
 
     private function rate(Request $request): array

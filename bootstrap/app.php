@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\RequirePermission;
 use App\Http\Middleware\SetAuditUser;
+use App\Http\Middleware\SetLocale;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Hosting platforms terminate HTTPS at their load balancer.
         $middleware->trustProxies(at: '*');
+        $middleware->appendToGroup('web', SetLocale::class);
         $middleware->alias([
             'permission' => RequirePermission::class,
             'audit.user' => SetAuditUser::class,

@@ -58,6 +58,13 @@ CREATE TABLE users (
     updated_at        timestamptz NOT NULL DEFAULT now()
 );
 
+-- Per-user interface language.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS locale text NOT NULL DEFAULT 'ar';
+DO $$ BEGIN
+    ALTER TABLE users ADD CONSTRAINT users_locale_check CHECK (locale IN ('ar', 'en'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
 CREATE TABLE roles (
     id          bigserial PRIMARY KEY,
     code        text NOT NULL UNIQUE CHECK (code ~ '^[a-z][a-z0-9_]*$'),

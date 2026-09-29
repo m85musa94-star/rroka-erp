@@ -32,7 +32,7 @@ class RoleController extends Controller
         $role = Role::create($data);
         $role->permissions()->sync($data['permissions'] ?? []);
 
-        return redirect()->route('roles.index')->with('ok', 'تم إنشاء الدور.');
+        return redirect()->route('roles.index')->with('ok', __('تم إنشاء الدور.'));
     }
 
     public function edit(Role $role): View
@@ -50,21 +50,21 @@ class RoleController extends Controller
         $role->update($data);
         $role->permissions()->sync($role->code === 'system_admin' ? Permission::pluck('id') : ($data['permissions'] ?? []));
 
-        return redirect()->route('roles.index')->with('ok', 'تم تحديث الدور.');
+        return redirect()->route('roles.index')->with('ok', __('تم تحديث الدور.'));
     }
 
     public function destroy(Role $role): RedirectResponse
     {
         if ($role->code === 'system_admin') {
-            return back()->withErrors(['role' => 'لا يمكن حذف دور مدير النظام.']);
+            return back()->withErrors(['role' => __('لا يمكن حذف دور مدير النظام.')]);
         }
         if ($role->users()->exists()) {
-            return back()->withErrors(['role' => 'لا يمكن حذف دور مسنَد إلى مستخدمين. أزله عنهم أولًا من صفحة المستخدمين.']);
+            return back()->withErrors(['role' => __('لا يمكن حذف دور مسنَد إلى مستخدمين. أزله عنهم أولًا من صفحة المستخدمين.')]);
         }
         $role->permissions()->detach();
         $role->delete();
 
-        return redirect()->route('roles.index')->with('ok', 'تم حذف الدور.');
+        return redirect()->route('roles.index')->with('ok', __('تم حذف الدور.'));
     }
 
     /** Permissions grouped by module prefix, with Arabic group titles. */

@@ -5,7 +5,7 @@
 --}}
 <div class="cp">
     <div class="cp-row">
-        <nav class="crumbs" aria-label="مسار التنقل">
+        <nav class="crumbs" aria-label="{{ __('مسار التنقل') }}">
             @foreach($crumbs as $i => [$label, $url])
                 @if($i > 0)<span class="crumb-sep">/</span>@endif
                 @if($url && ! $loop->last)
@@ -19,13 +19,13 @@
             @if($paginator && $paginator->total() > 0)
                 <div class="cp-pager">
                     <span>{{ $paginator->firstItem() }}–{{ $paginator->lastItem() }} / {{ $paginator->total() }}</span>
-                    <a class="pg-btn @if($paginator->onFirstPage()) off @endif" href="{{ $paginator->previousPageUrl() ?? '#' }}" aria-label="السابق">›</a>
-                    <a class="pg-btn @if(! $paginator->hasMorePages()) off @endif" href="{{ $paginator->nextPageUrl() ?? '#' }}" aria-label="التالي">‹</a>
+                    <a class="pg-btn @if($paginator->onFirstPage()) off @endif" href="{{ $paginator->previousPageUrl() ?? '#' }}" aria-label="{{ __('السابق') }}">{{ app()->getLocale() === 'ar' ? '›' : '‹' }}</a>
+                    <a class="pg-btn @if(! $paginator->hasMorePages()) off @endif" href="{{ $paginator->nextPageUrl() ?? '#' }}" aria-label="{{ __('التالي') }}">{{ app()->getLocale() === 'ar' ? '‹' : '›' }}</a>
                 </div>
             @endif
         @endisset
         @isset($total)
-            @if($total !== null)<div class="cp-pager"><span>{{ $total }} سجل</span></div>@endif
+            @if($total !== null)<div class="cp-pager"><span>{{ $total }} {{ __('سجل') }}</span></div>@endif
         @endisset
     </div>
 
@@ -33,7 +33,7 @@
     <div class="cp-row">
         <div class="cp-left">
             @if(! empty($newUrl))
-                <a class="btn" href="{{ $newUrl }}">{{ $newLabel ?? 'جديد' }}</a>
+                <a class="btn" href="{{ $newUrl }}">{{ $newLabel ?? __('جديد') }}</a>
             @endif
         </div>
 
@@ -44,27 +44,27 @@
             @foreach($lv->keep as $k)@if(request($k))<input type="hidden" name="{{ $k }}" value="{{ request($k) }}">@endif @endforeach
             <div class="facets">
                 @foreach($lv->active as $f)
-                    <a class="facet" href="{{ $lv->toggleFilterUrl($f) }}" title="إزالة">{{ $lv->filters[$f]['label'] }} <b>×</b></a>
+                    <a class="facet" href="{{ $lv->toggleFilterUrl($f) }}" title="{{ __('إزالة') }}">{{ $lv->filters[$f]['label'] }} <b>×</b></a>
                 @endforeach
                 @if($lv->group)
-                    <a class="facet facet-group" href="{{ $lv->url(['g' => null]) }}" title="إزالة">تجميع: {{ $lv->groups[$lv->group]['label'] }} <b>×</b></a>
+                    <a class="facet facet-group" href="{{ $lv->url(['g' => null]) }}" title="{{ __('إزالة') }}">{{ __('تجميع:') }} {{ $lv->groups[$lv->group]['label'] }} <b>×</b></a>
                 @endif
                 @if($lv->q !== '')
-                    <a class="facet facet-q" href="{{ $lv->url(['q' => null, 'page' => null]) }}" title="إزالة">«{{ $lv->q }}» <b>×</b></a>
+                    <a class="facet facet-q" href="{{ $lv->url(['q' => null, 'page' => null]) }}" title="{{ __('إزالة') }}">«{{ $lv->q }}» <b>×</b></a>
                 @endif
                 @if(! ($noSearch ?? false))
-                    <input name="q" value="" placeholder="{{ $placeholder ?? 'بحث…' }}" aria-label="بحث">
+                    <input name="q" value="" placeholder="{{ $placeholder ?? __('بحث…') }}" aria-label="{{ __('بحث') }}">
                 @elseif(! $lv->active)
-                    <span class="muted" style="font-size:13px;padding:5px 2px">بلا فلاتر — اضغط ▾ لاختيار فلتر</span>
+                    <span class="muted" style="font-size:13px;padding:5px 2px">{{ __('بلا فلاتر — اضغط ▾ لاختيار فلتر') }}</span>
                 @endif
             </div>
             @if($lv->filters || $lv->groups)
             <details class="cp-drop">
-                <summary aria-label="الفلاتر والتجميع">▾</summary>
+                <summary aria-label="{{ __('الفلاتر والتجميع') }}">▾</summary>
                 <div class="cp-menu">
                     @if($lv->filters)
                     <div class="cp-col">
-                        <div class="cp-col-title">الفلاتر</div>
+                        <div class="cp-col-title">{{ __('الفلاتر') }}</div>
                         @php($prevGroup = null)
                         @foreach($lv->filters as $key => $f)
                             @if($prevGroup !== null && $prevGroup !== $f['group'])<hr>@endif
@@ -75,7 +75,7 @@
                     @endif
                     @if($lv->groups)
                     <div class="cp-col">
-                        <div class="cp-col-title">تجميع حسب</div>
+                        <div class="cp-col-title">{{ __('تجميع حسب') }}</div>
                         @foreach($lv->groups as $key => $g)
                             <a href="{{ $lv->url(['g' => $lv->group === $key ? null : $key, 'page' => null]) }}" @class(['on' => $lv->group === $key])>{{ $g['label'] }}</a>
                         @endforeach
@@ -89,7 +89,7 @@
         <div class="cp-views">
             @if(count($lv->views) > 1)
                 @foreach($lv->views as $v)
-                    <a href="{{ $lv->url(['v' => $v, 'page' => null]) }}" @class(['vw', 'on' => $lv->view === $v]) title="{{ ['list' => 'قائمة', 'kanban' => 'بطاقات', 'pivot' => 'جدول محوري', 'graph' => 'رسم بياني'][$v] }}" aria-label="{{ ['list' => 'عرض القائمة', 'kanban' => 'عرض البطاقات', 'pivot' => 'الجدول المحوري', 'graph' => 'الرسم البياني'][$v] }}">
+                    <a href="{{ $lv->url(['v' => $v, 'page' => null]) }}" @class(['vw', 'on' => $lv->view === $v]) title="{{ ['list' => __('قائمة'), 'kanban' => __('بطاقات'), 'pivot' => __('جدول محوري'), 'graph' => __('رسم بياني')][$v] }}" aria-label="{{ ['list' => __('عرض القائمة'), 'kanban' => __('عرض البطاقات'), 'pivot' => __('الجدول المحوري'), 'graph' => __('الرسم البياني')][$v] }}">
                         @if($v === 'pivot')
                             <svg width="18" height="18" viewBox="0 0 18 18"><rect x="2" y="2" width="14" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M2 7h14M7 2v14" stroke="currentColor" stroke-width="1.6"/></svg>
                         @elseif($v === 'graph')

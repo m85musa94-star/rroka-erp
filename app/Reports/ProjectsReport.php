@@ -11,12 +11,12 @@ class ProjectsReport extends Report
 
     public function title(): string
     {
-        return 'تحليل المشاريع';
+        return __('تحليل المشاريع');
     }
 
     public function description(): string
     {
-        return 'عدد المشاريع وقيمة عقودها والمتأخر منها، حسب المرحلة والشهر والعميل.';
+        return __('عدد المشاريع وقيمة عقودها والمتأخر منها، حسب المرحلة والشهر والعميل.');
     }
 
     public function dateColumn(): string
@@ -26,7 +26,7 @@ class ProjectsReport extends Report
 
     public function dateLabel(): string
     {
-        return 'تاريخ بدء المشروع';
+        return __('تاريخ بدء المشروع');
     }
 
     public function permissions(): array
@@ -46,19 +46,19 @@ class ProjectsReport extends Report
     public function dimensions(): array
     {
         return [
-            'status' => ['label' => 'المرحلة', 'expr' => 'r.status', 'labeler' => fn ($k) => __("rroka.status.$k")],
-            'month' => ['label' => 'شهر البدء', 'expr' => "to_char(r.start_date, 'YYYY-MM')"],
-            'client' => ['label' => 'العميل', 'expr' => 'r.client_name'],
-            'city' => ['label' => 'المدينة', 'expr' => 'r.city'],
+            'status' => ['label' => __('المرحلة'), 'expr' => 'r.status', 'labeler' => fn ($k) => __("rroka.status.$k")],
+            'month' => ['label' => __('شهر البدء'), 'expr' => "to_char(r.start_date, 'YYYY-MM')"],
+            'client' => ['label' => __('العميل'), 'expr' => 'r.client_name'],
+            'city' => ['label' => __('المدينة'), 'expr' => 'r.city'],
         ];
     }
 
     public function measures(): array
     {
         return [
-            'value' => ['label' => 'قيمة العقود قبل الضريبة', 'agg' => 'sum(r.contract_value)', 'format' => 'money', 'additive' => true],
-            'count' => ['label' => 'عدد المشاريع', 'agg' => 'count(*)', 'format' => 'int', 'additive' => true],
-            'late' => ['label' => 'المتأخرة عن التسليم', 'agg' => 'count(*) FILTER (WHERE r.is_late)', 'format' => 'int', 'additive' => true],
+            'value' => ['label' => __('قيمة العقود قبل الضريبة'), 'agg' => 'sum(r.contract_value)', 'format' => 'money', 'additive' => true],
+            'count' => ['label' => __('عدد المشاريع'), 'agg' => 'count(*)', 'format' => 'int', 'additive' => true],
+            'late' => ['label' => __('المتأخرة عن التسليم'), 'agg' => 'count(*) FILTER (WHERE r.is_late)', 'format' => 'int', 'additive' => true],
         ];
     }
 
@@ -70,9 +70,9 @@ class ProjectsReport extends Report
     public function filters(): array
     {
         return [
-            'open' => ['label' => 'الجارية', 'group' => 'status', 'sql' => "r.status IN ('ACTIVE', 'IN_PRODUCTION', 'INSTALLATION')"],
-            'completed' => ['label' => 'المكتملة', 'group' => 'status', 'sql' => "r.status = 'COMPLETED'"],
-            'this_year' => ['label' => 'بدأت هذه السنة', 'group' => 'date', 'sql' => "r.start_date >= date_trunc('year', current_date)"],
+            'open' => ['label' => __('الجارية'), 'group' => 'status', 'sql' => "r.status IN ('ACTIVE', 'IN_PRODUCTION', 'INSTALLATION')"],
+            'completed' => ['label' => __('المكتملة'), 'group' => 'status', 'sql' => "r.status = 'COMPLETED'"],
+            'this_year' => ['label' => __('بدأت هذه السنة'), 'group' => 'date', 'sql' => "r.start_date >= date_trunc('year', current_date)"],
         ];
     }
 }

@@ -14,18 +14,18 @@ class AppMenu
     public static function all(): array
     {
         return [
-            ['key' => 'clients', 'label' => 'العملاء', 'route' => 'clients.index', 'match' => 'clients.*', 'permission' => 'clients.view', 'group' => 'sales'],
-            ['key' => 'quotations', 'label' => 'عروض الأسعار', 'route' => 'quotations.index', 'match' => 'quotations.*', 'permission' => 'quotations.view', 'group' => 'sales'],
-            ['key' => 'projects', 'label' => 'المشاريع', 'route' => 'projects.index', 'match' => 'projects.*', 'permission' => 'projects.view', 'group' => 'ops'],
-            ['key' => 'reports', 'label' => 'التقارير', 'route' => 'reports.index', 'match' => 'reports.*', 'permission' => ['quotations.view', 'projects.view', 'costing.view'], 'group' => 'reports'],
-            ['key' => 'designs', 'label' => 'التصاميم', 'route' => null, 'match' => null, 'permission' => null, 'group' => 'ops'],
-            ['key' => 'inventory', 'label' => 'المخزون', 'route' => null, 'match' => null, 'permission' => null, 'group' => 'ops'],
-            ['key' => 'production', 'label' => 'الإنتاج', 'route' => null, 'match' => null, 'permission' => null, 'group' => 'ops'],
-            ['key' => 'quality', 'label' => 'الجودة', 'route' => null, 'match' => null, 'permission' => null, 'group' => 'ops'],
-            ['key' => 'installation', 'label' => 'التركيب', 'route' => null, 'match' => null, 'permission' => null, 'group' => 'ops'],
-            ['key' => 'rates', 'label' => 'معدلات التكلفة', 'route' => 'rates.index', 'match' => 'rates.*', 'permission' => 'settings.cost_rates', 'group' => 'settings'],
-            ['key' => 'users', 'label' => 'المستخدمون', 'route' => 'users.index', 'match' => 'users.*', 'permission' => 'users.manage', 'group' => 'settings'],
-            ['key' => 'roles', 'label' => 'الأدوار والصلاحيات', 'route' => 'roles.index', 'match' => 'roles.*', 'permission' => 'users.manage', 'group' => 'settings'],
+            ['key' => 'clients', 'label' => __('العملاء'), 'route' => 'clients.index', 'match' => 'clients.*', 'permission' => 'clients.view', 'group' => 'sales'],
+            ['key' => 'quotations', 'label' => __('عروض الأسعار'), 'route' => 'quotations.index', 'match' => 'quotations.*', 'permission' => 'quotations.view', 'group' => 'sales'],
+            ['key' => 'projects', 'label' => __('المشاريع'), 'route' => 'projects.index', 'match' => 'projects.*', 'permission' => 'projects.view', 'group' => 'ops'],
+            ['key' => 'reports', 'label' => __('التقارير'), 'route' => 'reports.index', 'match' => 'reports.*', 'permission' => ['quotations.view', 'projects.view', 'costing.view'], 'group' => 'reports'],
+            ['key' => 'designs', 'label' => __('التصاميم'), 'route' => null, 'match' => null, 'permission' => null, 'group' => 'ops'],
+            ['key' => 'inventory', 'label' => __('المخزون'), 'route' => null, 'match' => null, 'permission' => null, 'group' => 'ops'],
+            ['key' => 'production', 'label' => __('الإنتاج'), 'route' => null, 'match' => null, 'permission' => null, 'group' => 'ops'],
+            ['key' => 'quality', 'label' => __('الجودة'), 'route' => null, 'match' => null, 'permission' => null, 'group' => 'ops'],
+            ['key' => 'installation', 'label' => __('التركيب'), 'route' => null, 'match' => null, 'permission' => null, 'group' => 'ops'],
+            ['key' => 'rates', 'label' => __('معدلات التكلفة'), 'route' => 'rates.index', 'match' => 'rates.*', 'permission' => 'settings.cost_rates', 'group' => 'settings'],
+            ['key' => 'users', 'label' => __('المستخدمون'), 'route' => 'users.index', 'match' => 'users.*', 'permission' => 'users.manage', 'group' => 'settings'],
+            ['key' => 'roles', 'label' => __('الأدوار والصلاحيات'), 'route' => 'roles.index', 'match' => 'roles.*', 'permission' => 'users.manage', 'group' => 'settings'],
         ];
     }
 
@@ -101,7 +101,7 @@ class AppMenu
                 continue;
             }
             $url = route($route, $params);
-            $items[] = [$label, $url, self::isActive($route, $params)];
+            $items[] = [__($label), $url, self::isActive($route, $params)];
         }
         // Only one item is active: the most specific match.
         $hits = array_keys(array_filter($items, fn ($i) => $i[2]));

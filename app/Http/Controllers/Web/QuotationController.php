@@ -21,17 +21,17 @@ class QuotationController extends Controller
         $status = fn (string $st) => fn ($q) => $q->where('quotations.status', $st);
         $lv = new ListView($request,
             filters: [
-                'draft' => ['label' => 'مسودة', 'group' => 'status', 'apply' => $status('DRAFT')],
-                'sent' => ['label' => 'بانتظار رد العميل', 'group' => 'status', 'apply' => $status('SENT')],
-                'approved' => ['label' => 'معتمد', 'group' => 'status', 'apply' => $status('APPROVED')],
-                'rejected' => ['label' => 'مرفوض', 'group' => 'status', 'apply' => $status('REJECTED')],
-                'this_month' => ['label' => 'هذا الشهر', 'group' => 'date', 'apply' => fn ($q) => $q->where('issue_date', '>=', now()->startOfMonth())],
-                'no_project' => ['label' => 'معتمد بلا مشروع', 'group' => 'project', 'apply' => fn ($q) => $q->where('quotations.status', 'APPROVED')->whereDoesntHave('project')],
+                'draft' => ['label' => __('مسودة'), 'group' => 'status', 'apply' => $status('DRAFT')],
+                'sent' => ['label' => __('بانتظار رد العميل'), 'group' => 'status', 'apply' => $status('SENT')],
+                'approved' => ['label' => __('معتمد'), 'group' => 'status', 'apply' => $status('APPROVED')],
+                'rejected' => ['label' => __('مرفوض'), 'group' => 'status', 'apply' => $status('REJECTED')],
+                'this_month' => ['label' => __('هذا الشهر'), 'group' => 'date', 'apply' => fn ($q) => $q->where('issue_date', '>=', now()->startOfMonth())],
+                'no_project' => ['label' => __('معتمد بلا مشروع'), 'group' => 'project', 'apply' => fn ($q) => $q->where('quotations.status', 'APPROVED')->whereDoesntHave('project')],
             ],
             groups: [
-                'status' => ['label' => 'الحالة', 'key' => fn ($r) => $r->status, 'title' => fn ($r) => __("rroka.status.$r->status")],
-                'client' => ['label' => 'العميل', 'key' => fn ($r) => $r->client_id, 'title' => fn ($r) => $r->client->business_name],
-                'month' => ['label' => 'الشهر', 'key' => fn ($r) => $r->issue_date->format('Y-m'), 'title' => fn ($r) => $r->issue_date->format('Y-m')],
+                'status' => ['label' => __('الحالة'), 'key' => fn ($r) => $r->status, 'title' => fn ($r) => __("rroka.status.$r->status")],
+                'client' => ['label' => __('العميل'), 'key' => fn ($r) => $r->client_id, 'title' => fn ($r) => $r->client->business_name],
+                'month' => ['label' => __('الشهر'), 'key' => fn ($r) => $r->issue_date->format('Y-m'), 'title' => fn ($r) => $r->issue_date->format('Y-m')],
             ],
             views: ['list', 'kanban'],
         );
@@ -87,7 +87,7 @@ class QuotationController extends Controller
             return $quotation;
         });
 
-        return redirect()->route('quotations.show', $quotation)->with('ok', 'تم حفظ عرض السعر كمسودة.');
+        return redirect()->route('quotations.show', $quotation)->with('ok', __('تم حفظ عرض السعر كمسودة.'));
     }
 
     public function show(Quotation $quotation): View
@@ -129,21 +129,21 @@ class QuotationController extends Controller
             $this->writeLines($quotation, $data['lines']);
         });
 
-        return redirect()->route('quotations.show', $quotation)->with('ok', 'تم تحديث عرض السعر.');
+        return redirect()->route('quotations.show', $quotation)->with('ok', __('تم تحديث عرض السعر.'));
     }
 
     public function transition(Request $request, Quotation $quotation, string $action): RedirectResponse
     {
         $map = [
-            'send' => ['SENT', 'quotations.manage', 'تم تسجيل إرسال العرض للعميل.'],
-            'revise' => ['DRAFT', 'quotations.manage', 'أُعيد العرض إلى مسودة للتعديل.'],
-            'approve' => ['APPROVED', 'quotations.approve', 'تم اعتماد العرض.'],
-            'reject' => ['REJECTED', 'quotations.approve', 'تم تسجيل رفض العميل.'],
-            'cancel' => ['CANCELLED', 'quotations.manage', 'تم إلغاء العرض.'],
+            'send' => ['SENT', 'quotations.manage', __('تم تسجيل إرسال العرض للعميل.')],
+            'revise' => ['DRAFT', 'quotations.manage', __('أُعيد العرض إلى مسودة للتعديل.')],
+            'approve' => ['APPROVED', 'quotations.approve', __('تم اعتماد العرض.')],
+            'reject' => ['REJECTED', 'quotations.approve', __('تم تسجيل رفض العميل.')],
+            'cancel' => ['CANCELLED', 'quotations.manage', __('تم إلغاء العرض.')],
         ];
         abort_unless(isset($map[$action]), 404);
         [$status, $permission, $message] = $map[$action];
-        abort_unless($request->user()->hasPermission($permission), 403, 'ليست لديك صلاحية لهذه العملية.');
+        abort_unless($request->user()->hasPermission($permission), 403, __('ليست لديك صلاحية لهذه العملية.'));
 
         $changes = ['status' => $status];
         if ($status === 'APPROVED') {
@@ -158,7 +158,7 @@ class QuotationController extends Controller
     {
         $sync->syncQuotation($quotation->load('lines', 'client'), $request->user());
 
-        return back()->with('ok', 'تم إنشاء عرض السعر في دفترة.');
+        return back()->with('ok', __('تم إنشاء عرض السعر في دفترة.'));
     }
 
     private function validated(Request $request): array

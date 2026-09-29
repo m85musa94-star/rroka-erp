@@ -1,15 +1,15 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
+<html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title') — إر روكا</title>
+    <title>@yield('title') {{ __('— إر روكا') }}</title>
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
 </head>
 <body>
 <div class="login"><div class="card" style="text-align:center">
     <h1>@yield('title')</h1>
     <p class="muted">@yield('message')</p>
-    <a class="btn" href="{{ url('/') }}">العودة إلى الرئيسية</a>
+    <a class="btn" href="{{ url('/') }}">{{ __('العودة إلى الرئيسية') }}</a>
 </div></div>
 </body>
 </html>

@@ -1,7 +1,7 @@
 @extends('layouts.app')
-@section('title', $role->exists ? 'تعديل الدور: '.$role->name_ar : 'دور جديد')
+@section('title', $role->exists ? __('تعديل الدور: ').$role->name_ar : __('دور جديد'))
 @section('cp')
-    @include('partials.control-panel', ['crumbs' => [['الأدوار والصلاحيات', route('roles.index')], [$role->exists ? $role->name_ar : 'جديد', null]]])
+    @include('partials.control-panel', ['crumbs' => [[__('الأدوار والصلاحيات'), route('roles.index')], [$role->exists ? $role->name_ar : __('جديد'), null]]])
 @endsection
 @section('content')
 @php($chosen = array_map('intval', old('permissions', $selected)))
@@ -11,16 +11,16 @@
     @if($role->exists) @method('put') @endif
     <div class="card">
         <div class="grid g2">
-            <div class="field"><label>اسم الدور *</label><input name="name_ar" value="{{ old('name_ar', $role->name_ar) }}" required placeholder="مثال: مسؤول المبيعات، مشرف الإنتاج، أمين المستودع"></div>
-            <div class="field"><label>الوصف</label><input name="description" value="{{ old('description', $role->description) }}" placeholder="اختياري: ما مسؤوليات هذا الدور؟"></div>
+            <div class="field"><label>{{ __('اسم الدور *') }}</label><input name="name_ar" value="{{ old('name_ar', $role->name_ar) }}" required placeholder="{{ __('مثال: مسؤول المبيعات، مشرف الإنتاج، أمين المستودع') }}"></div>
+            <div class="field"><label>{{ __('الوصف') }}</label><input name="description" value="{{ old('description', $role->description) }}" placeholder="{{ __('اختياري: ما مسؤوليات هذا الدور؟') }}"></div>
         </div>
     </div>
 
     @if($isAdmin)
-        <p class="alert warn">دور مدير النظام يملك كل الصلاحيات دائمًا، ولا تُعدَّل صلاحياته.</p>
+        <p class="alert warn">{{ __('دور مدير النظام يملك كل الصلاحيات دائمًا، ولا تُعدَّل صلاحياته.') }}</p>
     @else
     <div class="card">
-        <h2>الصلاحيات <span class="muted" style="font-weight:400;font-size:13px">— حدّد ما يستطيع صاحب هذا الدور فعله</span></h2>
+        <h2>{{ __('الصلاحيات') }} <span class="muted" style="font-weight:400;font-size:13px">{{ __('— حدّد ما يستطيع صاحب هذا الدور فعله') }}</span></h2>
         <div class="perm-groups">
             @foreach($groups as $g)
                 <fieldset class="perm-group">
@@ -30,7 +30,7 @@
                     @foreach($g['items'] as $p)
                         <label class="perm-item">
                             <input type="checkbox" name="permissions[]" value="{{ $p->id }}" @checked(in_array($p->id, $chosen))>
-                            {{ $p->description }}
+                            {{ __($p->description) }}
                         </label>
                     @endforeach
                 </fieldset>
@@ -38,7 +38,7 @@
         </div>
     </div>
     @endif
-    <div class="actions"><button class="btn">حفظ</button><a class="btn ghost" href="{{ route('roles.index') }}">إلغاء</a></div>
+    <div class="actions"><button class="btn">{{ __('حفظ') }}</button><a class="btn ghost" href="{{ route('roles.index') }}">{{ __('إلغاء') }}</a></div>
 </form>
 @endsection
 @push('scripts')

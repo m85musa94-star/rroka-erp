@@ -1,3 +1,3 @@
 @extends('errors.layout')
-@section('title', 'النظام تحت الصيانة')
-@section('message', 'يعود النظام خلال دقائق.')
+@section('title', __('النظام تحت الصيانة'))
+@section('message', __('يعود النظام خلال دقائق.'))

@@ -55,16 +55,16 @@ class ActivityLog
 
         $summary = match ($r->action) {
             'INSERT' => $r->table_name === 'quotation_lines'
-                ? 'أضاف بندًا: '.($new['description'] ?? '')
-                : "أنشأ {$entity}",
+                ? __('أضاف بندًا: ').($new['description'] ?? '')
+                : __('أنشأ :entity', ['entity' => $entity]),
             'DELETE' => $r->table_name === 'quotation_lines'
-                ? 'حذف بندًا: '.($old['description'] ?? '')
-                : "حذف {$entity}",
-            default => "عدّل {$entity}",
+                ? __('حذف بندًا: ').($old['description'] ?? '')
+                : __('حذف :entity', ['entity' => $entity]),
+            default => __('عدّل :entity', ['entity' => $entity]),
         };
 
         return [
-            'user' => $r->user_name ?? 'النظام',
+            'user' => $r->user_name ?? __('النظام'),
             'system' => $r->user_name === null,
             'at' => Carbon::parse($r->at)->timezone(config('app.timezone')),
             'summary' => $summary,
@@ -89,7 +89,7 @@ class ActivityLog
             return __("rroka.status.$v");
         }
         if (is_bool($v)) {
-            return $v ? 'نعم' : 'لا';
+            return $v ? __('نعم') : __('لا');
         }
         if (is_string($v) && preg_match('/^\d{4}-\d{2}-\d{2}T/', $v)) {
             return Carbon::parse($v)->timezone(config('app.timezone'))->format('Y-m-d H:i');
