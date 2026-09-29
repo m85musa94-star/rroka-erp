@@ -19,7 +19,8 @@ class AppMenu
             ['key' => 'quotations', 'label' => __('عروض الأسعار'), 'route' => 'quotations.index', 'match' => 'quotations.*', 'permission' => 'quotations.view', 'group' => 'sales'],
             ['key' => 'projects', 'label' => __('المشاريع'), 'route' => 'projects.index', 'match' => 'projects.*', 'permission' => 'projects.view', 'group' => 'ops'],
             ['key' => 'studio', 'label' => __('الاستوديو'), 'route' => 'studio.index', 'match' => 'studio.*', 'permission' => 'studio.view', 'group' => 'ops'],
-            ['key' => 'purchasing', 'label' => __('المشتريات'), 'route' => 'purchases.index', 'match' => ['purchases.*', 'suppliers.*'], 'permission' => ['purchases.view', 'purchases.manage'], 'group' => 'buy'],
+            ['key' => 'purchasing', 'label' => __('المشتريات'), 'route' => 'purchases.index', 'match' => 'purchases.*', 'permission' => ['purchases.view', 'purchases.manage'], 'group' => 'buy'],
+            ['key' => 'suppliers', 'label' => __('الموردون'), 'route' => 'suppliers.index', 'match' => 'suppliers.*', 'permission' => ['purchases.view', 'purchases.manage'], 'group' => 'buy'],
             ['key' => 'expenses', 'label' => __('المصروفات'), 'route' => 'expenses.index', 'match' => ['expenses.*', 'expense-categories.*'], 'permission' => ['expenses.view', 'expenses.manage'], 'group' => 'buy'],
             ['key' => 'reports', 'label' => __('التقارير'), 'route' => 'reports.index', 'match' => 'reports.*', 'permission' => ['quotations.view', 'projects.view', 'costing.view', 'purchases.view', 'expenses.view', 'inventory.view'], 'group' => 'reports'],
             ['key' => 'production', 'label' => __('التصنيع'), 'route' => 'production.index', 'match' => ['production.*', 'designs.*', 'design-versions.*'], 'permission' => ['production.manage', 'production.log_time', 'quality.inspect', 'designs.manage', 'designs.release', 'bom.manage'], 'group' => 'mrp'],
@@ -129,6 +130,12 @@ class AppMenu
                     ['الموردون', 'suppliers.index', [], ['purchases.view', 'purchases.manage']],
                     ['الخامات والمخزون', 'materials.index', [], ['inventory.view', 'inventory.move']],
                     ['التقارير', 'reports.show', ['key' => 'purchases'], ['purchases.view', 'purchases.manage']],
+                ],
+                'suppliers' => [
+                    ['كل الموردين', 'suppliers.index', [], ['purchases.view', 'purchases.manage']],
+                    ['مسجلون في ضريبة القيمة المضافة', 'suppliers.index', ['f' => ['vat']], ['purchases.view', 'purchases.manage']],
+                    ['فواتير المشتريات', 'purchases.index', [], ['purchases.view', 'purchases.manage']],
+                    ['المصروفات', 'expenses.index', [], ['expenses.view', 'expenses.manage']],
                 ],
                 'expenses' => [
                     ['المصروفات', 'expenses.index', [], ['expenses.view', 'expenses.manage']],

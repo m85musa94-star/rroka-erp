@@ -88,6 +88,13 @@
         <rect x="24" y="20" width="26" height="14" rx="3" fill="#F2BD5B"/>
         <circle cx="26" cy="50" r="5" fill="#E8833A"/><circle cx="46" cy="50" r="5" fill="#E8833A"/>
         @break
+    @case('suppliers')
+        <rect x="6" y="20" width="32" height="24" rx="4" fill="#2A5F7E"/>
+        <path d="M38 28h9l9 9v7H38z" fill="#5AB2F2"/>
+        <rect x="42" y="31" width="6" height="6" rx="1" fill="#fff" opacity=".85"/>
+        <circle cx="17" cy="47" r="6" fill="#F2BD5B"/><circle cx="46" cy="47" r="6" fill="#F2BD5B"/>
+        <rect x="12" y="26" width="16" height="4" rx="2" fill="#5FD0BD"/>
+        @break
     @case('expenses')
         <rect x="8" y="16" width="48" height="32" rx="6" fill="#1e7a4a"/>
         <rect x="8" y="24" width="48" height="7" fill="#2A5F7E"/>

@@ -81,6 +81,11 @@ class PurchasingTest extends ApiTestCase
         $this->actingAs($admin)->post("/purchases/{$p->id}/approve")->assertSessionHasNoErrors();
         $this->assertFalse($p->fresh()->selfApproved());
         $this->actingAs($this->userWith(['clients.view']))->get('/purchases')->assertForbidden();
+
+        // Suppliers have their own tile on the home screen, only for purchasing users.
+        $this->actingAs($clerk)->get('/')->assertSee(route('suppliers.index'), false);
+        $this->actingAs($clerk)->get("/suppliers/{$s->id}")->assertSee('class="tb-menu"', false)->assertSee('كل الموردين');
+        $this->actingAs($this->userWith(['clients.view']))->get('/')->assertDontSee(route('suppliers.index'), false);
     }
 
     public function test_expenses_capture_approval_and_project_cost(): void
