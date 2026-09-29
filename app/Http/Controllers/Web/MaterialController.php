@@ -78,13 +78,17 @@ class MaterialController extends Controller
         return redirect()->route('materials.show', $material)->with('ok', __('تم تحديث الخامة.'));
     }
 
-    /** Manual movements only: receipts and adjustments. Reservations and issues come from production orders. */
+    /**
+     * Manual movements are adjustments only (count differences, damage, the opening
+     * balance). Receipts come from approved supplier invoices; reservations and
+     * issues from manufacturing orders.
+     */
     public function move(Request $request, RawMaterial $material): RedirectResponse
     {
         $data = $request->validate([
-            'movement_type' => ['required', Rule::in(['RECEIPT', 'ADJUST_IN', 'ADJUST_OUT'])],
+            'movement_type' => ['required', Rule::in(['ADJUST_IN', 'ADJUST_OUT'])],
             'quantity' => ['required', 'numeric', 'gt:0'],
-            'unit_cost' => ['nullable', 'numeric', 'min:0', 'required_if:movement_type,RECEIPT', 'required_if:movement_type,ADJUST_IN'],
+            'unit_cost' => ['nullable', 'numeric', 'min:0', 'required_if:movement_type,ADJUST_IN'],
             'reference' => ['nullable', 'string', 'max:200'],
             'reason' => ['nullable', 'string', 'max:500', 'required_if:movement_type,ADJUST_IN', 'required_if:movement_type,ADJUST_OUT'],
             'moved_at' => ['nullable', 'date', 'before_or_equal:now'],

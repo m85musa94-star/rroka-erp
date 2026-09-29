@@ -57,6 +57,7 @@
         <tr><td>{{ __('الخامات المصروفة (صافي المرتجع)') }}</td><td class="num">—</td><td class="num">{!! $m($cost->material_cost) !!}</td></tr>
         <tr><td>{{ __('العمالة المباشرة') }}</td><td class="num">{{ $cost->labor_hours + 0 }}</td><td class="num">{!! $m($cost->labor_cost) !!}</td></tr>
         <tr><td>{{ __('تشغيل الآلات') }}</td><td class="num">{{ $cost->machine_hours + 0 }}</td><td class="num">{!! $m($cost->machine_cost) !!}</td></tr>
+        <tr><td>{{ __('مصروفات مباشرة على المشروع') }} @if(auth()->user()->hasPermission('expenses.view') || auth()->user()->hasPermission('expenses.manage'))<a class="muted" href="{{ route('expenses.index', ['project_id' => $project->id]) }}">({{ __('التفاصيل') }})</a>@endif</td><td class="num">—</td><td class="num">{{ number_format($cost->direct_expense_cost, 2) }}</td></tr>
         <tr><td>{{ __('المصروفات غير المباشرة') }} @if($cost->overhead_basis)<span class="muted">({{ $cost->overhead_rate_pct + 0 }}% — {{ __("rroka.overhead_basis.$cost->overhead_basis") }})</span>@endif</td><td class="num">—</td><td class="num">{!! $m($cost->overhead_cost) !!}</td></tr>
         <tr><th>{{ __('إجمالي التكلفة') }}</th><th></th><th class="num">{!! $m($cost->total_cost) !!}</th></tr>
         <tr><th>{{ __('مجمل الربح') }}</th><th></th><th class="num">{!! $m($cost->gross_profit) !!}</th></tr>

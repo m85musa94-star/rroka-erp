@@ -1,8 +1,8 @@
 {{-- Latest studio images of a customer or project. Params: $scope ['client_id' => id] or ['project_id' => id] --}}
 @php($u = auth()->user())
 @if($u->hasPermission('studio.view'))
-    @php($images = \App\Models\StudioAsset::where($scope)->orderByDesc('id')->limit(12)->get())
-    @php($count = \App\Models\StudioAsset::where($scope)->count())
+    @php($images = \App\Models\StudioAsset::gallery()->where($scope)->orderByDesc('id')->limit(12)->get())
+    @php($count = \App\Models\StudioAsset::gallery()->where($scope)->count())
     <div class="card">
         <div class="rec-bar" style="margin:0 0 10px;padding:0;border:0">
             <h2 style="margin:0">{{ __('الصور') }} <span class="grp-count">({{ $count }})</span></h2>

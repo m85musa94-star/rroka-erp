@@ -43,7 +43,7 @@ class StudioController extends Controller
             keep: ['client_id', 'project_id'],
         );
 
-        $query = $lv->applyFilters(StudioAsset::query()->with('client:id,business_name', 'project:id,project_no,title')->orderByDesc('id'))
+        $query = $lv->applyFilters(StudioAsset::query()->gallery()->with('client:id,business_name', 'project:id,project_no,title')->orderByDesc('id'))
             ->when($request->integer('client_id'), fn ($q, $id) => $q->where('client_id', $id))
             ->when($request->integer('project_id'), fn ($q, $id) => $q->where('project_id', $id));
         if ($lv->q !== '') {
@@ -113,6 +113,8 @@ class StudioController extends Controller
 
     public function show(StudioAsset $asset): View
     {
+        abort_if($asset->category === 'DOCUMENT', 404);
+
         return view('studio.show', [
             'asset' => $asset->load('client', 'project', 'quotationLines'),
             'quotations' => Quotation::whereIn('id', $asset->quotationLines->pluck('quotation_id'))->orderByDesc('id')->get(['id', 'quotation_no', 'status']),
@@ -123,6 +125,8 @@ class StudioController extends Controller
 
     public function edit(StudioAsset $asset): View
     {
+        abort_if($asset->category === 'DOCUMENT', 404);
+
         return view('studio.form', ['asset' => $asset, ...$this->choices(), 'ready' => true]);
     }
 
@@ -142,8 +146,14 @@ class StudioController extends Controller
     }
 
     /** Streams the image after the permission check; nothing is publicly reachable. */
-    public function file(StudioAsset $asset, string $variant): StreamedResponse
+    public function file(Request $request, StudioAsset $asset, string $variant): StreamedResponse
     {
+        // Supporting documents (supplier invoices, receipts) belong to purchasing/expenses, not the gallery.
+        $u = $request->user();
+        $allowed = $asset->category === 'DOCUMENT'
+            ? $u->hasPermission('purchases.view') || $u->hasPermission('expenses.view') || $u->hasPermission('purchases.manage') || $u->hasPermission('expenses.manage')
+            : $u->hasPermission('studio.view') || $u->hasPermission('quotations.view');
+        abort_unless($allowed, 403, __('ليست لديك صلاحية لهذه الصفحة أو العملية.'));
         $path = $variant === 'thumb' && $asset->thumb_path ? $asset->thumb_path : $asset->path;
         $mime = $path === $asset->path ? $asset->mime_type : 'image/jpeg';
         abort_unless(Storage::disk($asset->disk)->exists($path), 404);
@@ -160,7 +170,7 @@ class StudioController extends Controller
     {
         $clientId = $request->integer('client_id') ?: null;
         $q = trim((string) $request->query('q', ''));
-        $assets = StudioAsset::query()->usableFor($clientId)->with('client:id,business_name')
+        $assets = StudioAsset::query()->gallery()->usableFor($clientId)->with('client:id,business_name')
             ->when($q !== '', fn ($query) => $query->where(fn ($w) => $w->where('title', 'ilike', "%{$q}%")
                 ->orWhere('tags', 'ilike', "%{$q}%")->orWhere('asset_no', 'ilike', "%{$q}%")))
             ->when($request->query('category'), fn ($query, $c) => $query->where('category', $c))

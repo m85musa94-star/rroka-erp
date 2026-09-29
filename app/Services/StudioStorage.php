@@ -73,6 +73,18 @@ class StudioStorage
         return [$asset, false];
     }
 
+    /**
+     * A supporting document (supplier invoice, receipt): a private DOCUMENT asset,
+     * never listed in the studio. The same file twice returns the existing asset,
+     * which is how a receipt attached to two expenses gets noticed.
+     *
+     * @return array{0: StudioAsset, 1: bool}
+     */
+    public function storeDocument(UploadedFile $file, string $title, ?int $userId): array
+    {
+        return $this->store($file, ['title' => $title, 'category' => 'DOCUMENT'], $userId);
+    }
+
     /** Removes the files of an asset whose row is already deleted. */
     public function deleteFiles(StudioAsset $asset): void
     {

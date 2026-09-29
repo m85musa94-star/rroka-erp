@@ -59,6 +59,12 @@ return [
         'RROKA_ATTENDANCE_OVERLAP' => 'This record overlaps another attendance record of the employee (or the previous check-out is missing).',
         'RROKA_ATTENDANCE_FUTURE' => 'Attendance cannot be recorded in the future.',
         'RROKA_EMPLOYEE_ON_LEAVE' => 'The employee is on approved leave that day.',
+        'RROKA_PURCHASE_TRANSITION' => 'A supplier invoice starts as a draft.',
+        'RROKA_PURCHASE_LOCKED' => 'An approved or cancelled supplier invoice cannot change; an approved one has already moved stock.',
+        'RROKA_PURCHASE_EMPTY' => 'A supplier invoice without lines cannot be approved.',
+        'RROKA_PURCHASE_NEGATIVE' => 'The discount is larger than the lines total.',
+        'RROKA_EXPENSE_TRANSITION' => 'An expense starts as a draft.',
+        'RROKA_EXPENSE_LOCKED' => 'An approved or cancelled expense cannot change.',
         'CHECK_VIOLATION' => 'The entered data breaks one of the validity rules.',
         'DUPLICATE' => 'This record already exists.',
         'INVALID_REFERENCE' => 'Invalid reference.',
@@ -79,10 +85,11 @@ return [
         'projects' => 'Projects', 'designs' => 'Designs', 'bom' => 'Bills of materials',
         'inventory' => 'Inventory', 'production' => 'Production', 'quality' => 'Quality',
         'installations' => 'Installation', 'costing' => 'Costing & profitability', 'settings' => 'Settings',
-        'daftra' => 'Daftra', 'hr' => 'Human resources', 'studio' => 'Studio', 'users' => 'Users & roles', 'audit' => 'Audit log',
+        'daftra' => 'Daftra', 'hr' => 'Human resources', 'purchases' => 'Purchasing', 'expenses' => 'Expenses', 'studio' => 'Studio', 'users' => 'Users & roles', 'audit' => 'Audit log',
     ],
 
     'entities' => [
+        'suppliers' => 'supplier', 'purchase_invoices' => 'supplier invoice', 'purchase_invoice_lines' => 'supplier invoice line', 'expenses' => 'expense', 'expense_categories' => 'expense category',
         'employee_contracts' => 'contract', 'leave_requests' => 'time-off request', 'leave_allocations' => 'allocation', 'attendances' => 'attendance', 'leave_types' => 'time-off type',
         'workers' => 'employee', 'departments' => 'department', 'job_positions' => 'job position', 'employee_documents' => 'document',
         'raw_materials' => 'material', 'designs' => 'design', 'design_versions' => 'design version', 'design_bom_lines' => 'BOM line', 'production_orders' => 'manufacturing order',
@@ -91,6 +98,7 @@ return [
     ],
 
     'fields' => [
+        'supplier_id' => 'Supplier', 'supplier_invoice_no' => 'Supplier invoice no.', 'invoice_date' => 'Invoice date', 'due_date' => 'Due date', 'vat_amount' => 'VAT', 'attachment_id' => 'Document image', 'expense_date' => 'Date', 'category_id' => 'Category', 'payee' => 'Payee', 'amount' => 'Amount', 'payment_method' => 'Payment method', 'paid_by_employee_id' => 'Paid from custody of', 'reference' => 'Reference', 'is_overhead' => 'Overhead', 'daftra_account_ref' => 'Daftra account', 'line_no' => 'Line no.',
         'contract_type' => 'Contract type', 'end_date' => 'End date', 'basic_salary' => 'Basic salary', 'housing_allowance' => 'Housing allowance', 'transport_allowance' => 'Transport allowance', 'other_allowance' => 'Other allowances', 'weekly_hours' => 'Weekly hours', 'check_in' => 'Check in', 'check_out' => 'Check out', 'date_from' => 'From', 'date_to' => 'To', 'days' => 'Days', 'refusal_reason' => 'Refusal reason',
         'department_id' => 'Department', 'job_id' => 'Job position', 'trade' => 'Trade', 'work_phone' => 'Work phone', 'work_email' => 'Work email', 'mobile' => 'Personal mobile', 'nationality' => 'Nationality', 'id_type' => 'ID type', 'id_number' => 'ID number', 'birth_date' => 'Date of birth', 'gender' => 'Gender', 'hire_date' => 'Hire date', 'employment_type' => 'Employment type', 'is_direct_labor' => 'Direct labour', 'termination_date' => 'End of service', 'termination_reason' => 'End of service reason', 'iban' => 'IBAN', 'emergency_contact' => 'Emergency contact', 'emergency_phone' => 'Emergency phone', 'doc_type' => 'Document type', 'doc_number' => 'Document number', 'issue_date' => 'Issue date', 'expiry_date' => 'Expiry date', 'parent_id' => 'Parent', 'user_id' => 'User account',
         'code' => 'Code', 'name' => 'Name', 'uom' => 'Unit', 'is_active' => 'Active', 'file_url' => 'Design file', 'change_notes' => 'Version notes', 'planned_start' => 'Planned start', 'planned_end' => 'Planned end', 'started_at' => 'Started', 'client_approved_at' => 'Client approval', 'released_at' => 'Released on', 'released_by' => 'Released by', 'waste_pct' => 'Waste %', 'material_id' => 'Material',
@@ -106,7 +114,7 @@ return [
         'description' => 'Description', 'quantity' => 'Quantity', 'unit_price' => 'Unit price', 'unit' => 'Unit',
     ],
 
-    'studio_category' => ['CLIENT_REFERENCE' => 'From customers', 'FINISHED_WORK' => 'Finished work', 'CATALOG' => 'Product catalogue', 'SITE' => 'Site photos', 'MATERIAL' => 'Materials & samples'],
+    'studio_category' => ['DOCUMENT' => 'Supporting document', 'CLIENT_REFERENCE' => 'From customers', 'FINISHED_WORK' => 'Finished work', 'CATALOG' => 'Product catalogue', 'SITE' => 'Site photos', 'MATERIAL' => 'Materials & samples'],
 
     'movement_type' => ['RECEIPT' => 'Receipt', 'RESERVE' => 'Reserve for project', 'UNRESERVE' => 'Unreserve', 'ISSUE' => 'Issue to production', 'RETURN' => 'Return to store', 'ADJUST_IN' => 'Adjustment in', 'ADJUST_OUT' => 'Adjustment out'],
 
@@ -119,6 +127,10 @@ return [
     'employment_type' => ['FULL_TIME' => 'Full time', 'PART_TIME' => 'Part time', 'CONTRACTOR' => 'Contractor'],
 
     'contract_type' => ['FIXED_TERM' => 'Fixed term', 'INDEFINITE' => 'Indefinite'],
+
+    'payment_method' => ['CASH' => 'Cash', 'BANK' => 'Bank transfer', 'CARD' => 'Card', 'PETTY_CASH' => 'Employee petty cash'],
+
+    'expense_kind' => ['PROJECT' => 'On a project', 'OVERHEAD' => 'Workshop overhead', 'OTHER' => 'General & admin'],
 
     'client_type' => ['INDIVIDUAL' => 'Individual', 'COMPANY' => 'Company'],
 

@@ -10,15 +10,18 @@ use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\DepartmentController;
 use App\Http\Controllers\Web\DesignController;
 use App\Http\Controllers\Web\EmployeeController;
+use App\Http\Controllers\Web\ExpenseController;
 use App\Http\Controllers\Web\LeaveController;
 use App\Http\Controllers\Web\LocaleController;
 use App\Http\Controllers\Web\MaterialController;
 use App\Http\Controllers\Web\ProductionController;
 use App\Http\Controllers\Web\ProjectController;
+use App\Http\Controllers\Web\PurchaseController;
 use App\Http\Controllers\Web\QuotationController;
 use App\Http\Controllers\Web\ReportController;
 use App\Http\Controllers\Web\RoleController;
 use App\Http\Controllers\Web\StudioController;
+use App\Http\Controllers\Web\SupplierController;
 use App\Http\Controllers\Web\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -71,7 +74,7 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
 
     // Per-report permissions are checked in the controller.
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('/reports/{key}', [ReportController::class, 'show'])->whereIn('key', ['quotations', 'projects', 'profitability'])->name('reports.show');
+    Route::get('/reports/{key}', [ReportController::class, 'show'])->whereIn('key', ['quotations', 'projects', 'profitability', 'purchases', 'expenses', 'consumption'])->name('reports.show');
 
     Route::middleware('permission:settings.cost_rates')->prefix('settings/rates')->name('rates.')->group(function () {
         Route::get('/', [CostRateController::class, 'index'])->name('index');
@@ -177,9 +180,47 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::post('/leave-allocations', [LeaveController::class, 'allocationStore'])->name('leave-allocations.store');
     });
 
+    // Purchasing & expenses: documents captured once here (approval moves stock / books project cost).
+    Route::middleware('permission:purchases.view|purchases.manage')->group(function () {
+        Route::get('/suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
+        Route::get('/suppliers/create', [SupplierController::class, 'create'])->name('suppliers.create')->middleware('permission:purchases.manage');
+        Route::get('/suppliers/{supplier}', [SupplierController::class, 'show'])->name('suppliers.show')->whereNumber('supplier');
+        Route::get('/purchases', [PurchaseController::class, 'index'])->name('purchases.index');
+        Route::get('/purchases/create', [PurchaseController::class, 'create'])->name('purchases.create')->middleware('permission:purchases.manage');
+        Route::get('/purchases/{purchase}', [PurchaseController::class, 'show'])->name('purchases.show')->whereNumber('purchase');
+    });
+    Route::middleware('permission:purchases.manage')->group(function () {
+        Route::post('/suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
+        Route::get('/suppliers/{supplier}/edit', [SupplierController::class, 'edit'])->name('suppliers.edit')->whereNumber('supplier');
+        Route::put('/suppliers/{supplier}', [SupplierController::class, 'update'])->name('suppliers.update')->whereNumber('supplier');
+        Route::post('/purchases', [PurchaseController::class, 'store'])->name('purchases.store')->middleware('throttle:30,1');
+        Route::get('/purchases/{purchase}/edit', [PurchaseController::class, 'edit'])->name('purchases.edit')->whereNumber('purchase');
+        Route::put('/purchases/{purchase}', [PurchaseController::class, 'update'])->name('purchases.update')->whereNumber('purchase');
+        Route::post('/purchases/{purchase}/cancel', [PurchaseController::class, 'cancel'])->name('purchases.cancel')->whereNumber('purchase');
+    });
+    Route::post('/purchases/{purchase}/approve', [PurchaseController::class, 'approve'])->name('purchases.approve')->whereNumber('purchase')->middleware('permission:purchases.approve');
+
+    Route::middleware('permission:expenses.view|expenses.manage')->group(function () {
+        Route::get('/expenses', [ExpenseController::class, 'index'])->name('expenses.index');
+        Route::get('/expenses/create', [ExpenseController::class, 'create'])->name('expenses.create')->middleware('permission:expenses.manage');
+        Route::get('/expenses/{expense}', [ExpenseController::class, 'show'])->name('expenses.show')->whereNumber('expense');
+        Route::get('/expense-categories', [ExpenseController::class, 'categories'])->name('expense-categories.index');
+    });
+    Route::middleware('permission:expenses.manage')->group(function () {
+        Route::post('/expenses', [ExpenseController::class, 'store'])->name('expenses.store')->middleware('throttle:30,1');
+        Route::get('/expenses/{expense}/edit', [ExpenseController::class, 'edit'])->name('expenses.edit')->whereNumber('expense');
+        Route::put('/expenses/{expense}', [ExpenseController::class, 'update'])->name('expenses.update')->whereNumber('expense');
+        Route::post('/expenses/{expense}/cancel', [ExpenseController::class, 'cancel'])->name('expenses.cancel')->whereNumber('expense');
+    });
+    Route::post('/expenses/{expense}/approve', [ExpenseController::class, 'approve'])->name('expenses.approve')->whereNumber('expense')->middleware('permission:expenses.approve');
+    Route::middleware('permission:expenses.approve')->group(function () {
+        Route::post('/expense-categories', [ExpenseController::class, 'categoryStore'])->name('expense-categories.store');
+        Route::put('/expense-categories/{category}', [ExpenseController::class, 'categoryUpdate'])->name('expense-categories.update')->whereNumber('category');
+    });
+
     // Studio: images are streamed only through these routes. A quotation may show one,
     // so anyone who can see quotations can load an image file (not browse the studio).
-    Route::middleware('permission:studio.view|quotations.view')->group(function () {
+    Route::middleware('permission:studio.view|quotations.view|purchases.view|expenses.view')->group(function () {
         Route::get('/studio/{asset}/file/{variant}', [StudioController::class, 'file'])->name('studio.file')->whereNumber('asset')->whereIn('variant', ['thumb', 'full']);
     });
     Route::middleware('permission:studio.view')->group(function () {

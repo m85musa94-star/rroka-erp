@@ -19,7 +19,9 @@ class AppMenu
             ['key' => 'quotations', 'label' => __('عروض الأسعار'), 'route' => 'quotations.index', 'match' => 'quotations.*', 'permission' => 'quotations.view', 'group' => 'sales'],
             ['key' => 'projects', 'label' => __('المشاريع'), 'route' => 'projects.index', 'match' => 'projects.*', 'permission' => 'projects.view', 'group' => 'ops'],
             ['key' => 'studio', 'label' => __('الاستوديو'), 'route' => 'studio.index', 'match' => 'studio.*', 'permission' => 'studio.view', 'group' => 'ops'],
-            ['key' => 'reports', 'label' => __('التقارير'), 'route' => 'reports.index', 'match' => 'reports.*', 'permission' => ['quotations.view', 'projects.view', 'costing.view'], 'group' => 'reports'],
+            ['key' => 'purchasing', 'label' => __('المشتريات'), 'route' => 'purchases.index', 'match' => ['purchases.*', 'suppliers.*'], 'permission' => ['purchases.view', 'purchases.manage'], 'group' => 'buy'],
+            ['key' => 'expenses', 'label' => __('المصروفات'), 'route' => 'expenses.index', 'match' => ['expenses.*', 'expense-categories.*'], 'permission' => ['expenses.view', 'expenses.manage'], 'group' => 'buy'],
+            ['key' => 'reports', 'label' => __('التقارير'), 'route' => 'reports.index', 'match' => 'reports.*', 'permission' => ['quotations.view', 'projects.view', 'costing.view', 'purchases.view', 'expenses.view', 'inventory.view'], 'group' => 'reports'],
             ['key' => 'production', 'label' => __('التصنيع'), 'route' => 'production.index', 'match' => ['production.*', 'designs.*', 'design-versions.*'], 'permission' => ['production.manage', 'production.log_time', 'quality.inspect', 'designs.manage', 'designs.release', 'bom.manage'], 'group' => 'mrp'],
             ['key' => 'inventory', 'label' => __('المخزون'), 'route' => 'materials.index', 'match' => 'materials.*', 'permission' => ['inventory.view', 'inventory.move'], 'group' => 'mrp'],
             ['key' => 'employees', 'label' => __('الموظفون'), 'route' => 'employees.index', 'match' => ['employees.*', 'departments.*', 'contracts.*'], 'permission' => ['hr.view', 'hr.manage', 'hr.contracts'], 'group' => 'hr'],
@@ -69,10 +71,12 @@ class AppMenu
         }
         $defs = match ($app['group']) {
             'reports' => [
-                ['كل التقارير', 'reports.index', [], ['quotations.view', 'projects.view', 'costing.view']],
+                ['كل التقارير', 'reports.index', [], ['quotations.view', 'projects.view', 'costing.view', 'purchases.view', 'expenses.view', 'inventory.view']],
                 ['عروض الأسعار', 'reports.show', ['key' => 'quotations'], 'quotations.view'],
                 ['المشاريع', 'reports.show', ['key' => 'projects'], 'projects.view'],
                 ['الربحية', 'reports.show', ['key' => 'profitability'], 'costing.view'],
+                ['المشتريات', 'reports.show', ['key' => 'purchases'], ['purchases.view', 'purchases.manage']],
+                ['المصروفات', 'reports.show', ['key' => 'expenses'], ['expenses.view', 'expenses.manage']],
             ],
             'mrp' => [
                 ['أوامر التصنيع', 'production.index', [], ['production.manage', 'production.log_time', 'quality.inspect', 'projects.view']],
@@ -119,6 +123,17 @@ class AppMenu
                 'timeoff' => [
                     ['الإجازات', 'leaves.index', [], ['hr.leave_approve', 'hr.manage', 'self.employee']],
                     ['أنواع الإجازات والأرصدة', 'leaves.settings', [], 'hr.leave_approve'],
+                ],
+                'purchasing' => [
+                    ['فواتير المشتريات', 'purchases.index', [], ['purchases.view', 'purchases.manage']],
+                    ['الموردون', 'suppliers.index', [], ['purchases.view', 'purchases.manage']],
+                    ['الخامات والمخزون', 'materials.index', [], ['inventory.view', 'inventory.move']],
+                    ['التقارير', 'reports.show', ['key' => 'purchases'], ['purchases.view', 'purchases.manage']],
+                ],
+                'expenses' => [
+                    ['المصروفات', 'expenses.index', [], ['expenses.view', 'expenses.manage']],
+                    ['تصنيفات المصروفات', 'expense-categories.index', [], ['expenses.view', 'expenses.manage']],
+                    ['التقارير', 'reports.show', ['key' => 'expenses'], ['expenses.view', 'expenses.manage']],
                 ],
                 'studio' => [
                     ['كل الصور', 'studio.index', [], 'studio.view'],

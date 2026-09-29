@@ -7,14 +7,18 @@ use App\Models\Department;
 use App\Models\DesignVersion;
 use App\Models\Employee;
 use App\Models\EmployeeContract;
+use App\Models\Expense;
+use App\Models\ExpenseCategory;
 use App\Models\JobPosition;
 use App\Models\LeaveType;
 use App\Models\Permission;
 use App\Models\ProductionOrder;
 use App\Models\Project;
+use App\Models\PurchaseInvoice;
 use App\Models\RawMaterial;
 use App\Models\Role;
 use App\Models\StudioAsset;
+use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -81,10 +85,20 @@ class LocalizationTest extends ApiTestCase
             'valid_from' => now()->startOfYear()->toDateString(), 'valid_to' => now()->endOfYear()->toDateString(), 'reason' => 'Yearly']);
         $this->actingAs($admin)->post('/leaves', ['employee_id' => $employeeId, 'leave_type_id' => LeaveType::value('id'),
             'date_from' => now()->addMonth()->toDateString(), 'date_to' => now()->addMonth()->addDay()->toDateString(), 'days' => 2]);
+        // Purchasing & expenses in English.
+        $this->actingAs($admin)->post('/suppliers', ['name' => 'Timber Co', 'vat_number' => '300000000000003']);
+        $supplierId = Supplier::value('id');
+        $this->actingAs($admin)->post('/expense-categories', ['name' => 'Transport']);
+        $this->actingAs($admin)->post('/expenses', ['expense_date' => now()->toDateString(), 'category_id' => ExpenseCategory::value('id'), 'payee' => 'Truck',
+            'description' => 'Delivery', 'amount' => 100, 'vat_amount' => 15, 'payment_method' => 'CASH', 'project_id' => $projectId]);
+        $expenseId = Expense::value('id');
         // Manufacturing records in English.
         $this->actingAs($admin)->post('/inventory', ['code' => 'MDF18', 'name' => 'MDF board', 'uom' => 'sheet', 'is_active' => 1]);
         $materialId = RawMaterial::value('id');
-        $this->actingAs($admin)->post("/inventory/{$materialId}/move", ['movement_type' => 'RECEIPT', 'quantity' => 20, 'unit_cost' => 90]);
+        $this->actingAs($admin)->post("/inventory/{$materialId}/move", ['movement_type' => 'ADJUST_IN', 'quantity' => 20, 'unit_cost' => 90, 'reason' => 'Opening balance']);
+        $this->actingAs($admin)->post('/purchases', ['supplier_id' => $supplierId, 'supplier_invoice_no' => 'T-1', 'invoice_date' => now()->toDateString(),
+            'discount_amount' => 0, 'vat_amount' => 0, 'lines' => [['material_id' => $materialId, 'quantity' => 2, 'unit_price' => 50]]]);
+        $purchaseId = PurchaseInvoice::value('id');
         $this->actingAs($admin)->post('/designs', ['project_id' => $projectId, 'title' => 'Main wall']);
         $versionId = DesignVersion::value('id');
         $this->actingAs($admin)->post("/design-versions/{$versionId}/bom", ['material_id' => $materialId, 'quantity' => 4]);
@@ -110,11 +124,14 @@ class LocalizationTest extends ApiTestCase
             '/contracts', '/contracts/create', "/contracts/{$contractId}", "/contracts/{$contractId}/edit",
             '/attendance', '/attendance/records', '/attendance/records?g=employee', '/leaves', '/leaves/create', '/leaves/settings',
             '/inventory', '/inventory?g=category', '/inventory/create', "/inventory/{$materialId}", "/inventory/{$materialId}/edit",
+            '/suppliers', '/suppliers/create', "/suppliers/{$supplierId}", "/suppliers/{$supplierId}/edit",
+            '/purchases', '/purchases/create', '/purchases?g=supplier', "/purchases/{$purchaseId}", "/purchases/{$purchaseId}/edit",
+            '/expenses', '/expenses/create', '/expenses?g=category', "/expenses/{$expenseId}", "/expenses/{$expenseId}/edit", '/expense-categories',
             '/designs', '/designs/create', "/design-versions/{$versionId}",
             '/production', '/production?v=kanban', '/production/create', "/production/{$orderId}",
             '/studio', '/studio?v=list', '/studio?g=category', '/studio/create', "/studio/{$assetId}", "/studio/{$assetId}/edit", "/quotations/{$draft['id']}/edit", "/quotations/{$draft['id']}",
         ];
-        foreach (['quotations', 'projects', 'profitability'] as $r) {
+        foreach (['quotations', 'projects', 'profitability', 'purchases', 'expenses', 'consumption'] as $r) {
             $pages[] = "/reports/$r";
             $pages[] = "/reports/$r?view=graph";
         }

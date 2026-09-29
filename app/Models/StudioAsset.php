@@ -28,6 +28,12 @@ class StudioAsset extends Model
         return $this->hasMany(QuotationLine::class);
     }
 
+    /** Gallery images only: supporting documents (invoices, receipts) are never listed. */
+    public function scopeGallery($query)
+    {
+        return $query->where('category', '<>', 'DOCUMENT');
+    }
+
     /** Images a quotation for this customer may show: everything except other customers' own photos. */
     public function scopeUsableFor($query, ?int $clientId)
     {

@@ -59,6 +59,12 @@ return [
         'RROKA_ATTENDANCE_OVERLAP' => 'يتداخل هذا السجل مع سجل حضور آخر للموظف (أو لم يُسجَّل انصرافه السابق).',
         'RROKA_ATTENDANCE_FUTURE' => 'لا يُسجَّل حضور بوقت في المستقبل.',
         'RROKA_EMPLOYEE_ON_LEAVE' => 'الموظف في إجازة معتمدة في هذا اليوم.',
+        'RROKA_PURCHASE_TRANSITION' => 'فاتورة المورد تبدأ مسودة.',
+        'RROKA_PURCHASE_LOCKED' => 'فاتورة المورد المعتمدة أو الملغاة لا تُعدَّل؛ المعتمدة أدخلت المخزون فعلًا.',
+        'RROKA_PURCHASE_EMPTY' => 'لا تُعتمد فاتورة مورد بلا بنود.',
+        'RROKA_PURCHASE_NEGATIVE' => 'الخصم أكبر من مجموع البنود.',
+        'RROKA_EXPENSE_TRANSITION' => 'المصروف يبدأ مسودة.',
+        'RROKA_EXPENSE_LOCKED' => 'المصروف المعتمد أو الملغى لا يُعدَّل.',
         'CHECK_VIOLATION' => 'البيانات المُدخلة تخالف أحد شروط الصحة.',
         'DUPLICATE' => 'هذا السجل موجود مسبقًا.',
         'INVALID_REFERENCE' => 'مرجع غير صالح.',
@@ -79,10 +85,11 @@ return [
         'projects' => 'المشاريع', 'designs' => 'التصاميم', 'bom' => 'قوائم المواد',
         'inventory' => 'المخزون', 'production' => 'الإنتاج', 'quality' => 'الجودة',
         'installations' => 'التركيب', 'costing' => 'التكلفة والربحية', 'settings' => 'الإعدادات',
-        'daftra' => 'دفترة', 'hr' => 'الموارد البشرية', 'studio' => 'الاستوديو', 'users' => 'المستخدمون والأدوار', 'audit' => 'سجل التدقيق',
+        'daftra' => 'دفترة', 'hr' => 'الموارد البشرية', 'purchases' => 'المشتريات', 'expenses' => 'المصروفات', 'studio' => 'الاستوديو', 'users' => 'المستخدمون والأدوار', 'audit' => 'سجل التدقيق',
     ],
 
     'entities' => [
+        'suppliers' => 'المورد', 'purchase_invoices' => 'فاتورة المورد', 'purchase_invoice_lines' => 'بند فاتورة المورد', 'expenses' => 'المصروف', 'expense_categories' => 'تصنيف المصروف',
         'employee_contracts' => 'العقد', 'leave_requests' => 'طلب الإجازة', 'leave_allocations' => 'رصيد الإجازة', 'attendances' => 'سجل الحضور', 'leave_types' => 'نوع الإجازة',
         'workers' => 'الموظف', 'departments' => 'القسم', 'job_positions' => 'المسمى الوظيفي', 'employee_documents' => 'الوثيقة',
         'raw_materials' => 'الخامة', 'designs' => 'التصميم', 'design_versions' => 'نسخة التصميم', 'design_bom_lines' => 'بند قائمة المواد', 'production_orders' => 'أمر التصنيع',
@@ -91,6 +98,7 @@ return [
     ],
 
     'fields' => [
+        'supplier_id' => 'المورد', 'supplier_invoice_no' => 'رقم فاتورة المورد', 'invoice_date' => 'تاريخ الفاتورة', 'due_date' => 'تاريخ الاستحقاق', 'vat_amount' => 'الضريبة', 'attachment_id' => 'صورة المستند', 'expense_date' => 'التاريخ', 'category_id' => 'التصنيف', 'payee' => 'الجهة', 'amount' => 'المبلغ', 'payment_method' => 'طريقة الدفع', 'paid_by_employee_id' => 'من عهدة', 'reference' => 'المرجع', 'is_overhead' => 'غير مباشر', 'daftra_account_ref' => 'حساب دفترة', 'line_no' => 'رقم البند',
         'contract_type' => 'نوع العقد', 'end_date' => 'تاريخ النهاية', 'basic_salary' => 'الراتب الأساسي', 'housing_allowance' => 'بدل السكن', 'transport_allowance' => 'بدل النقل', 'other_allowance' => 'بدلات أخرى', 'weekly_hours' => 'الساعات الأسبوعية', 'check_in' => 'الحضور', 'check_out' => 'الانصراف', 'date_from' => 'من', 'date_to' => 'إلى', 'days' => 'الأيام', 'refusal_reason' => 'سبب الرفض',
         'department_id' => 'القسم', 'job_id' => 'المسمى الوظيفي', 'trade' => 'المهنة', 'work_phone' => 'هاتف العمل', 'work_email' => 'بريد العمل', 'mobile' => 'الجوال الشخصي', 'nationality' => 'الجنسية', 'id_type' => 'نوع الهوية', 'id_number' => 'رقم الهوية', 'birth_date' => 'تاريخ الميلاد', 'gender' => 'الجنس', 'hire_date' => 'تاريخ التعيين', 'employment_type' => 'نوع التوظيف', 'is_direct_labor' => 'عمالة مباشرة', 'termination_date' => 'انتهاء الخدمة', 'termination_reason' => 'سبب انتهاء الخدمة', 'iban' => 'الآيبان', 'emergency_contact' => 'جهة الطوارئ', 'emergency_phone' => 'هاتف الطوارئ', 'doc_type' => 'نوع الوثيقة', 'doc_number' => 'رقم الوثيقة', 'issue_date' => 'تاريخ الإصدار', 'expiry_date' => 'تاريخ الانتهاء', 'parent_id' => 'يتبع', 'user_id' => 'حساب المستخدم',
         'code' => 'الرمز', 'name' => 'الاسم', 'uom' => 'الوحدة', 'is_active' => 'نشط', 'file_url' => 'ملف التصميم', 'change_notes' => 'ملاحظات النسخة', 'planned_start' => 'البدء المخطط', 'planned_end' => 'الانتهاء المخطط', 'started_at' => 'بدأ', 'client_approved_at' => 'موافقة العميل', 'released_at' => 'تاريخ الإصدار للإنتاج', 'released_by' => 'أصدرها', 'waste_pct' => 'نسبة الهالك', 'material_id' => 'الخامة',
@@ -106,7 +114,7 @@ return [
         'description' => 'الوصف', 'quantity' => 'الكمية', 'unit_price' => 'سعر الوحدة', 'unit' => 'الوحدة',
     ],
 
-    'studio_category' => ['CLIENT_REFERENCE' => 'صور من العملاء', 'FINISHED_WORK' => 'أعمال منجزة', 'CATALOG' => 'كتالوج المنتجات', 'SITE' => 'صور المواقع', 'MATERIAL' => 'خامات وعينات'],
+    'studio_category' => ['DOCUMENT' => 'مستند مؤيد', 'CLIENT_REFERENCE' => 'صور من العملاء', 'FINISHED_WORK' => 'أعمال منجزة', 'CATALOG' => 'كتالوج المنتجات', 'SITE' => 'صور المواقع', 'MATERIAL' => 'خامات وعينات'],
 
     'movement_type' => ['RECEIPT' => 'استلام', 'RESERVE' => 'حجز للمشروع', 'UNRESERVE' => 'فك حجز', 'ISSUE' => 'صرف للإنتاج', 'RETURN' => 'إرجاع للمخزن', 'ADJUST_IN' => 'تسوية بالزيادة', 'ADJUST_OUT' => 'تسوية بالنقص'],
 
@@ -119,6 +127,10 @@ return [
     'employment_type' => ['FULL_TIME' => 'دوام كامل', 'PART_TIME' => 'دوام جزئي', 'CONTRACTOR' => 'متعاقد مستقل'],
 
     'contract_type' => ['FIXED_TERM' => 'محدد المدة', 'INDEFINITE' => 'غير محدد المدة'],
+
+    'payment_method' => ['CASH' => 'نقدًا', 'BANK' => 'تحويل بنكي', 'CARD' => 'بطاقة', 'PETTY_CASH' => 'من عهدة موظف'],
+
+    'expense_kind' => ['PROJECT' => 'على مشروع', 'OVERHEAD' => 'غير مباشر للورشة', 'OTHER' => 'إداري وعمومي'],
 
     'client_type' => ['INDIVIDUAL' => 'فرد', 'COMPANY' => 'منشأة'],
 

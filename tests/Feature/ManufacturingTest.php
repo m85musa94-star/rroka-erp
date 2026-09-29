@@ -28,7 +28,7 @@ class ManufacturingTest extends ApiTestCase
         $this->actingAs($admin)->post('/inventory', ['code' => $code, 'name' => "TEST $code", 'uom' => 'pc', 'is_active' => 1])->assertRedirect();
         $m = RawMaterial::where('code', $code)->sole();
         if ($qty > 0) {
-            $this->actingAs($admin)->post("/inventory/{$m->id}/move", ['movement_type' => 'RECEIPT', 'quantity' => $qty, 'unit_cost' => $cost, 'reference' => 'INV-1'])->assertSessionHasNoErrors();
+            $this->actingAs($admin)->post("/inventory/{$m->id}/move", ['movement_type' => 'ADJUST_IN', 'quantity' => $qty, 'unit_cost' => $cost, 'reference' => 'INV-1', 'reason' => 'TEST opening balance'])->assertSessionHasNoErrors();
         }
 
         return $m;
@@ -38,7 +38,8 @@ class ManufacturingTest extends ApiTestCase
     {
         $admin = $this->admin();
         $m = $this->material($admin, 'MDF18', 10, 100);
-        $this->actingAs($admin)->post("/inventory/{$m->id}/move", ['movement_type' => 'RECEIPT', 'quantity' => 10, 'unit_cost' => 120]);
+        $this->actingAs($admin)->post("/inventory/{$m->id}/move", ['movement_type' => 'RECEIPT', 'quantity' => 10, 'unit_cost' => 120])->assertSessionHasErrors('movement_type'); // receipts come from supplier invoices
+        $this->actingAs($admin)->post("/inventory/{$m->id}/move", ['movement_type' => 'ADJUST_IN', 'quantity' => 10, 'unit_cost' => 120, 'reason' => 'TEST count']);
         $this->assertEquals(110, (float) DB::table('stock_balances')->where('material_id', $m->id)->value('avg_unit_cost'));
 
         $this->actingAs($admin)->post("/inventory/{$m->id}/move", ['movement_type' => 'ADJUST_OUT', 'quantity' => 1])->assertSessionHasErrors('reason');
@@ -47,7 +48,7 @@ class ManufacturingTest extends ApiTestCase
 
         $this->actingAs($admin)->get('/inventory')->assertOk()->assertSee('MDF18')->assertSee('18');
         $this->actingAs($admin)->get("/inventory/{$m->id}")->assertOk()->assertSee('damaged')->assertSee('INV-1');
-        $this->actingAs($this->userWith(['inventory.view']))->post("/inventory/{$m->id}/move", ['movement_type' => 'RECEIPT', 'quantity' => 1, 'unit_cost' => 1])->assertForbidden();
+        $this->actingAs($this->userWith(['inventory.view']))->post("/inventory/{$m->id}/move", ['movement_type' => 'ADJUST_IN', 'quantity' => 1, 'unit_cost' => 1, 'reason' => 'x'])->assertForbidden();
     }
 
     public function test_full_cycle_design_release_order_materials_time_quality(): void

@@ -9,7 +9,7 @@ class ReportRegistry
     /** @return array<string, Report> */
     public static function all(): array
     {
-        $reports = [new QuotationsReport, new ProjectsReport, new ProfitabilityReport];
+        $reports = [new QuotationsReport, new ProjectsReport, new ProfitabilityReport, new PurchasesReport, new ExpensesReport, new MaterialConsumptionReport];
 
         return array_combine(array_map(fn ($r) => $r->key(), $reports), $reports);
     }

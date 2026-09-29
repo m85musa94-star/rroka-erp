@@ -7,6 +7,7 @@
 
 1. **النظام = Operations & Costing فقط.** لا محرك محاسبي ولا ضريبي داخلي.
    الفوترة الرسمية، القيود، التحصيل، VAT/ZATCA/Zakat → **دفترة (Daftra)** عبر API.
+   تفسير معتمد (2026-09-30، تجربة): مستندات المشتريات والمصروفات تُلتقط هنا مرة واحدة وتُرسل لدفترة؛ لا قيود ولا احتساب ضريبة هنا.
 2. **Zero Assumption Policy.** معدلات التكلفة (أجر ساعة العامل، تكلفة ساعة الآلة،
    نسبة تحميل المصاريف غير المباشرة) تبقى `NULL` صراحةً — لا صفر، ولا متوسطات صناعية.
    أي حساب يعتمد عليها يجب أن يُرجع "غير مُفعَّل" لا رقمًا.
@@ -48,3 +49,4 @@
   في الإنتاج يُرفض الرفع إن كان القرص محليًا (`StudioStorage::isReady`). صورة العميل لا تظهر إلا في عروض أسعاره (Trigger).
 - التصنيع: `ProductionController` (أوامر التصنيع: مكونات من قائمة مواد النسخة، حجز/صرف/إرجاع عبر `stock_movements`، ساعات، فحوصات)، `DesignController` (نسخ ومراحل وقائمة مواد)، `MaterialController` (المخزون). الحجز والصرف على مستوى المشروع (`fn_project_reserved`/`fn_project_issued`).
 - الموارد البشرية: `Employee` (جدول `workers` نفسه الذي يستخدمه `Worker` للتكلفة)، `EmployeeController` (الدليل `hr.view` بلا بيانات شخصية)، `ContractController` (`hr.contracts`)، `AttendanceController` (`hr.attendance`)، `LeaveController` (خدمة ذاتية عبر `workers.user_id`؛ الاعتماد `hr.leave_approve`). صلاحية القائمة الوهمية `self.employee` في `AppMenu::can`. لا احتساب رواتب.
+- المشتريات والمصروفات: `PurchaseController` (اعتماد الفاتورة يُدخل المخزون عبر `fn_purchase_invoice_post`)، `ExpenseController` (المصروف على مشروع يدخل `v_project_actual_cost.direct_expense_cost`). الاستلام اليدوي في المخزون ملغى. صور المستندات فئة `DOCUMENT` في الاستوديو ولا تظهر في المعرض (`scopeGallery`).

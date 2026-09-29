@@ -451,6 +451,65 @@ SELECT pg_temp.expect_error('time: no production hours on a leave day',
     'INSERT INTO labor_logs (production_order_id, worker_id, work_date, hours) VALUES (1, 10, ''2026-04-06'', 2)', 'RROKA_EMPLOYEE_ON_LEAVE');
 
 -- ---------------------------------------------------------------------
+-- Purchasing & expenses
+-- ---------------------------------------------------------------------
+INSERT INTO suppliers (id, name, vat_number) VALUES (1, 'TEST timber supplier', '300000000000003');
+SELECT pg_temp.expect_error('supplier: VAT number is 15 digits',
+    'INSERT INTO suppliers (name, vat_number) VALUES (''x'', ''12345'')', 'check constraint');
+INSERT INTO raw_materials (id, code, name, uom) VALUES (5, 'PLY', 'TEST plywood', 'sheet'), (6, 'GLUE', 'TEST glue', 'L');
+INSERT INTO purchase_invoices (id, supplier_id, supplier_invoice_no, invoice_date, discount_amount, vat_amount)
+    VALUES (1, 1, 'INV-77', '2026-03-10', 30, 150);
+INSERT INTO purchase_invoice_lines (purchase_invoice_id, line_no, material_id, quantity, unit_price)
+    VALUES (1, 1, 5, 10, 90), (1, 2, 6, 5, 20);   -- 900 + 100 = 1000, discount 30
+SELECT setval('purchase_invoices_id_seq', 10);
+SELECT pg_temp.expect_error('purchase: same supplier invoice cannot be entered twice',
+    'INSERT INTO purchase_invoices (supplier_id, supplier_invoice_no, invoice_date, discount_amount, vat_amount) VALUES (1, '' inv-77'', ''2026-03-11'', 0, 0)',
+    'ux_purchase_supplier_invoice');
+SELECT pg_temp.expect_error('purchase: starts as draft',
+    'INSERT INTO purchase_invoices (supplier_id, supplier_invoice_no, invoice_date, discount_amount, vat_amount, status, approved_by, approved_at) VALUES (1, ''X1'', ''2026-03-11'', 0, 0, ''APPROVED'', 1, now())',
+    'RROKA_PURCHASE_TRANSITION');
+SELECT pg_temp.expect_error('purchase: approval needs approver (CHECK)',
+    'UPDATE purchase_invoices SET status = ''APPROVED'' WHERE id = 1', 'check constraint');
+SELECT pg_temp.expect_ok('purchase: approve posts stock receipts',
+    'UPDATE purchase_invoices SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 1');
+SELECT pg_temp.expect_eq('purchase: plywood received at net cost (900 - 27) / 10 = 87.3',
+    (SELECT unit_cost FROM stock_movements WHERE purchase_invoice_line_id = (SELECT id FROM purchase_invoice_lines WHERE purchase_invoice_id = 1 AND line_no = 1)),
+    87.3000::numeric);
+SELECT pg_temp.expect_eq('purchase: discount fully absorbed (net received value = 970)',
+    (SELECT sum(quantity * unit_cost) FROM stock_movements WHERE purchase_invoice_line_id IN (SELECT id FROM purchase_invoice_lines WHERE purchase_invoice_id = 1)),
+    970.0000::numeric);
+SELECT pg_temp.expect_eq('purchase: stock on hand from invoice', (SELECT qty_on_hand FROM stock_balances WHERE material_id = 5), 10.0000::numeric);
+SELECT pg_temp.expect_eq('purchase: totals view (net 970 + VAT 150)', (SELECT total FROM v_purchase_totals WHERE purchase_invoice_id = 1), 1120.00::numeric);
+SELECT pg_temp.expect_error('purchase: approved invoice is final',
+    'UPDATE purchase_invoices SET discount_amount = 0 WHERE id = 1', 'RROKA_PURCHASE_LOCKED');
+SELECT pg_temp.expect_error('purchase: approved lines are final',
+    'UPDATE purchase_invoice_lines SET quantity = 99 WHERE purchase_invoice_id = 1', 'RROKA_PURCHASE_LOCKED');
+SELECT pg_temp.expect_error('purchase: approved invoice cannot be cancelled',
+    'UPDATE purchase_invoices SET status = ''CANCELLED'' WHERE id = 1', 'RROKA_PURCHASE_LOCKED');
+SELECT pg_temp.expect_ok('purchase: Daftra id can be linked after approval',
+    'UPDATE purchase_invoices SET daftra_purchase_id = 555 WHERE id = 1');
+INSERT INTO purchase_invoices (id, supplier_id, supplier_invoice_no, invoice_date, discount_amount, vat_amount) VALUES (20, 1, 'INV-78', '2026-03-12', 0, 0);
+SELECT pg_temp.expect_error('purchase: cannot approve without lines',
+    'UPDATE purchase_invoices SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 20', 'RROKA_PURCHASE_EMPTY');
+
+INSERT INTO expense_categories (id, name, is_overhead) VALUES (1, 'TEST transport', false), (2, 'TEST workshop rent', true);
+SELECT pg_temp.expect_error('expense: needs a supplier or payee',
+    'INSERT INTO expenses (expense_date, category_id, description, amount, vat_amount, payment_method) VALUES (''2026-03-01'', 1, ''x'', 10, 0, ''CASH'')',
+    'check constraint');
+SELECT pg_temp.expect_error('expense: petty cash names the employee',
+    'INSERT INTO expenses (expense_date, category_id, payee, description, amount, vat_amount, payment_method) VALUES (''2026-03-01'', 1, ''x'', ''x'', 10, 0, ''PETTY_CASH'')',
+    'check constraint');
+INSERT INTO expenses (id, expense_date, category_id, payee, description, amount, vat_amount, payment_method, project_id)
+    VALUES (1, '2026-03-02', 1, 'TEST truck', 'TEST delivery to site', 250, 37.5, 'CASH', 1);
+SELECT pg_temp.expect_eq('expense: draft is not a project cost yet',
+    (SELECT direct_expense_cost FROM v_project_actual_cost WHERE project_id = 1), 0::numeric);
+UPDATE expenses SET status = 'APPROVED', approved_by = 2, approved_at = now() WHERE id = 1;
+SELECT pg_temp.expect_eq('expense: approved project expense is a direct cost (before VAT)',
+    (SELECT direct_expense_cost FROM v_project_actual_cost WHERE project_id = 1), 250.00::numeric);
+SELECT pg_temp.expect_error('expense: approved expense is final',
+    'UPDATE expenses SET amount = 1 WHERE id = 1', 'RROKA_EXPENSE_LOCKED');
+
+-- ---------------------------------------------------------------------
 -- Report
 -- ---------------------------------------------------------------------
 \pset footer off

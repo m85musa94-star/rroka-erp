@@ -28,19 +28,21 @@
 
 @if($canMove)
 <div class="card">
-    <h2>{{ __('تسجيل حركة') }}</h2>
+    <h2>{{ __('تسوية المخزون') }}</h2>
+    <p class="hint">{{ __('الاستلام يتم من فاتورة المورد المعتمدة فقط. هنا فروق الجرد والتالف والرصيد الافتتاحي (تسوية بالزيادة بسبب «رصيد افتتاحي»).') }}
+        @if(auth()->user()->hasPermission('purchases.manage'))<a href="{{ route('purchases.create') }}">{{ __('فاتورة مورد جديدة') }}</a>@endif</p>
     <form method="post" action="{{ route('materials.move', $material) }}" class="grid g3" id="move-form">
         @csrf
         <div class="field"><label>{{ __('النوع *') }}</label>
             <select name="movement_type" id="mtype">
-                @foreach(['RECEIPT', 'ADJUST_IN', 'ADJUST_OUT'] as $t)
+                @foreach(['ADJUST_IN', 'ADJUST_OUT'] as $t)
                     <option value="{{ $t }}" @selected(old('movement_type') === $t)>{{ __("rroka.movement_type.$t") }}</option>
                 @endforeach
             </select></div>
         <div class="field"><label>{{ __('الكمية *') }}</label><input name="quantity" type="number" step="0.0001" min="0.0001" value="{{ old('quantity') }}" required dir="ltr"></div>
-        <div class="field" id="cost-field"><label>{{ __('تكلفة الوحدة الفعلية *') }}</label><input name="unit_cost" type="number" step="0.0001" min="0" value="{{ old('unit_cost') }}" dir="ltr"><div class="hint">{{ __('قبل الضريبة، من فاتورة المورد.') }}</div></div>
-        <div class="field"><label>{{ __('المرجع') }}</label><input name="reference" value="{{ old('reference') }}" placeholder="{{ __('رقم فاتورة المورد أو سند الاستلام') }}"></div>
-        <div class="field"><label>{{ __('السبب') }}</label><input name="reason" value="{{ old('reason') }}" placeholder="{{ __('إلزامي للتسويات: جرد، تالف، …') }}"></div>
+        <div class="field" id="cost-field"><label>{{ __('تكلفة الوحدة الفعلية *') }}</label><input name="unit_cost" type="number" step="0.0001" min="0" value="{{ old('unit_cost') }}" dir="ltr"><div class="hint">{{ __('قبل الضريبة، من آخر فاتورة شراء أو من الجرد المعتمد.') }}</div></div>
+        <div class="field"><label>{{ __('المرجع') }}</label><input name="reference" value="{{ old('reference') }}" placeholder="{{ __('رقم محضر الجرد أو المستند') }}"></div>
+        <div class="field"><label>{{ __('السبب') }}</label><input name="reason" value="{{ old('reason') }}" placeholder="{{ __('إلزامي: رصيد افتتاحي، فرق جرد، تالف…') }}" required></div>
         <div class="field"><label>{{ __('التاريخ') }}</label><input name="moved_at" type="datetime-local" value="{{ old('moved_at', now()->format('Y-m-d\TH:i')) }}"></div>
         <div class="actions"><button class="btn">{{ __('تسجيل') }}</button></div>
     </form>

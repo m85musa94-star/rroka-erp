@@ -83,6 +83,17 @@
         <rect x="18" y="6" width="5" height="12" rx="2" fill="#8E5486"/><rect x="41" y="6" width="5" height="12" rx="2" fill="#8E5486"/>
         <path d="M22 40l7 7 14-15" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
         @break
+    @case('purchasing')
+        <path d="M8 14h8l6 26h26l6-18H20" stroke="#2A5F7E" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="24" y="20" width="26" height="14" rx="3" fill="#F2BD5B"/>
+        <circle cx="26" cy="50" r="5" fill="#E8833A"/><circle cx="46" cy="50" r="5" fill="#E8833A"/>
+        @break
+    @case('expenses')
+        <rect x="8" y="16" width="48" height="32" rx="6" fill="#1e7a4a"/>
+        <rect x="8" y="24" width="48" height="7" fill="#2A5F7E"/>
+        <circle cx="44" cy="40" r="7" fill="#F2BD5B"/>
+        <rect x="14" y="37" width="16" height="5" rx="2" fill="#5FD0BD"/>
+        @break
     @case('users')
         <circle cx="32" cy="22" r="11" fill="#E8833A"/>
         <path d="M12 54c0-12 9-20 20-20s20 8 20 20z" fill="#F2BD5B"/>
