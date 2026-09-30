@@ -37,8 +37,10 @@ class HealthController extends Controller
                 $ok = $this->safe(fn () => Schema::hasTable($table));
                 $checks[] = [$label, $ok, $ok ? 'موجود' : 'غير موجود — لم يُنفَّذ أمر php artisan migrate --force'];
             }
-            $theme = $this->safe(fn () => Schema::hasColumn('users', 'theme'));
-            $checks[] = ['تحديث قاعدة البيانات الأخير (المظهر الداكن)', $theme, $theme ? 'منفَّذ' : 'غير منفَّذ — لم يُنفَّذ أمر php artisan migrate --force بعد آخر نشر'];
+            // The newest database update shipped with this code, and whether it has been run.
+            $latest = basename((string) collect(glob(database_path('migrations/*.php')))->sort()->last(), '.php');
+            $ran = $this->safe(fn () => DB::table('migrations')->where('migration', $latest)->exists());
+            $checks[] = ['آخر تحديث لقاعدة البيانات ('.$latest.')', $ran, $ran ? 'منفَّذ' : 'غير منفَّذ — لم يُنفَّذ أمر php artisan migrate --force بعد آخر نشر'];
             $users = $this->safe(fn () => Schema::hasTable('users') && DB::table('users')->exists());
             $checks[] = ['حساب المدير', $users, $users ? 'موجود' : 'غير موجود — لم يُنفَّذ أمر php artisan rroka:bootstrap-admin أو متغيراته ناقصة'];
         }
