@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\EmployeeDocument;
+use App\Models\JobPosition;
 
 class HrTest extends ApiTestCase
 {
@@ -16,7 +17,7 @@ class HrTest extends ApiTestCase
         $this->actingAs($admin)->post('/jobs', ['name' => 'TEST carpenter', 'department_id' => $dept->id])->assertSessionHasNoErrors();
 
         $this->actingAs($admin)->post('/employees', [
-            'name' => 'TEST Ahmed', 'department_id' => $dept->id, 'job_id' => 1, 'hire_date' => '2026-01-01',
+            'name' => 'TEST Ahmed', 'department_id' => $dept->id, 'job_id' => JobPosition::sole()->id, 'hire_date' => '2026-01-01',
             'is_direct_labor' => 1, 'id_type' => 'IQAMA', 'id_number' => '2000000001', 'iban' => 'sa03 8000 0000 6080 1016 7519',
             'work_phone' => '0500000001',
         ])->assertRedirect();

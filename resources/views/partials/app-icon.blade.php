@@ -111,6 +111,11 @@
         <circle cx="24" cy="26" r="5" fill="#fff"/>
         <path d="M34 34l20 20M46 46l-5 5M51 51l-4 4" stroke="#2A5F7E" stroke-width="6" stroke-linecap="round"/>
         @break
+    @case('demo')
+        <path d="M24 8h16v6h-3v12l15 24a4 4 0 0 1-3.4 6H15.4a4 4 0 0 1-3.4-6l15-24V14h-3z" fill="#5FD0BD"/>
+        <path d="M18 42h28l5 8a2 2 0 0 1-1.7 3H14.7a2 2 0 0 1-1.7-3z" fill="#2A5F7E"/>
+        <circle cx="28" cy="46" r="3" fill="#F2BD5B"/><circle cx="38" cy="48" r="2" fill="#E8833A"/>
+        @break
     @case('studio')
         <rect x="8" y="14" width="48" height="38" rx="6" fill="#2A5F7E"/>
         <circle cx="22" cy="26" r="5" fill="#F2BD5B"/>

@@ -34,6 +34,7 @@ class AppMenu
             ['key' => 'daftra', 'label' => __('الربط مع دفترة'), 'route' => 'daftra.index', 'match' => 'daftra.*', 'permission' => 'daftra.sync', 'group' => 'settings'],
             ['key' => 'users', 'label' => __('المستخدمون'), 'route' => 'users.index', 'match' => 'users.*', 'permission' => 'users.manage', 'group' => 'settings'],
             ['key' => 'roles', 'label' => __('الأدوار والصلاحيات'), 'route' => 'roles.index', 'match' => 'roles.*', 'permission' => 'users.manage', 'group' => 'settings'],
+            ['key' => 'demo', 'label' => __('البيانات التجريبية'), 'route' => 'demo.index', 'match' => 'demo.*', 'permission' => 'users.manage', 'group' => 'settings'],
         ];
     }
 
@@ -90,6 +91,7 @@ class AppMenu
                 ['الربط مع دفترة', 'daftra.index', [], 'daftra.sync'],
                 ['المستخدمون', 'users.index', [], 'users.manage'],
                 ['الأدوار والصلاحيات', 'roles.index', [], 'users.manage'],
+                ['البيانات التجريبية', 'demo.index', [], 'users.manage'],
             ],
             default => match ($app['key']) {
                 'clients' => [

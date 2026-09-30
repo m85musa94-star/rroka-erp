@@ -119,7 +119,7 @@ class LocalizationTest extends ApiTestCase
             '/projects', '/projects?v=kanban', "/projects/{$projectId}",
             '/settings/rates', '/users', '/users/create', "/users/{$admin->id}/edit",
             '/roles', '/roles/create', "/roles/{$roleId}/edit",
-            '/reports', '/settings/daftra',
+            '/reports', '/settings/daftra', '/settings/demo',
             '/employees', '/employees?v=list&g=department', '/employees/create', "/employees/{$employeeId}", "/employees/{$employeeId}/edit", '/departments',
             '/contracts', '/contracts/create', "/contracts/{$contractId}", "/contracts/{$contractId}/edit",
             '/attendance', '/attendance/records', '/attendance/records?g=employee', '/leaves', '/leaves/create', '/leaves/settings',

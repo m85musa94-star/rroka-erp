@@ -2038,4 +2038,17 @@ SELECT r.id, p.id FROM roles r CROSS JOIN permissions p
  WHERE r.code = 'system_admin' AND (p.code LIKE 'purchases.%' OR p.code LIKE 'expenses.%')
 ON CONFLICT DO NOTHING;
 
+-- ---------------------------------------------------------------------
+-- Demo data registry: every sample record the "demo data" tool creates is
+-- listed here, so the whole set can be removed later without touching real data.
+-- Sample records are also labelled "تجريبي" in their names.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS demo_records (
+    id          bigserial PRIMARY KEY,
+    table_name  text   NOT NULL,
+    row_id      bigint NOT NULL,
+    created_at  timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (table_name, row_id)
+);
+
 COMMIT;

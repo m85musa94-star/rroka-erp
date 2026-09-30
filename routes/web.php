@@ -7,6 +7,7 @@ use App\Http\Controllers\Web\ContractController;
 use App\Http\Controllers\Web\CostRateController;
 use App\Http\Controllers\Web\DaftraSettingsController;
 use App\Http\Controllers\Web\DashboardController;
+use App\Http\Controllers\Web\DemoDataController;
 use App\Http\Controllers\Web\DepartmentController;
 use App\Http\Controllers\Web\DesignController;
 use App\Http\Controllers\Web\EmployeeController;
@@ -248,5 +249,8 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
     Route::middleware('permission:users.manage')->group(function () {
         Route::resource('users', UserController::class)->except(['show', 'destroy']);
         Route::resource('roles', RoleController::class)->except(['show']);
+        Route::get('/settings/demo', [DemoDataController::class, 'index'])->name('demo.index');
+        Route::post('/settings/demo', [DemoDataController::class, 'store'])->name('demo.store');
+        Route::delete('/settings/demo', [DemoDataController::class, 'destroy'])->name('demo.destroy');
     });
 });
