@@ -8,6 +8,9 @@
 @if($categories->isEmpty())
     <div class="alert warn">{{ __('أضف تصنيفات المصروفات أولًا من «تصنيفات المصروفات».') }}</div>
 @endif
+@if($accounts->isEmpty())
+    <div class="alert warn">{{ __('أضف الصناديق والحسابات البنكية والعهد أولًا من تطبيق «الخزينة والعهد».') }}</div>
+@endif
 <form method="post" action="{{ $x->exists ? route('expenses.update', $x) : route('expenses.store') }}" enctype="multipart/form-data" class="card">
     @csrf
     @if($x->exists) @method('put') @endif
@@ -27,10 +30,18 @@
     <div class="grid g3">
         <div class="field"><label>{{ __('المبلغ قبل الضريبة *') }}</label><input name="amount" type="number" step="0.01" min="0.01" value="{{ $v('amount') }}" required dir="ltr"></div>
         <div class="field"><label>{{ __('ضريبة القيمة المضافة كما في الإيصال *') }}</label><input name="vat_amount" type="number" step="0.01" min="0" value="{{ $v('vat_amount') }}" required dir="ltr"><div class="hint">{{ __('اكتب 0 إن لم يكن الإيصال ضريبيًا.') }}</div></div>
-        <div class="field"><label>{{ __('طريقة الدفع *') }}</label>
-            <select name="payment_method" id="method" required>@foreach(\App\Models\Expense::METHODS as $m)<option value="{{ $m }}" @selected($v('payment_method') === $m)>{{ __("rroka.payment_method.$m") }}</option>@endforeach</select></div>
-        <div class="field" id="paid-by"><label>{{ __('دفعه من عهدته') }}</label>
-            <select name="paid_by_employee_id"><option value="">{{ __('— بلا —') }}</option>@foreach($employees as $e)<option value="{{ $e->id }}" @selected((string) $v('paid_by_employee_id') === (string) $e->id)>{{ $e->name }}</option>@endforeach</select></div>
+        <div class="field"><label>{{ __('دُفع من *') }}</label>
+            <select name="payment_account_id" id="account" required>
+                <option value="">{{ __('— اختر الصندوق أو البنك أو العهدة —') }}</option>
+                @foreach(['CASH' => __('الصناديق النقدية'), 'BANK' => __('الحسابات البنكية'), 'CUSTODY' => __('عهد الموظفين')] as $kind => $label)
+                    @if($accounts->where('kind', $kind)->isNotEmpty())
+                        <optgroup label="{{ $label }}">@foreach($accounts->where('kind', $kind) as $a)<option value="{{ $a->id }}" data-kind="{{ $a->kind }}" @selected((string) $v('payment_account_id') === (string) $a->id)>{{ $a->name }}</option>@endforeach</optgroup>
+                    @endif
+                @endforeach
+            </select>
+            <div class="hint">{{ __('يُرسل لاحقًا إلى الخزينة المقابلة في دفترة، وهناك تتم مطابقة البنك والنقدية.') }}</div></div>
+        <div class="field" id="bank-method"><label>{{ __('طريقة الدفع من البنك') }}</label>
+            <select name="payment_method">@foreach(\App\Models\PaymentAccount::METHODS['BANK'] as $m)<option value="{{ $m }}" @selected($v('payment_method') === $m)>{{ __("rroka.payment_method.$m") }}</option>@endforeach</select></div>
         <div class="field"><label>{{ __('صورة الإيصال') }}</label>
             @if($canAttach)<input type="file" name="document" accept="image/jpeg,image/png,image/webp">@else<div class="hint">{{ __('مخزن الصور غير مربوط بعد، فلا تُحفظ الصور حتى لا تضيع. راجع دليل النشر.') }}</div>@endif</div>
     </div>
@@ -39,8 +50,9 @@
 @endsection
 @push('scripts')
 <script>
-(() => { const m = document.getElementById('method'), p = document.getElementById('paid-by');
-    const sync = () => { p.hidden = m.value !== 'PETTY_CASH'; p.querySelector('select').required = m.value === 'PETTY_CASH'; };
-    m.addEventListener('change', sync); sync(); })();
+// The bank method (transfer or card) is asked only for a bank account; the others imply it.
+(() => { const a = document.getElementById('account'), b = document.getElementById('bank-method');
+    const sync = () => { b.hidden = a.selectedOptions[0]?.dataset.kind !== 'BANK'; };
+    a.addEventListener('change', sync); sync(); })();
 </script>
 @endpush

@@ -25,6 +25,7 @@
             <dt>{{ __('التاريخ') }}</dt><dd>{{ $x->expense_date->format('Y-m-d') }}</dd>
             <dt>{{ __('الجهة') }}</dt><dd>@if($x->supplier)<a href="{{ route('suppliers.show', $x->supplier) }}">{{ $x->supplier->name }}</a>@else{{ $x->payee }}@endif</dd>
             <dt>{{ __('المشروع') }}</dt><dd>@if($x->project)<a href="{{ route('projects.show', $x->project) }}">{{ $x->project->project_no }}</a>@else{{ __('مصروف عام للورشة') }}@endif</dd>
+            <dt>{{ __('دُفع من') }}</dt><dd>@if($x->paymentAccount)@if($u->hasPermission('treasury.view') || $u->hasPermission('treasury.manage'))<a href="{{ route('treasury.accounts.show', $x->paymentAccount) }}">{{ $x->paymentAccount->name }}</a>@else{{ $x->paymentAccount->name }}@endif @else<span class="warn-text">{{ __('غير محدد') }}</span>@endif</dd>
             <dt>{{ __('طريقة الدفع') }}</dt><dd>{{ __("rroka.payment_method.$x->payment_method") }}{{ $x->paidBy ? ' — '.$x->paidBy->name : '' }}</dd>
             <dt>{{ __('المرجع') }}</dt><dd>{{ $x->reference ?? '—' }}</dd>
         </dl>

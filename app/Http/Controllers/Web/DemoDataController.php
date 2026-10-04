@@ -18,6 +18,7 @@ class DemoDataController extends Controller
         'production_orders' => 'أوامر التصنيع', 'labor_logs' => 'ساعات العمال', 'machine_logs' => 'ساعات الآلات', 'quality_inspections' => 'فحوصات الجودة',
         'raw_materials' => 'الخامات', 'stock_movements' => 'حركات المخزون', 'suppliers' => 'الموردون', 'purchase_invoices' => 'فواتير المشتريات',
         'purchase_invoice_lines' => 'بنود فواتير المشتريات', 'expense_categories' => 'تصنيفات المصروفات', 'expenses' => 'المصروفات',
+        'payment_accounts' => 'الصناديق والبنوك والعهد', 'treasury_transfers' => 'التحويلات وصرف العهد',
         'departments' => 'الأقسام', 'job_positions' => 'المسميات الوظيفية', 'workers' => 'الموظفون', 'employee_documents' => 'وثائق الموظفين',
         'employee_contracts' => 'العقود', 'worker_rates' => 'أجور ساعات العمال', 'machines' => 'الآلات', 'machine_rates' => 'تكلفة ساعات الآلات',
         'leave_types' => 'أنواع الإجازات', 'leave_allocations' => 'أرصدة الإجازات', 'leave_requests' => 'طلبات الإجازات', 'attendances' => 'سجلات الحضور',

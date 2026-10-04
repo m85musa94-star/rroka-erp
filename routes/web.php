@@ -15,6 +15,7 @@ use App\Http\Controllers\Web\ExpenseController;
 use App\Http\Controllers\Web\LeaveController;
 use App\Http\Controllers\Web\LocaleController;
 use App\Http\Controllers\Web\MaterialController;
+use App\Http\Controllers\Web\PaymentAccountController;
 use App\Http\Controllers\Web\ProductionController;
 use App\Http\Controllers\Web\ProjectController;
 use App\Http\Controllers\Web\PurchaseController;
@@ -24,6 +25,7 @@ use App\Http\Controllers\Web\RoleController;
 use App\Http\Controllers\Web\StudioController;
 use App\Http\Controllers\Web\SupplierController;
 use App\Http\Controllers\Web\ThemeController;
+use App\Http\Controllers\Web\TreasuryTransferController;
 use App\Http\Controllers\Web\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -223,6 +225,27 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
 
     // Studio: images are streamed only through these routes. A quotation may show one,
     // so anyone who can see quotations can load an image file (not browse the studio).
+    // Treasury: cash boxes, bank accounts, employee custody and transfers between them.
+    Route::middleware('permission:treasury.view|treasury.manage')->prefix('treasury')->name('treasury.')->group(function () {
+        Route::get('/accounts', [PaymentAccountController::class, 'index'])->name('accounts.index');
+        Route::get('/accounts/create', [PaymentAccountController::class, 'create'])->name('accounts.create')->middleware('permission:treasury.manage');
+        Route::get('/accounts/{account}', [PaymentAccountController::class, 'show'])->name('accounts.show')->whereNumber('account');
+        Route::get('/transfers', [TreasuryTransferController::class, 'index'])->name('transfers.index');
+        Route::get('/transfers/create', [TreasuryTransferController::class, 'create'])->name('transfers.create')->middleware('permission:treasury.manage');
+        Route::get('/transfers/{transfer}', [TreasuryTransferController::class, 'show'])->name('transfers.show')->whereNumber('transfer');
+    });
+    Route::middleware('permission:treasury.manage')->prefix('treasury')->name('treasury.')->group(function () {
+        Route::post('/accounts', [PaymentAccountController::class, 'store'])->name('accounts.store');
+        Route::get('/accounts/{account}/edit', [PaymentAccountController::class, 'edit'])->name('accounts.edit')->whereNumber('account');
+        Route::put('/accounts/{account}', [PaymentAccountController::class, 'update'])->name('accounts.update')->whereNumber('account');
+        Route::post('/transfers', [TreasuryTransferController::class, 'store'])->name('transfers.store');
+        Route::get('/transfers/{transfer}/edit', [TreasuryTransferController::class, 'edit'])->name('transfers.edit')->whereNumber('transfer');
+        Route::put('/transfers/{transfer}', [TreasuryTransferController::class, 'update'])->name('transfers.update')->whereNumber('transfer');
+        Route::post('/transfers/{transfer}/cancel', [TreasuryTransferController::class, 'cancel'])->name('transfers.cancel')->whereNumber('transfer');
+    });
+    Route::post('/treasury/transfers/{transfer}/approve', [TreasuryTransferController::class, 'approve'])->name('treasury.transfers.approve')
+        ->whereNumber('transfer')->middleware('permission:treasury.approve');
+
     Route::middleware('permission:studio.view|quotations.view|purchases.view|expenses.view')->group(function () {
         Route::get('/studio/{asset}/file/{variant}', [StudioController::class, 'file'])->name('studio.file')->whereNumber('asset')->whereIn('variant', ['thumb', 'full']);
     });

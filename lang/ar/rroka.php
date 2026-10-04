@@ -65,6 +65,15 @@ return [
         'RROKA_PURCHASE_NEGATIVE' => 'الخصم أكبر من مجموع البنود.',
         'RROKA_EXPENSE_TRANSITION' => 'المصروف يبدأ مسودة.',
         'RROKA_EXPENSE_LOCKED' => 'المصروف المعتمد أو الملغى لا يُعدَّل.',
+        'RROKA_EXPENSE_NEEDS_PAYMENT_ACCOUNT' => 'حدّد من أين دُفع المصروف (صندوق أو بنك أو عهدة) قبل اعتماده.',
+        'RROKA_EXPENSE_PAYMENT_MISMATCH' => 'طريقة الدفع لا تناسب الحساب: الصندوق نقدًا، والبنك تحويل أو بطاقة، والعهدة من عهدة الموظف.',
+        'RROKA_PAYMENT_ACCOUNT_INACTIVE' => 'الحساب مغلق؛ لا تُعتمد عليه حركة جديدة.',
+        'RROKA_PAYMENT_ACCOUNT_LOCKED' => 'نوع الحساب وصاحب العهدة لا يتغيران؛ أغلق الحساب وأنشئ غيره.',
+        'RROKA_CUSTODY_NOT_SETTLED' => 'لا تُغلق العهدة قبل تسويتها إلى الصفر (إرجاع المتبقي أو تعويض الموظف).',
+        'RROKA_CUSTODY_INSUFFICIENT' => 'المبلغ أكبر مما في عهدة الموظف.',
+        'RROKA_CUSTODY_LIMIT' => 'التحويل يجعل العهدة تتجاوز حدها الأعلى.',
+        'RROKA_TRANSFER_TRANSITION' => 'التحويل يبدأ مسودة.',
+        'RROKA_TRANSFER_LOCKED' => 'التحويل المعتمد أو الملغى لا يُعدَّل.',
         'CHECK_VIOLATION' => 'البيانات المُدخلة تخالف أحد شروط الصحة.',
         'DUPLICATE' => 'هذا السجل موجود مسبقًا.',
         'INVALID_REFERENCE' => 'مرجع غير صالح.',
@@ -85,11 +94,11 @@ return [
         'projects' => 'المشاريع', 'designs' => 'التصاميم', 'bom' => 'قوائم المواد',
         'inventory' => 'المخزون', 'production' => 'الإنتاج', 'quality' => 'الجودة',
         'installations' => 'التركيب', 'costing' => 'التكلفة والربحية', 'settings' => 'الإعدادات',
-        'daftra' => 'دفترة', 'hr' => 'الموارد البشرية', 'purchases' => 'المشتريات', 'expenses' => 'المصروفات', 'studio' => 'الاستوديو', 'users' => 'المستخدمون والأدوار', 'audit' => 'سجل التدقيق',
+        'daftra' => 'دفترة', 'hr' => 'الموارد البشرية', 'purchases' => 'المشتريات', 'expenses' => 'المصروفات', 'treasury' => 'الخزينة والعهد', 'studio' => 'الاستوديو', 'users' => 'المستخدمون والأدوار', 'audit' => 'سجل التدقيق',
     ],
 
     'entities' => [
-        'suppliers' => 'المورد', 'purchase_invoices' => 'فاتورة المورد', 'purchase_invoice_lines' => 'بند فاتورة المورد', 'expenses' => 'المصروف', 'expense_categories' => 'تصنيف المصروف',
+        'payment_accounts' => 'الحساب', 'treasury_transfers' => 'التحويل', 'suppliers' => 'المورد', 'purchase_invoices' => 'فاتورة المورد', 'purchase_invoice_lines' => 'بند فاتورة المورد', 'expenses' => 'المصروف', 'expense_categories' => 'تصنيف المصروف',
         'employee_contracts' => 'العقد', 'leave_requests' => 'طلب الإجازة', 'leave_allocations' => 'رصيد الإجازة', 'attendances' => 'سجل الحضور', 'leave_types' => 'نوع الإجازة',
         'workers' => 'الموظف', 'departments' => 'القسم', 'job_positions' => 'المسمى الوظيفي', 'employee_documents' => 'الوثيقة',
         'raw_materials' => 'الخامة', 'designs' => 'التصميم', 'design_versions' => 'نسخة التصميم', 'design_bom_lines' => 'بند قائمة المواد', 'production_orders' => 'أمر التصنيع',
@@ -99,6 +108,7 @@ return [
 
     'fields' => [
         'supplier_id' => 'المورد', 'supplier_invoice_no' => 'رقم فاتورة المورد', 'invoice_date' => 'تاريخ الفاتورة', 'due_date' => 'تاريخ الاستحقاق', 'vat_amount' => 'الضريبة', 'attachment_id' => 'صورة المستند', 'expense_date' => 'التاريخ', 'category_id' => 'التصنيف', 'payee' => 'الجهة', 'amount' => 'المبلغ', 'payment_method' => 'طريقة الدفع', 'paid_by_employee_id' => 'من عهدة', 'reference' => 'المرجع', 'is_overhead' => 'غير مباشر', 'daftra_account_ref' => 'حساب دفترة', 'line_no' => 'رقم البند',
+        'payment_account_id' => 'دُفع من', 'from_account_id' => 'من', 'to_account_id' => 'إلى', 'transfer_date' => 'التاريخ', 'kind' => 'النوع', 'bank_name' => 'البنك', 'employee_id' => 'الموظف', 'custody_limit' => 'الحد الأعلى للعهدة', 'daftra_treasury_ref' => 'خزينة دفترة',
         'contract_type' => 'نوع العقد', 'end_date' => 'تاريخ النهاية', 'basic_salary' => 'الراتب الأساسي', 'housing_allowance' => 'بدل السكن', 'transport_allowance' => 'بدل النقل', 'other_allowance' => 'بدلات أخرى', 'weekly_hours' => 'الساعات الأسبوعية', 'check_in' => 'الحضور', 'check_out' => 'الانصراف', 'date_from' => 'من', 'date_to' => 'إلى', 'days' => 'الأيام', 'refusal_reason' => 'سبب الرفض',
         'department_id' => 'القسم', 'job_id' => 'المسمى الوظيفي', 'trade' => 'المهنة', 'work_phone' => 'هاتف العمل', 'work_email' => 'بريد العمل', 'mobile' => 'الجوال الشخصي', 'nationality' => 'الجنسية', 'id_type' => 'نوع الهوية', 'id_number' => 'رقم الهوية', 'birth_date' => 'تاريخ الميلاد', 'gender' => 'الجنس', 'hire_date' => 'تاريخ التعيين', 'employment_type' => 'نوع التوظيف', 'is_direct_labor' => 'عمالة مباشرة', 'termination_date' => 'انتهاء الخدمة', 'termination_reason' => 'سبب انتهاء الخدمة', 'iban' => 'الآيبان', 'emergency_contact' => 'جهة الطوارئ', 'emergency_phone' => 'هاتف الطوارئ', 'doc_type' => 'نوع الوثيقة', 'doc_number' => 'رقم الوثيقة', 'issue_date' => 'تاريخ الإصدار', 'expiry_date' => 'تاريخ الانتهاء', 'parent_id' => 'يتبع', 'user_id' => 'حساب المستخدم',
         'code' => 'الرمز', 'name' => 'الاسم', 'uom' => 'الوحدة', 'is_active' => 'نشط', 'file_url' => 'ملف التصميم', 'change_notes' => 'ملاحظات النسخة', 'planned_start' => 'البدء المخطط', 'planned_end' => 'الانتهاء المخطط', 'started_at' => 'بدأ', 'client_approved_at' => 'موافقة العميل', 'released_at' => 'تاريخ الإصدار للإنتاج', 'released_by' => 'أصدرها', 'waste_pct' => 'نسبة الهالك', 'material_id' => 'الخامة',
@@ -129,6 +139,10 @@ return [
     'contract_type' => ['FIXED_TERM' => 'محدد المدة', 'INDEFINITE' => 'غير محدد المدة'],
 
     'payment_method' => ['CASH' => 'نقدًا', 'BANK' => 'تحويل بنكي', 'CARD' => 'بطاقة', 'PETTY_CASH' => 'من عهدة موظف'],
+
+    'account_kind' => ['CASH' => 'صندوق نقدي', 'BANK' => 'حساب بنكي', 'CUSTODY' => 'عهدة موظف'],
+
+    'transfer_purpose' => ['ISSUE' => 'صرف عهدة', 'RETURN' => 'إرجاع عهدة', 'MOVE' => 'تحويل بين الحسابات'],
 
     'expense_kind' => ['PROJECT' => 'على مشروع', 'OVERHEAD' => 'غير مباشر للورشة', 'OTHER' => 'إداري وعمومي'],
 

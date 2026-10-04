@@ -408,3 +408,25 @@ dialog.picker::backdrop { background: rgba(30, 20, 12, .45); }
 .theme-list button:hover, .theme-list button:focus-visible { background: var(--hover-strong); }
 .theme-list button[aria-pressed="true"] { background: var(--brand-soft); color: var(--brand); font-weight: 600; }
 .theme-list svg { flex: none; }
+
+/* Treasury dashboard (Odoo accounting-style cards) */
+.acct-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.acct-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 10px; box-shadow: var(--shadow-sm); }
+.acct-card:hover { border-color: var(--card-hover-border); box-shadow: var(--shadow-md); }
+.acct-head { display: flex; flex-direction: column; gap: 2px; color: var(--ink); }
+.acct-head:hover { text-decoration: none; }
+.acct-name { font-weight: 700; font-size: 17px; }
+.acct-kind { align-self: flex-start; font-size: 12px; border-radius: 999px; padding: 1px 10px; }
+.acct-kind.k-CASH { background: var(--ok-soft); color: var(--ok); }
+.acct-kind.k-BANK { background: var(--info-soft); color: var(--info); }
+.acct-kind.k-CUSTODY { background: var(--warn-soft); color: var(--warn); }
+.acct-figure { display: flex; flex-direction: column; background: var(--surface-2); border-radius: 8px; padding: 8px 12px; }
+.acct-figure .label { color: var(--muted); font-size: 13px; }
+.acct-figure .value { font-size: 24px; font-weight: 700; }
+.acct-figure.bad .value, .acct-figure.bad .label { color: var(--bad); }
+.acct-flags { display: flex; flex-wrap: wrap; gap: 6px; min-height: 0; }
+.acct-flags:empty { display: none; }
+.acct-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; }
+.stmt-in { color: var(--ok); }
+.stmt-out { color: var(--bad); }
+tr.draft-line td { color: var(--muted); font-style: italic; }

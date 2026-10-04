@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
+use App\Models\PaymentAccount;
 use App\Models\PurchaseInvoice;
 use App\Models\RawMaterial;
 use App\Models\StudioAsset;
@@ -102,9 +103,11 @@ class PurchasingTest extends ApiTestCase
         $transport = ExpenseCategory::where('name', 'TEST transport')->sole();
         $rent = ExpenseCategory::where('name', 'TEST rent')->sole();
 
-        $base = ['expense_date' => now()->toDateString(), 'category_id' => $transport->id, 'description' => 'TEST delivery', 'amount' => 250, 'vat_amount' => 37.5, 'payment_method' => 'CASH'];
+        $this->actingAs($admin)->post('/treasury/accounts', ['kind' => 'CASH', 'name' => 'TEST cash box'])->assertSessionHasNoErrors();
+        $cash = PaymentAccount::sole();
+        $base = ['expense_date' => now()->toDateString(), 'category_id' => $transport->id, 'description' => 'TEST delivery', 'amount' => 250, 'vat_amount' => 37.5, 'payment_account_id' => $cash->id];
         $this->actingAs($admin)->post('/expenses', $base)->assertSessionHasErrors('supplier_id'); // supplier or payee
-        $this->actingAs($admin)->post('/expenses', ['payee' => 'TEST truck', 'payment_method' => 'PETTY_CASH'] + $base)->assertSessionHasErrors('paid_by_employee_id');
+        $this->actingAs($admin)->post('/expenses', ['payee' => 'TEST truck', 'payment_account_id' => null] + $base)->assertSessionHasErrors('payment_account_id');
         $this->actingAs($admin)->post('/expenses', ['payee' => 'TEST truck', 'project_id' => $projectId] + $base)->assertRedirect();
         $this->actingAs($admin)->post('/expenses', ['payee' => 'TEST landlord', 'category_id' => $rent->id, 'amount' => 3000, 'vat_amount' => 0, 'description' => 'TEST rent'] + $base)->assertRedirect();
 

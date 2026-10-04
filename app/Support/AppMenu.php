@@ -21,6 +21,7 @@ class AppMenu
             ['key' => 'studio', 'label' => __('الاستوديو'), 'route' => 'studio.index', 'match' => 'studio.*', 'permission' => 'studio.view', 'group' => 'ops'],
             ['key' => 'purchasing', 'label' => __('المشتريات'), 'route' => 'purchases.index', 'match' => 'purchases.*', 'permission' => ['purchases.view', 'purchases.manage'], 'group' => 'buy'],
             ['key' => 'suppliers', 'label' => __('الموردون'), 'route' => 'suppliers.index', 'match' => 'suppliers.*', 'permission' => ['purchases.view', 'purchases.manage'], 'group' => 'buy'],
+            ['key' => 'treasury', 'label' => __('الخزينة والعهد'), 'route' => 'treasury.accounts.index', 'match' => 'treasury.*', 'permission' => ['treasury.view', 'treasury.manage'], 'group' => 'buy'],
             ['key' => 'expenses', 'label' => __('المصروفات'), 'route' => 'expenses.index', 'match' => ['expenses.*', 'expense-categories.*'], 'permission' => ['expenses.view', 'expenses.manage'], 'group' => 'buy'],
             ['key' => 'reports', 'label' => __('التقارير'), 'route' => 'reports.index', 'match' => 'reports.*', 'permission' => ['quotations.view', 'projects.view', 'costing.view', 'purchases.view', 'expenses.view', 'inventory.view'], 'group' => 'reports'],
             ['key' => 'production', 'label' => __('التصنيع'), 'route' => 'production.index', 'match' => ['production.*', 'designs.*', 'design-versions.*'], 'permission' => ['production.manage', 'production.log_time', 'quality.inspect', 'designs.manage', 'designs.release', 'bom.manage'], 'group' => 'mrp'],
@@ -139,9 +140,16 @@ class AppMenu
                     ['فواتير المشتريات', 'purchases.index', [], ['purchases.view', 'purchases.manage']],
                     ['المصروفات', 'expenses.index', [], ['expenses.view', 'expenses.manage']],
                 ],
+                'treasury' => [
+                    ['الصناديق والبنوك والعهد', 'treasury.accounts.index', [], ['treasury.view', 'treasury.manage']],
+                    ['العهد', 'treasury.accounts.index', ['f' => ['custody']], ['treasury.view', 'treasury.manage']],
+                    ['التحويلات وصرف العهد', 'treasury.transfers.index', [], ['treasury.view', 'treasury.manage']],
+                    ['المصروفات', 'expenses.index', [], ['expenses.view', 'expenses.manage']],
+                ],
                 'expenses' => [
                     ['المصروفات', 'expenses.index', [], ['expenses.view', 'expenses.manage']],
                     ['تصنيفات المصروفات', 'expense-categories.index', [], ['expenses.view', 'expenses.manage']],
+                    ['الصناديق والبنوك والعهد', 'treasury.accounts.index', [], ['treasury.view', 'treasury.manage']],
                     ['التقارير', 'reports.show', ['key' => 'expenses'], ['expenses.view', 'expenses.manage']],
                 ],
                 'studio' => [

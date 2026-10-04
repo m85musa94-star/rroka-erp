@@ -30,10 +30,11 @@ class DemoDataTest extends ApiTestCase
         $this->assertEquals(22000, (float) $cost->contract_value);
         $this->assertEquals(1112.5, (float) $cost->labor_cost);
         $this->assertNull($cost->gross_profit, 'the overhead rate is global and left unset');
+        $this->assertEquals(1793, (float) DB::table('v_payment_account_summary')->whereNotNull('custody_balance')->value('custody_balance'));
 
         foreach (['/', '/clients', '/quotations', '/projects', '/designs', '/production', '/inventory', '/suppliers', '/purchases', '/expenses',
             '/employees', '/departments', '/contracts', '/attendance', '/attendance/records', '/leaves', '/leaves/settings', '/studio', '/settings/rates',
-            '/reports/profitability', '/reports/purchases', '/reports/expenses'] as $page) {
+            '/reports/profitability', '/reports/purchases', '/reports/expenses', '/treasury/accounts', '/treasury/transfers'] as $page) {
             $this->actingAs($admin)->get($page)->assertOk()->assertSee('تجريبي');
         }
         $this->actingAs($admin)->get('/production/'.ProductionOrder::where('status', 'IN_PROGRESS')->value('id'))->assertOk()->assertSee('3 مم');
@@ -42,7 +43,7 @@ class DemoDataTest extends ApiTestCase
         $this->actingAs($admin)->get('/settings/demo')->assertSee('حذف البيانات التجريبية');
 
         $this->actingAs($admin)->delete('/settings/demo')->assertSessionHasNoErrors();
-        foreach (['clients', 'quotations', 'projects', 'stock_movements', 'stock_balances', 'workers', 'attendances', 'expenses', 'purchase_invoices', 'studio_assets', 'demo_records'] as $t) {
+        foreach (['clients', 'quotations', 'projects', 'stock_movements', 'stock_balances', 'workers', 'attendances', 'expenses', 'purchase_invoices', 'studio_assets', 'payment_accounts', 'treasury_transfers', 'demo_records'] as $t) {
             $this->assertSame(0, DB::table($t)->count(), $t);
         }
         $this->assertSame([], Storage::disk('studio')->allFiles());

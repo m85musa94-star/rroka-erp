@@ -337,16 +337,32 @@ class DemoData
         $transport = $cat('نقل وتوصيل', false);
         $rent = $cat('إيجار الورشة', true);
         $power = $cat('كهرباء وماء', true);
-        $expense = function (int $category, int $day, string $desc, float $amount, float $vat, string $method, array $extra, bool $approve) use ($u) {
+        // ---- Treasury: cash box, bank, a supervisor's custody --------------------------------
+        $acc = fn (array $x) => $this->add('payment_accounts', $x + ['notes' => self::NOTE, 'created_by' => $u]);
+        $cash = $acc(['name' => $this->name('صندوق الورشة'), 'kind' => 'CASH']);
+        $bank = $acc(['name' => $this->name('الحساب البنكي الرئيسي'), 'kind' => 'BANK', 'bank_name' => $this->name('بنك افتراضي')]);
+        $custody = $acc(['name' => $this->name('عهدة خالد المشرف'), 'kind' => 'CUSTODY', 'employee_id' => $khaled, 'custody_limit' => 3000]);
+        $transfer = function (int $from, int $to, float $amount, int $day, string $note, bool $approve) use ($u) {
+            $id = $this->add('treasury_transfers', ['transfer_date' => $this->day($day), 'from_account_id' => $from, 'to_account_id' => $to,
+                'amount' => $amount, 'reference' => 'DEMO-V-'.abs($day), 'notes' => $this->name($note), 'created_by' => $u]);
+            if ($approve) {
+                DB::table('treasury_transfers')->where('id', $id)->update(['status' => 'APPROVED', 'approved_by' => $u, 'approved_at' => $this->at($day)]);
+            }
+        };
+        $transfer($cash, $custody, 2000, -10, 'صرف عهدة لمشتريات الموقع الصغيرة', true);
+        $transfer($cash, $bank, 5000, -1, 'إيداع نقدية الصندوق في البنك', false);
+
+        $expense = function (int $category, int $day, string $desc, float $amount, float $vat, int $account, string $method, array $extra, bool $approve) use ($u) {
             $id = $this->add('expenses', ['expense_date' => $this->day($day), 'category_id' => $category, 'description' => $this->name($desc), 'amount' => $amount,
-                'vat_amount' => $vat, 'payment_method' => $method, 'created_by' => $u] + $extra);
+                'vat_amount' => $vat, 'payment_account_id' => $account, 'payment_method' => $method, 'created_by' => $u] + $extra);
             if ($approve) {
                 DB::table('expenses')->where('id', $id)->update(['status' => 'APPROVED', 'approved_by' => $u, 'approved_at' => $this->at($day + 1)]);
             }
         };
-        $expense($transport, -20, 'نقل ألواح من المورد إلى الورشة', 350, 52.5, 'CASH', ['supplier_id' => $s3, 'project_id' => $p1, 'reference' => 'DEMO-R-01'], true);
-        $expense($rent, -29, 'إيجار الورشة لهذا الشهر', 4000, 0, 'BANK', ['payee' => $this->name('مالك المستودع'), 'reference' => 'DEMO-R-02'], true);
-        $expense($power, -3, 'فاتورة الكهرباء', 780, 117, 'PETTY_CASH', ['payee' => $this->name('شركة الكهرباء'), 'paid_by_employee_id' => $khaled], false);
+        $expense($transport, -20, 'نقل ألواح من المورد إلى الورشة', 350, 52.5, $cash, 'CASH', ['supplier_id' => $s3, 'project_id' => $p1, 'reference' => 'DEMO-R-01'], true);
+        $expense($rent, -29, 'إيجار الورشة لهذا الشهر', 4000, 0, $bank, 'BANK', ['payee' => $this->name('مالك المستودع'), 'reference' => 'DEMO-R-02'], true);
+        $expense($transport, -6, 'أجرة نقل باب الخزانة المعاد قصه', 180, 27, $custody, 'PETTY_CASH', ['payee' => $this->name('سائق نقل'), 'project_id' => $p1, 'reference' => 'DEMO-R-03'], true);
+        $expense($power, -3, 'فاتورة الكهرباء', 780, 117, $custody, 'PETTY_CASH', ['payee' => $this->name('شركة الكهرباء')], false);
 
         // ---- Time off -------------------------------------------------------------------
         $annual = $this->add('leave_types', ['name' => $this->name('إجازة سنوية'), 'is_paid' => true, 'requires_allocation' => true]);

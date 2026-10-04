@@ -65,6 +65,15 @@ return [
         'RROKA_PURCHASE_NEGATIVE' => 'The discount is larger than the lines total.',
         'RROKA_EXPENSE_TRANSITION' => 'An expense starts as a draft.',
         'RROKA_EXPENSE_LOCKED' => 'An approved or cancelled expense cannot change.',
+        'RROKA_EXPENSE_NEEDS_PAYMENT_ACCOUNT' => 'Say where the expense was paid from (cash box, bank or custody) before approving it.',
+        'RROKA_EXPENSE_PAYMENT_MISMATCH' => 'The payment method does not fit the account: cash box = cash, bank = transfer or card, custody = employee petty cash.',
+        'RROKA_PAYMENT_ACCOUNT_INACTIVE' => 'The account is closed; no new movement can be approved on it.',
+        'RROKA_PAYMENT_ACCOUNT_LOCKED' => 'The account kind and custodian cannot change; close the account and create another.',
+        'RROKA_CUSTODY_NOT_SETTLED' => 'A custody cannot be closed before it is settled to zero (remainder returned or employee reimbursed).',
+        'RROKA_CUSTODY_INSUFFICIENT' => 'The amount is more than the employee holds in custody.',
+        'RROKA_CUSTODY_LIMIT' => 'The transfer would take the custody above its limit.',
+        'RROKA_TRANSFER_TRANSITION' => 'A transfer starts as a draft.',
+        'RROKA_TRANSFER_LOCKED' => 'An approved or cancelled transfer cannot change.',
         'CHECK_VIOLATION' => 'The entered data breaks one of the validity rules.',
         'DUPLICATE' => 'This record already exists.',
         'INVALID_REFERENCE' => 'Invalid reference.',
@@ -85,11 +94,11 @@ return [
         'projects' => 'Projects', 'designs' => 'Designs', 'bom' => 'Bills of materials',
         'inventory' => 'Inventory', 'production' => 'Production', 'quality' => 'Quality',
         'installations' => 'Installation', 'costing' => 'Costing & profitability', 'settings' => 'Settings',
-        'daftra' => 'Daftra', 'hr' => 'Human resources', 'purchases' => 'Purchasing', 'expenses' => 'Expenses', 'studio' => 'Studio', 'users' => 'Users & roles', 'audit' => 'Audit log',
+        'daftra' => 'Daftra', 'hr' => 'Human resources', 'purchases' => 'Purchasing', 'expenses' => 'Expenses', 'treasury' => 'Treasury & custody', 'studio' => 'Studio', 'users' => 'Users & roles', 'audit' => 'Audit log',
     ],
 
     'entities' => [
-        'suppliers' => 'supplier', 'purchase_invoices' => 'supplier invoice', 'purchase_invoice_lines' => 'supplier invoice line', 'expenses' => 'expense', 'expense_categories' => 'expense category',
+        'payment_accounts' => 'account', 'treasury_transfers' => 'transfer', 'suppliers' => 'supplier', 'purchase_invoices' => 'supplier invoice', 'purchase_invoice_lines' => 'supplier invoice line', 'expenses' => 'expense', 'expense_categories' => 'expense category',
         'employee_contracts' => 'contract', 'leave_requests' => 'time-off request', 'leave_allocations' => 'allocation', 'attendances' => 'attendance', 'leave_types' => 'time-off type',
         'workers' => 'employee', 'departments' => 'department', 'job_positions' => 'job position', 'employee_documents' => 'document',
         'raw_materials' => 'material', 'designs' => 'design', 'design_versions' => 'design version', 'design_bom_lines' => 'BOM line', 'production_orders' => 'manufacturing order',
@@ -99,6 +108,7 @@ return [
 
     'fields' => [
         'supplier_id' => 'Supplier', 'supplier_invoice_no' => 'Supplier invoice no.', 'invoice_date' => 'Invoice date', 'due_date' => 'Due date', 'vat_amount' => 'VAT', 'attachment_id' => 'Document image', 'expense_date' => 'Date', 'category_id' => 'Category', 'payee' => 'Payee', 'amount' => 'Amount', 'payment_method' => 'Payment method', 'paid_by_employee_id' => 'Paid from custody of', 'reference' => 'Reference', 'is_overhead' => 'Overhead', 'daftra_account_ref' => 'Daftra account', 'line_no' => 'Line no.',
+        'payment_account_id' => 'Paid from', 'from_account_id' => 'From', 'to_account_id' => 'To', 'transfer_date' => 'Date', 'kind' => 'Kind', 'bank_name' => 'Bank', 'employee_id' => 'Employee', 'custody_limit' => 'Custody limit', 'daftra_treasury_ref' => 'Daftra treasury',
         'contract_type' => 'Contract type', 'end_date' => 'End date', 'basic_salary' => 'Basic salary', 'housing_allowance' => 'Housing allowance', 'transport_allowance' => 'Transport allowance', 'other_allowance' => 'Other allowances', 'weekly_hours' => 'Weekly hours', 'check_in' => 'Check in', 'check_out' => 'Check out', 'date_from' => 'From', 'date_to' => 'To', 'days' => 'Days', 'refusal_reason' => 'Refusal reason',
         'department_id' => 'Department', 'job_id' => 'Job position', 'trade' => 'Trade', 'work_phone' => 'Work phone', 'work_email' => 'Work email', 'mobile' => 'Personal mobile', 'nationality' => 'Nationality', 'id_type' => 'ID type', 'id_number' => 'ID number', 'birth_date' => 'Date of birth', 'gender' => 'Gender', 'hire_date' => 'Hire date', 'employment_type' => 'Employment type', 'is_direct_labor' => 'Direct labour', 'termination_date' => 'End of service', 'termination_reason' => 'End of service reason', 'iban' => 'IBAN', 'emergency_contact' => 'Emergency contact', 'emergency_phone' => 'Emergency phone', 'doc_type' => 'Document type', 'doc_number' => 'Document number', 'issue_date' => 'Issue date', 'expiry_date' => 'Expiry date', 'parent_id' => 'Parent', 'user_id' => 'User account',
         'code' => 'Code', 'name' => 'Name', 'uom' => 'Unit', 'is_active' => 'Active', 'file_url' => 'Design file', 'change_notes' => 'Version notes', 'planned_start' => 'Planned start', 'planned_end' => 'Planned end', 'started_at' => 'Started', 'client_approved_at' => 'Client approval', 'released_at' => 'Released on', 'released_by' => 'Released by', 'waste_pct' => 'Waste %', 'material_id' => 'Material',
@@ -129,6 +139,10 @@ return [
     'contract_type' => ['FIXED_TERM' => 'Fixed term', 'INDEFINITE' => 'Indefinite'],
 
     'payment_method' => ['CASH' => 'Cash', 'BANK' => 'Bank transfer', 'CARD' => 'Card', 'PETTY_CASH' => 'Employee petty cash'],
+
+    'account_kind' => ['CASH' => 'Cash box', 'BANK' => 'Bank account', 'CUSTODY' => 'Employee custody'],
+
+    'transfer_purpose' => ['ISSUE' => 'Custody issue', 'RETURN' => 'Custody return', 'MOVE' => 'Transfer between accounts'],
 
     'expense_kind' => ['PROJECT' => 'On a project', 'OVERHEAD' => 'Workshop overhead', 'OTHER' => 'General & admin'],
 

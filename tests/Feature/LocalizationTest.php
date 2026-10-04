@@ -11,6 +11,7 @@ use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\JobPosition;
 use App\Models\LeaveType;
+use App\Models\PaymentAccount;
 use App\Models\Permission;
 use App\Models\ProductionOrder;
 use App\Models\Project;
@@ -19,6 +20,7 @@ use App\Models\RawMaterial;
 use App\Models\Role;
 use App\Models\StudioAsset;
 use App\Models\Supplier;
+use App\Models\TreasuryTransfer;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -89,8 +91,15 @@ class LocalizationTest extends ApiTestCase
         $this->actingAs($admin)->post('/suppliers', ['name' => 'Timber Co', 'vat_number' => '300000000000003']);
         $supplierId = Supplier::value('id');
         $this->actingAs($admin)->post('/expense-categories', ['name' => 'Transport']);
+        $this->actingAs($admin)->post('/treasury/accounts', ['kind' => 'CASH', 'name' => 'Workshop cash box']);
+        $this->actingAs($admin)->post('/treasury/accounts', ['kind' => 'CUSTODY', 'name' => 'Supervisor custody', 'employee_id' => $employeeId, 'custody_limit' => 2000]);
+        $cashId = PaymentAccount::where('kind', 'CASH')->value('id');
+        $custodyId = PaymentAccount::where('kind', 'CUSTODY')->value('id');
+        $this->actingAs($admin)->post('/treasury/transfers', ['transfer_date' => now()->toDateString(), 'from_account_id' => $cashId, 'to_account_id' => $custodyId, 'amount' => 500]);
+        $transferId = TreasuryTransfer::value('id');
+        $this->actingAs($admin)->post("/treasury/transfers/{$transferId}/approve");
         $this->actingAs($admin)->post('/expenses', ['expense_date' => now()->toDateString(), 'category_id' => ExpenseCategory::value('id'), 'payee' => 'Truck',
-            'description' => 'Delivery', 'amount' => 100, 'vat_amount' => 15, 'payment_method' => 'CASH', 'project_id' => $projectId]);
+            'description' => 'Delivery', 'amount' => 100, 'vat_amount' => 15, 'payment_account_id' => $custodyId, 'project_id' => $projectId]);
         $expenseId = Expense::value('id');
         // Manufacturing records in English.
         $this->actingAs($admin)->post('/inventory', ['code' => 'MDF18', 'name' => 'MDF board', 'uom' => 'sheet', 'is_active' => 1]);
@@ -127,6 +136,8 @@ class LocalizationTest extends ApiTestCase
             '/suppliers', '/suppliers/create', "/suppliers/{$supplierId}", "/suppliers/{$supplierId}/edit",
             '/purchases', '/purchases/create', '/purchases?g=supplier', "/purchases/{$purchaseId}", "/purchases/{$purchaseId}/edit",
             '/expenses', '/expenses/create', '/expenses?g=category', "/expenses/{$expenseId}", "/expenses/{$expenseId}/edit", '/expense-categories',
+            '/treasury/accounts', '/treasury/accounts?v=list', '/treasury/accounts?g=kind', '/treasury/accounts/create', "/treasury/accounts/{$custodyId}", "/treasury/accounts/{$cashId}", "/treasury/accounts/{$custodyId}/edit",
+            '/treasury/transfers', '/treasury/transfers/create', "/treasury/transfers/{$transferId}",
             '/designs', '/designs/create', "/design-versions/{$versionId}",
             '/production', '/production?v=kanban', '/production/create', "/production/{$orderId}",
             '/studio', '/studio?v=list', '/studio?g=category', '/studio/create', "/studio/{$assetId}", "/studio/{$assetId}/edit", "/quotations/{$draft['id']}/edit", "/quotations/{$draft['id']}",

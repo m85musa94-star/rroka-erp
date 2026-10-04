@@ -38,10 +38,11 @@ class ExpensesReport extends Report
     protected function base(): string
     {
         return "SELECT e.id, e.expense_date, e.amount, e.vat_amount, e.payment_method, c.name AS category,
-                       c.is_overhead, p.project_no, (e.project_id IS NOT NULL) AS on_project
+                       c.is_overhead, p.project_no, (e.project_id IS NOT NULL) AS on_project, a.name AS account
                   FROM expenses e
                   JOIN expense_categories c ON c.id = e.category_id
                   LEFT JOIN projects p ON p.id = e.project_id
+                  LEFT JOIN payment_accounts a ON a.id = e.payment_account_id
                  WHERE e.status = 'APPROVED'";
     }
 
@@ -53,6 +54,7 @@ class ExpensesReport extends Report
             'project' => ['label' => __('المشروع'), 'expr' => 'r.project_no'],
             'kind' => ['label' => __('النوع'), 'expr' => "CASE WHEN r.on_project THEN 'PROJECT' WHEN r.is_overhead THEN 'OVERHEAD' ELSE 'OTHER' END",
                 'labeler' => fn ($k) => __("rroka.expense_kind.$k")],
+            'account' => ['label' => __('دُفع من'), 'expr' => "COALESCE(r.account, '—')"],
             'method' => ['label' => __('طريقة الدفع'), 'expr' => 'r.payment_method', 'labeler' => fn ($k) => __("rroka.payment_method.$k")],
         ];
     }

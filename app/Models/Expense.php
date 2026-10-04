@@ -10,7 +10,7 @@ class Expense extends Model
     public const METHODS = ['CASH', 'BANK', 'CARD', 'PETTY_CASH'];
 
     protected $fillable = ['expense_date', 'category_id', 'supplier_id', 'payee', 'description', 'amount', 'vat_amount',
-        'payment_method', 'paid_by_employee_id', 'project_id', 'reference', 'attachment_id'];
+        'payment_method', 'paid_by_employee_id', 'payment_account_id', 'project_id', 'reference', 'attachment_id'];
 
     protected function casts(): array
     {
@@ -35,6 +35,11 @@ class Expense extends Model
     public function paidBy(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'paid_by_employee_id');
+    }
+
+    public function paymentAccount(): BelongsTo
+    {
+        return $this->belongsTo(PaymentAccount::class);
     }
 
     public function attachment(): BelongsTo

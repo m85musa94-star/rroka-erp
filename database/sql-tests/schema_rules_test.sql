@@ -499,8 +499,9 @@ SELECT pg_temp.expect_error('expense: needs a supplier or payee',
 SELECT pg_temp.expect_error('expense: petty cash names the employee',
     'INSERT INTO expenses (expense_date, category_id, payee, description, amount, vat_amount, payment_method) VALUES (''2026-03-01'', 1, ''x'', ''x'', 10, 0, ''PETTY_CASH'')',
     'check constraint');
-INSERT INTO expenses (id, expense_date, category_id, payee, description, amount, vat_amount, payment_method, project_id)
-    VALUES (1, '2026-03-02', 1, 'TEST truck', 'TEST delivery to site', 250, 37.5, 'CASH', 1);
+INSERT INTO payment_accounts (id, name, kind) VALUES (1, 'TEST workshop cash box', 'CASH');
+INSERT INTO expenses (id, expense_date, category_id, payee, description, amount, vat_amount, payment_method, project_id, payment_account_id)
+    VALUES (1, '2026-03-02', 1, 'TEST truck', 'TEST delivery to site', 250, 37.5, 'CASH', 1, 1);
 SELECT pg_temp.expect_eq('expense: draft is not a project cost yet',
     (SELECT direct_expense_cost FROM v_project_actual_cost WHERE project_id = 1), 0::numeric);
 UPDATE expenses SET status = 'APPROVED', approved_by = 2, approved_at = now() WHERE id = 1;
@@ -508,6 +509,88 @@ SELECT pg_temp.expect_eq('expense: approved project expense is a direct cost (be
     (SELECT direct_expense_cost FROM v_project_actual_cost WHERE project_id = 1), 250.00::numeric);
 SELECT pg_temp.expect_error('expense: approved expense is final',
     'UPDATE expenses SET amount = 1 WHERE id = 1', 'RROKA_EXPENSE_LOCKED');
+
+-- ---------------------------------------------------------------------
+-- Treasury: payment accounts, custody, transfers
+-- ---------------------------------------------------------------------
+INSERT INTO payment_accounts (id, name, kind, bank_name, iban) VALUES (2, 'TEST bank', 'BANK', 'TEST bank name', 'SA0380000000608010167519');
+SELECT setval('payment_accounts_id_seq', 10);
+SELECT pg_temp.expect_error('account: custody names its custodian',
+    'INSERT INTO payment_accounts (name, kind) VALUES (''x'', ''CUSTODY'')', 'check constraint');
+SELECT pg_temp.expect_error('account: only a bank has bank details',
+    'INSERT INTO payment_accounts (name, kind, iban) VALUES (''x'', ''CASH'', ''SA0380000000608010167519'')', 'check constraint');
+SELECT pg_temp.expect_error('account: only custody has a limit',
+    'INSERT INTO payment_accounts (name, kind, custody_limit) VALUES (''x'', ''CASH'', 100)', 'check constraint');
+INSERT INTO payment_accounts (id, name, kind, employee_id, custody_limit) VALUES (3, 'TEST custody staff', 'CUSTODY', 11, 1000);
+SELECT pg_temp.expect_error('account: one open custody per employee',
+    'INSERT INTO payment_accounts (name, kind, employee_id) VALUES (''x'', ''CUSTODY'', 11)', 'ux_payment_accounts_one_custody');
+SELECT pg_temp.expect_error('account: kind cannot change',
+    'UPDATE payment_accounts SET kind = ''BANK'' WHERE id = 1', 'RROKA_PAYMENT_ACCOUNT_LOCKED');
+SELECT pg_temp.expect_error('account: custodian cannot change',
+    'UPDATE payment_accounts SET employee_id = 10 WHERE id = 3', 'RROKA_PAYMENT_ACCOUNT_LOCKED');
+SELECT pg_temp.expect_ok('account: name and Daftra treasury can change',
+    'UPDATE payment_accounts SET name = ''TEST custody of staff 2'', daftra_treasury_ref = ''7'' WHERE id = 3');
+
+-- Expenses must say where they were paid from, consistently with the method.
+INSERT INTO expenses (id, expense_date, category_id, payee, description, amount, vat_amount, payment_method)
+    VALUES (2, '2026-03-03', 1, 'TEST shop', 'TEST screws', 100, 15, 'CASH');
+SELECT pg_temp.expect_error('expense: approval needs the account it was paid from',
+    'UPDATE expenses SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 2', 'RROKA_EXPENSE_NEEDS_PAYMENT_ACCOUNT');
+SELECT pg_temp.expect_ok('expense: a draft can be cancelled without an account',
+    'UPDATE expenses SET status = ''CANCELLED'' WHERE id = 2');
+SELECT pg_temp.expect_error('expense: cash method cannot come from a bank account',
+    'INSERT INTO expenses (expense_date, category_id, payee, description, amount, vat_amount, payment_method, payment_account_id) VALUES (''2026-03-03'', 1, ''x'', ''x'', 10, 0, ''CASH'', 2)',
+    'RROKA_EXPENSE_PAYMENT_MISMATCH');
+SELECT pg_temp.expect_error('expense: custody account means petty cash',
+    'INSERT INTO expenses (expense_date, category_id, payee, description, amount, vat_amount, payment_method, payment_account_id) VALUES (''2026-03-03'', 1, ''x'', ''x'', 10, 0, ''BANK'', 3)',
+    'RROKA_EXPENSE_PAYMENT_MISMATCH');
+SELECT pg_temp.expect_ok('expense: card payment from a bank account',
+    'INSERT INTO expenses (id, expense_date, category_id, payee, description, amount, vat_amount, payment_method, payment_account_id) VALUES (3, ''2026-03-03'', 1, ''x'', ''TEST card'', 10, 0, ''CARD'', 2)');
+INSERT INTO expenses (id, expense_date, category_id, payee, description, amount, vat_amount, payment_method, paid_by_employee_id, payment_account_id)
+    VALUES (4, '2026-03-04', 1, 'TEST hardware shop', 'TEST hinges', 300, 45, 'PETTY_CASH', 10, 3);
+SELECT pg_temp.expect_eq('expense: custody spending is recorded against the custodian',
+    (SELECT paid_by_employee_id FROM expenses WHERE id = 4), 11::bigint);
+
+-- Transfers: issue custody from the cash box, spend, return.
+INSERT INTO treasury_transfers (id, transfer_date, from_account_id, to_account_id, amount) VALUES (1, '2026-03-01', 1, 3, 800);
+SELECT setval('treasury_transfers_id_seq', 10);
+SELECT pg_temp.expect_error('transfer: starts as draft',
+    'INSERT INTO treasury_transfers (transfer_date, from_account_id, to_account_id, amount, status, approved_by, approved_at) VALUES (''2026-03-01'', 1, 3, 1, ''APPROVED'', 2, now())',
+    'RROKA_TRANSFER_TRANSITION');
+SELECT pg_temp.expect_error('transfer: not to the same account',
+    'INSERT INTO treasury_transfers (transfer_date, from_account_id, to_account_id, amount) VALUES (''2026-03-01'', 1, 1, 5)', 'check constraint');
+SELECT pg_temp.expect_eq('custody: a draft issue is not held yet', fn_custody_balance(3), 0::numeric);
+SELECT pg_temp.expect_ok('transfer: approve custody issue',
+    'UPDATE treasury_transfers SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 1');
+SELECT pg_temp.expect_error('transfer: approved transfer is final',
+    'UPDATE treasury_transfers SET amount = 1 WHERE id = 1', 'RROKA_TRANSFER_LOCKED');
+SELECT pg_temp.expect_ok('transfer: Daftra id can be linked after approval',
+    'UPDATE treasury_transfers SET daftra_transfer_id = 77 WHERE id = 1');
+INSERT INTO treasury_transfers (id, transfer_date, from_account_id, to_account_id, amount) VALUES (2, '2026-03-02', 2, 3, 300);
+SELECT pg_temp.expect_error('custody: cannot hold more than its limit (800 + 300 > 1000)',
+    'UPDATE treasury_transfers SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 2', 'RROKA_CUSTODY_LIMIT');
+UPDATE expenses SET status = 'APPROVED', approved_by = 2, approved_at = now() WHERE id = 4;
+SELECT pg_temp.expect_eq('custody: balance = 800 issued − 345 spent (with VAT)', fn_custody_balance(3), 455.00::numeric);
+INSERT INTO treasury_transfers (id, transfer_date, from_account_id, to_account_id, amount) VALUES (3, '2026-03-05', 3, 1, 500);
+SELECT pg_temp.expect_error('custody: cannot return more than it holds',
+    'UPDATE treasury_transfers SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 3', 'RROKA_CUSTODY_INSUFFICIENT');
+SELECT pg_temp.expect_error('custody: not closed while money is outstanding',
+    'UPDATE payment_accounts SET is_active = false WHERE id = 3', 'RROKA_CUSTODY_NOT_SETTLED');
+INSERT INTO treasury_transfers (id, transfer_date, from_account_id, to_account_id, amount) VALUES (4, '2026-03-05', 3, 1, 455);
+SELECT pg_temp.expect_ok('custody: return the remainder',
+    'UPDATE treasury_transfers SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 4');
+SELECT pg_temp.expect_eq('custody: summary view agrees with the balance',
+    (SELECT custody_balance FROM v_payment_account_summary WHERE account_id = 3), 0::numeric);
+SELECT pg_temp.expect_eq('cash box: no balance is computed here (collections are in Daftra)',
+    (SELECT custody_balance FROM v_payment_account_summary WHERE account_id = 1), NULL::numeric);
+SELECT pg_temp.expect_ok('custody: closed once settled',
+    'UPDATE payment_accounts SET is_active = false WHERE id = 3');
+SELECT pg_temp.expect_error('transfer: not to a closed account',
+    'UPDATE treasury_transfers SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 2', 'RROKA_PAYMENT_ACCOUNT_INACTIVE');
+INSERT INTO expenses (id, expense_date, category_id, payee, description, amount, vat_amount, payment_method, payment_account_id)
+    VALUES (5, '2026-03-06', 1, 'x', 'TEST late receipt', 20, 0, 'PETTY_CASH', 3);
+SELECT pg_temp.expect_error('expense: not approved against a closed account',
+    'UPDATE expenses SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 5', 'RROKA_PAYMENT_ACCOUNT_INACTIVE');
 
 -- ---------------------------------------------------------------------
 -- Report

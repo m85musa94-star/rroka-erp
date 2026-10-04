@@ -111,6 +111,13 @@
         <circle cx="24" cy="26" r="5" fill="#fff"/>
         <path d="M34 34l20 20M46 46l-5 5M51 51l-4 4" stroke="#2A5F7E" stroke-width="6" stroke-linecap="round"/>
         @break
+    @case('treasury')
+        <rect x="8" y="18" width="48" height="34" rx="6" fill="#2A5F7E"/>
+        <rect x="8" y="26" width="48" height="6" fill="#1E4A63"/>
+        <rect x="38" y="36" width="18" height="10" rx="3" fill="#F2BD5B"/>
+        <circle cx="44" cy="41" r="2.5" fill="#2A5F7E"/>
+        <path d="M14 18l26-8 6 8z" fill="#5FD0BD"/>
+        @break
     @case('demo')
         <path d="M24 8h16v6h-3v12l15 24a4 4 0 0 1-3.4 6H15.4a4 4 0 0 1-3.4-6l15-24V14h-3z" fill="#5FD0BD"/>
         <path d="M18 42h28l5 8a2 2 0 0 1-1.7 3H14.7a2 2 0 0 1-1.7-3z" fill="#2A5F7E"/>

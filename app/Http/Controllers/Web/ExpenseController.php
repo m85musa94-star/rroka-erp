@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
-use App\Models\Employee;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
+use App\Models\PaymentAccount;
 use App\Models\Project;
 use App\Models\Supplier;
 use App\Services\StudioStorage;
@@ -35,18 +35,22 @@ class ExpenseController extends Controller
                 'overhead' => ['label' => __('مصروفات غير مباشرة للورشة'), 'group' => 'p', 'apply' => fn ($q) => $q->whereNull('project_id')->whereHas('category', fn ($c) => $c->where('is_overhead', true))],
                 'self' => ['label' => __('اعتماد ذاتي (للمراجعة)'), 'group' => 'x', 'apply' => fn ($q) => $q->where('expenses.status', 'APPROVED')->whereColumn('approved_by', 'expenses.created_by')],
                 'no_doc' => ['label' => __('بلا صورة مستند'), 'group' => 'd', 'apply' => fn ($q) => $q->whereNull('attachment_id')],
+                'custody' => ['label' => __('من عهد الموظفين'), 'group' => 'pay', 'apply' => fn ($q) => $q->where('payment_method', 'PETTY_CASH')],
+                'no_account' => ['label' => __('معتمدة بلا جهة دفع (قبل تفعيل الخزينة)'), 'group' => 'pay', 'apply' => fn ($q) => $q->where('expenses.status', 'APPROVED')->whereNull('payment_account_id')],
                 'this_month' => ['label' => __('هذا الشهر'), 'group' => 'date', 'apply' => fn ($q) => $q->where('expense_date', '>=', now()->startOfMonth())],
             ],
             groups: [
                 'category' => ['label' => __('التصنيف'), 'key' => fn ($e) => $e->category_id, 'title' => fn ($e) => $e->category->name],
                 'project' => ['label' => __('المشروع'), 'key' => fn ($e) => $e->project_id ?? 0, 'title' => fn ($e) => $e->project?->project_no ?? __('بلا مشروع')],
                 'month' => ['label' => __('الشهر'), 'key' => fn ($e) => $e->expense_date->format('Y-m'), 'title' => fn ($e) => $e->expense_date->format('Y-m')],
+                'account' => ['label' => __('دُفع من'), 'key' => fn ($e) => $e->payment_account_id ?? 0, 'title' => fn ($e) => $e->paymentAccount?->name ?? __('بلا جهة دفع')],
                 'method' => ['label' => __('طريقة الدفع'), 'key' => fn ($e) => $e->payment_method, 'title' => fn ($e) => __("rroka.payment_method.$e->payment_method")],
             ],
-            keep: ['project_id'],
+            keep: ['project_id', 'payment_account_id'],
         );
-        $query = $lv->applyFilters(Expense::with('category:id,name', 'project:id,project_no', 'supplier:id,name')->orderByDesc('expense_date')->orderByDesc('id'))
-            ->when($request->integer('project_id'), fn ($q, $id) => $q->where('project_id', $id));
+        $query = $lv->applyFilters(Expense::with('category:id,name', 'project:id,project_no', 'supplier:id,name', 'paymentAccount:id,name')->orderByDesc('expense_date')->orderByDesc('id'))
+            ->when($request->integer('project_id'), fn ($q, $id) => $q->where('project_id', $id))
+            ->when($request->integer('payment_account_id'), fn ($q, $id) => $q->where('payment_account_id', $id));
         if ($lv->q !== '') {
             $s = $lv->q;
             $query->where(fn ($q) => $q->where('expense_no', 'ilike', "%{$s}%")->orWhere('description', 'ilike', "%{$s}%")
@@ -62,7 +66,8 @@ class ExpenseController extends Controller
 
     public function create(Request $request): View
     {
-        return view('expenses.form', ['x' => new Expense(['expense_date' => today(), 'payment_method' => 'CASH', 'project_id' => $request->integer('project_id') ?: null]), ...$this->choices()]);
+        return view('expenses.form', ['x' => new Expense(['expense_date' => today(), 'payment_method' => 'BANK',
+            'project_id' => $request->integer('project_id') ?: null, 'payment_account_id' => $request->integer('payment_account_id') ?: null]), ...$this->choices()]);
     }
 
     public function store(Request $request, StudioStorage $storage): RedirectResponse
@@ -82,7 +87,7 @@ class ExpenseController extends Controller
     public function show(Expense $expense): View
     {
         return view('expenses.show', [
-            'x' => $expense->load('category', 'project', 'supplier', 'paidBy', 'attachment'),
+            'x' => $expense->load('category', 'project', 'supplier', 'paidBy', 'paymentAccount', 'attachment'),
             'names' => DB::table('users')->whereIn('id', array_filter([$expense->created_by, $expense->approved_by]))->pluck('name', 'id'),
             'activity' => ActivityLog::for(['expenses' => [$expense->id]]),
         ]);
@@ -157,9 +162,10 @@ class ExpenseController extends Controller
         }
     }
 
+    /** Where it was paid from decides the method (bank: transfer or card) and, for custody, who paid. */
     private function validated(Request $request): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'expense_date' => ['required', 'date', 'before_or_equal:today'],
             'category_id' => ['required', 'integer', Rule::exists('expense_categories', 'id')->where('is_active', true)],
             'supplier_id' => ['nullable', 'integer', 'exists:suppliers,id', 'required_without:payee'],
@@ -167,12 +173,17 @@ class ExpenseController extends Controller
             'description' => ['required', 'string', 'max:500'],
             'amount' => ['required', 'numeric', 'gt:0'],
             'vat_amount' => ['required', 'numeric', 'min:0'],
-            'payment_method' => ['required', Rule::in(Expense::METHODS)],
-            'paid_by_employee_id' => ['nullable', 'integer', 'exists:workers,id', 'required_if:payment_method,PETTY_CASH'],
+            'payment_account_id' => ['required', 'integer', Rule::exists('payment_accounts', 'id')->where('is_active', true)],
+            'payment_method' => ['nullable', Rule::in(PaymentAccount::METHODS['BANK'])],
             'project_id' => ['nullable', 'integer', 'exists:projects,id'],
             'reference' => ['nullable', 'string', 'max:100'],
             'document' => ['nullable', 'file', 'max:20480', 'mimetypes:image/jpeg,image/png,image/webp'],
         ]);
+        $account = PaymentAccount::findOrFail($data['payment_account_id']);
+        $data['payment_method'] = $account->kind === 'BANK' ? ($data['payment_method'] ?? 'BANK') : PaymentAccount::METHODS[$account->kind][0];
+        $data['paid_by_employee_id'] = $account->isCustody() ? $account->employee_id : null;
+
+        return $data;
     }
 
     private function choices(): array
@@ -181,7 +192,7 @@ class ExpenseController extends Controller
             'categories' => ExpenseCategory::where('is_active', true)->orderBy('name')->get(),
             'suppliers' => Supplier::where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'projects' => Project::whereNotIn('status', ['CANCELLED'])->orderByDesc('id')->get(['id', 'project_no', 'title']),
-            'employees' => Employee::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'accounts' => PaymentAccount::where('is_active', true)->orderBy('kind')->orderBy('name')->get(['id', 'name', 'kind']),
             'canAttach' => StudioStorage::isReady(),
         ];
     }
