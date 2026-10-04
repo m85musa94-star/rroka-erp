@@ -39,7 +39,7 @@
         @if(in_array($q->status, ['SENT', 'APPROVED']) && ! $q->daftra_estimate_id && $u->hasPermission('daftra.sync'))
             <form method="post" action="{{ route('quotations.sync', $q) }}" class="inline">@csrf<button class="btn ghost sm">{{ __('إنشاء في دفترة') }}</button></form>
         @endif
-        <button class="btn ghost sm" onclick="window.print()">{{ __('طباعة') }}</button>
+        <a class="btn ghost sm" href="{{ route('quotations.print', [$q, 'autoprint' => 1]) }}" target="_blank" rel="noopener">{{ __('طباعة') }}</a>
     </div>
     @include('partials.statusbar', ['path' => $path, 'current' => $q->status, 'bad' => ['REJECTED', 'EXPIRED', 'CANCELLED']])
 </div>

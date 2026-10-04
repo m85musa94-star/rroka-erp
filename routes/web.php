@@ -64,6 +64,7 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::get('/quotations', [QuotationController::class, 'index'])->name('quotations.index');
         Route::get('/quotations/create', [QuotationController::class, 'create'])->name('quotations.create')->middleware('permission:quotations.manage');
         Route::get('/quotations/{quotation}', [QuotationController::class, 'show'])->name('quotations.show');
+        Route::get('/quotations/{quotation}/print', [QuotationController::class, 'print'])->name('quotations.print')->whereNumber('quotation');
         // Permission per action is checked inside (manage vs approve).
         Route::post('/quotations/{quotation}/{action}', [QuotationController::class, 'transition'])
             ->whereIn('action', ['send', 'revise', 'approve', 'reject', 'cancel'])->name('quotations.transition');

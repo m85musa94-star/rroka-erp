@@ -158,7 +158,7 @@ class LocalizationTest extends ApiTestCase
 
         $pages = [
             '/', '/clients', '/clients?v=kanban', '/clients?g=city', '/clients/create', "/clients/{$client->id}", "/clients/{$client->id}/edit",
-            '/quotations', '/quotations?v=kanban', '/quotations/create', "/quotations/{$q['id']}",
+            '/quotations', '/quotations?v=kanban', '/quotations/create', "/quotations/{$q['id']}", "/quotations/{$q['id']}/print", "/quotations/{$draft['id']}/print",
             '/projects', '/projects?v=kanban', "/projects/{$projectId}",
             '/settings/rates', '/users', '/users/create', "/users/{$admin->id}/edit",
             '/roles', '/roles/create', "/roles/{$roleId}/edit",

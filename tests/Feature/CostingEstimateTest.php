@@ -111,6 +111,11 @@ class CostingEstimateTest extends ApiTestCase
         $this->approve($newer, $admin->id);
         $this->assertEquals(1458, (float) DB::table('cost_estimate_snapshots')->where('quotation_id', $q->id)->value('manufacturing_cost'));
         $this->actingAs($admin)->get("/quotations/{$q->id}")->assertSee('1,458.00');
+
+        // The printed quotation is on the official letterhead and never carries a cost figure.
+        $this->actingAs($admin)->get("/quotations/{$q->id}/print")->assertOk()
+            ->assertSee('img/letterhead-a4.png')->assertSee($q->quotation_no)->assertSee('6,900.00')
+            ->assertDontSee('1,458.00')->assertDontSee('2,499.43')->assertDontSee('1,749.60');
     }
 
     public function test_markup_discount_and_warnings(): void

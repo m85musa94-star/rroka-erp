@@ -113,6 +113,12 @@ class QuotationController extends Controller
         ]);
     }
 
+    /** The quotation on the official letterhead (A4). Costs never appear here. */
+    public function print(Quotation $quotation): View
+    {
+        return view('quotations.print', ['q' => $quotation->load('lines.studioAsset', 'client'), 'totals' => $quotation->totals()]);
+    }
+
     public function edit(Quotation $quotation): View|RedirectResponse
     {
         if ($quotation->status !== 'DRAFT') {

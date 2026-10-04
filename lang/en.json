@@ -1499,5 +1499,9 @@
     "— متوسط أجر المركز —": "— centre average rate —",
     "— مصروف عام للورشة —": "— General workshop expense —",
     "— من العقد الموقّع؛ اكتب 0 لما لا يُصرف": "— from the signed contract; enter 0 for items not paid",
-    "⇄ تبديل": "⇄ Swap"
+    "⇄ تبديل": "⇄ Swap",
+    "رجوع": "Back",
+    "عرض سعر": "Quotation",
+    "الرقم الضريبي للعميل": "Client VAT number",
+    "اعتماد الشركة": "Company approval"
 }
