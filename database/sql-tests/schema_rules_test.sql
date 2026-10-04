@@ -593,6 +593,139 @@ SELECT pg_temp.expect_error('expense: not approved against a closed account',
     'UPDATE expenses SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 5', 'RROKA_PAYMENT_ACCOUNT_INACTIVE');
 
 -- ---------------------------------------------------------------------
+-- Costing engine phase 1: cost centres, cost cards, rates, overhead pools
+-- ---------------------------------------------------------------------
+INSERT INTO cost_centers (id, code, name, driver) VALUES (1, 'CARP', 'TEST carpentry', 'LABOR_HOURS'), (2, 'CNC', 'TEST CNC', 'MACHINE_HOURS');
+INSERT INTO workers (id, name, hire_date) VALUES (20, 'TEST carpenter', '2025-01-01'), (21, 'TEST supervisor', '2025-01-01');
+
+-- Employee card: 4,000 a month over 160 practical hours = 25 an hour (spec example).
+SELECT pg_temp.expect_error('cost card: practical hours must remain after the itemised deductions',
+    'INSERT INTO employee_cost_cards (employee_id, effective_from, basic_salary, housing, transportation, insurance, government_fees, allowances, other_costs, theoretical_hours, break_hours, cleaning_hours, maintenance_hours, setup_hours, meeting_hours, downtime_hours, waiting_hours, other_nonproductive_hours, source) VALUES (20, ''2026-01-01'', 1, 0, 0, 0, 0, 0, 0, 10, 10, 0, 0, 0, 0, 0, 0, 0, ''x'')',
+    'check constraint');
+SELECT pg_temp.expect_error('cost card: starts as draft',
+    'INSERT INTO employee_cost_cards (employee_id, effective_from, basic_salary, housing, transportation, insurance, government_fees, allowances, other_costs, theoretical_hours, break_hours, cleaning_hours, maintenance_hours, setup_hours, meeting_hours, downtime_hours, waiting_hours, other_nonproductive_hours, source, status, approved_by, approved_at) VALUES (20, ''2026-01-01'', 1, 0, 0, 0, 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, ''x'', ''APPROVED'', 2, now())',
+    'RROKA_COST_RECORD_TRANSITION');
+INSERT INTO employee_cost_cards (id, employee_id, effective_from, basic_salary, housing, transportation, insurance, government_fees, allowances, other_costs,
+    theoretical_hours, break_hours, cleaning_hours, maintenance_hours, setup_hours, meeting_hours, downtime_hours, waiting_hours, other_nonproductive_hours, source)
+    VALUES (1, 20, '2026-01-01', 2800, 700, 250, 100, 100, 50, 0, 208, 22, 6, 4, 6, 2, 4, 4, 0, 'TEST contract + GOSI statement');
+SELECT setval('employee_cost_cards_id_seq', 10);
+SELECT pg_temp.expect_eq('cost card: monthly cost = sum of components (4,000)', (SELECT monthly_cost FROM employee_cost_cards WHERE id = 1), 4000.00::numeric);
+SELECT pg_temp.expect_eq('cost card: practical hours = 208 − 48 itemised = 160', (SELECT practical_hours FROM employee_cost_cards WHERE id = 1), 160.00::numeric);
+SELECT pg_temp.expect_eq('cost card: productive hour rate = 4,000 ÷ 160 = 25', (SELECT hourly_rate FROM employee_cost_cards WHERE id = 1), 25.0000::numeric);
+SELECT pg_temp.expect_eq('cost card: version 1 of the series', (SELECT version FROM employee_cost_cards WHERE id = 1), 1);
+SELECT pg_temp.expect_error('cost card: approval needs cost-centre shares totalling 100%',
+    'UPDATE employee_cost_cards SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 1', 'RROKA_COST_SHARES_INCOMPLETE');
+INSERT INTO employee_cost_card_shares (card_id, cost_center_id, share_pct) VALUES (1, 1, 60);
+SELECT pg_temp.expect_error('cost card: 60% is not all of the hours',
+    'UPDATE employee_cost_cards SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 1', 'RROKA_COST_SHARES_INCOMPLETE');
+INSERT INTO employee_cost_card_shares (card_id, cost_center_id, share_pct) VALUES (1, 2, 40);
+SELECT pg_temp.expect_ok('cost card: approve with shares 60 + 40',
+    'UPDATE employee_cost_cards SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 1');
+SELECT pg_temp.expect_eq('cost card: approval writes the worker hour rate, traceable to the card',
+    (SELECT hourly_cost FROM worker_rates WHERE cost_card_id = 1 AND worker_id = 20 AND effective_from = '2026-01-01'), 25.0000::numeric);
+SELECT pg_temp.expect_error('cost card: approved card is final',
+    'UPDATE employee_cost_cards SET basic_salary = 1 WHERE id = 1', 'RROKA_COST_RECORD_LOCKED');
+SELECT pg_temp.expect_error('cost card: shares of an approved card are final',
+    'UPDATE employee_cost_card_shares SET share_pct = 50 WHERE card_id = 1', 'RROKA_COST_RECORD_LOCKED');
+INSERT INTO employee_cost_cards (id, employee_id, effective_from, basic_salary, housing, transportation, insurance, government_fees, allowances, other_costs,
+    theoretical_hours, break_hours, cleaning_hours, maintenance_hours, setup_hours, meeting_hours, downtime_hours, waiting_hours, other_nonproductive_hours, source)
+    VALUES (2, 20, '2025-12-01', 3000, 0, 0, 0, 0, 0, 0, 160, 0, 0, 0, 0, 0, 0, 0, 0, 'TEST');
+INSERT INTO employee_cost_card_shares (card_id, cost_center_id, share_pct) VALUES (2, 1, 100);
+SELECT pg_temp.expect_eq('cost card: next card is version 2', (SELECT version FROM employee_cost_cards WHERE id = 2), 2);
+SELECT pg_temp.expect_error('cost card: a new version cannot start before the approved one (no silent re-pricing)',
+    'UPDATE employee_cost_cards SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 2', 'RROKA_RATE_BACKDATED');
+
+-- Electricity and machine card: 120,000 − 20,000 over 10 years and 1,600 h = 6.25;
+-- 10 kW × 0.5 × 0.18 = 0.90; maintenance 3,200 ÷ 1,600 = 2; spare parts 1; other 0 → 10.15 an hour.
+INSERT INTO machines (id, code, name, cost_center_id) VALUES (50, 'TEST-CNC2', 'TEST router', 2);
+INSERT INTO machine_cost_cards (id, machine_id, effective_from, acquisition_cost, residual_value, useful_life_years, theoretical_annual_hours, practical_annual_hours,
+    power_kw, load_factor, annual_maintenance, annual_spare_parts, annual_other, source)
+    VALUES (1, 50, '2026-01-01', 120000, 20000, 10, 2000, 1600, 10, 0.5, 3200, 1600, 0, 'TEST invoice + manual');
+SELECT setval('machine_cost_cards_id_seq', 10);
+SELECT pg_temp.expect_eq('machine card: no electricity price yet → hour rate unknown, not zero', (SELECT hourly_rate FROM machine_cost_cards WHERE id = 1), NULL::numeric);
+SELECT pg_temp.expect_error('machine card: cannot be approved without an electricity price',
+    'UPDATE machine_cost_cards SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 1', 'RROKA_ENERGY_RATE_MISSING');
+INSERT INTO energy_rates (id, effective_from, rate_per_kwh, source) VALUES (1, '2025-12-01', 0.18, 'TEST electricity bill');
+SELECT pg_temp.expect_eq('energy rate: a draft rate is not used', (fn_energy_rate_on('2026-01-01')).rate_per_kwh, NULL::numeric);
+UPDATE energy_rates SET status = 'APPROVED', approved_by = 2, approved_at = now() WHERE id = 1;
+UPDATE machine_cost_cards SET notes = 'TEST refresh' WHERE id = 1;
+SELECT pg_temp.expect_eq('machine card: depreciation per hour = 6.25', (SELECT depreciation_per_hour FROM machine_cost_cards WHERE id = 1), 6.2500::numeric);
+SELECT pg_temp.expect_eq('machine card: electricity per hour = kW × load × price = 0.90', (SELECT electricity_per_hour FROM machine_cost_cards WHERE id = 1), 0.9000::numeric);
+SELECT pg_temp.expect_eq('machine card: hour rate = 6.25 + 0.90 + 2 + 1 + 0 = 10.15', (SELECT hourly_rate FROM machine_cost_cards WHERE id = 1), 10.1500::numeric);
+SELECT pg_temp.expect_error('machine card: residual value cannot exceed cost',
+    'INSERT INTO machine_cost_cards (machine_id, effective_from, acquisition_cost, residual_value, useful_life_years, theoretical_annual_hours, practical_annual_hours, power_kw, load_factor, annual_maintenance, annual_spare_parts, annual_other, source) VALUES (50, ''2026-05-01'', 10, 20, 1, 10, 10, 0, 0, 0, 0, 0, ''x'')',
+    'check constraint');
+SELECT pg_temp.expect_ok('machine card: approve',
+    'UPDATE machine_cost_cards SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 1');
+SELECT pg_temp.expect_eq('machine card: approval writes the machine hour rate',
+    (SELECT hourly_cost FROM machine_rates WHERE cost_card_id = 1), 10.1500::numeric);
+SELECT pg_temp.expect_error('energy rate: an approved rate is final',
+    'UPDATE energy_rates SET rate_per_kwh = 0.2 WHERE id = 1', 'RROKA_COST_RECORD_LOCKED');
+
+-- Standard prices and waste: none until approved; the material's own waste wins over its category.
+INSERT INTO raw_materials (id, code, name, category, uom) VALUES (60, 'TEST-FAB', 'TEST fabric', 'Fabric', 'm'), (61, 'TEST-FAB2', 'TEST velvet', 'Fabric', 'm');
+INSERT INTO material_standard_prices (id, material_id, effective_from, unit_price, price_basis, source) VALUES (1, 60, '2026-01-01', 45, 'LAST_PURCHASE', 'TEST invoice');
+SELECT pg_temp.expect_eq('standard price: a draft is not used', fn_standard_price(60, '2026-02-01'), NULL::numeric);
+UPDATE material_standard_prices SET status = 'APPROVED', approved_by = 2, approved_at = now() WHERE id = 1;
+SELECT pg_temp.expect_eq('standard price: approved price in force', fn_standard_price(60, '2026-02-01'), 45.0000::numeric);
+SELECT pg_temp.expect_eq('standard price: nothing before it starts', fn_standard_price(60, '2025-12-31'), NULL::numeric);
+INSERT INTO waste_defaults (id, category, effective_from, waste_pct, source) VALUES (1, 'fabric', '2026-01-01', 12, 'TEST cutting records');
+INSERT INTO waste_defaults (id, material_id, effective_from, waste_pct, source) VALUES (2, 61, '2026-01-01', 18, 'TEST velvet pattern matching');
+UPDATE waste_defaults SET status = 'APPROVED', approved_by = 2, approved_at = now() WHERE id IN (1, 2);
+SELECT pg_temp.expect_eq('waste: material without its own rate takes its category rate', fn_standard_waste_pct(60, '2026-02-01'), 12.00::numeric);
+SELECT pg_temp.expect_eq('waste: the material''s own rate wins', fn_standard_waste_pct(61, '2026-02-01'), 18.00::numeric);
+SELECT pg_temp.expect_error('waste: a material or a category, not both',
+    'INSERT INTO waste_defaults (material_id, category, effective_from, waste_pct, source) VALUES (60, ''Fabric'', ''2026-03-01'', 5, ''x'')', 'check constraint');
+
+-- Overhead pools: driver-based rate at practical capacity, with double-count rules.
+INSERT INTO overhead_pools (id, kind, effective_from, period_to, driver, practical_capacity, source)
+    VALUES (1, 'MANUFACTURING', '2026-01-01', '2026-12-31', 'LABOR_HOURS', 8000, 'TEST 2026 budget');
+SELECT setval('overhead_pools_id_seq', 10);
+INSERT INTO overhead_pool_lines (pool_id, category, description, amount) VALUES (1, 'RENT', 'TEST factory rent', 60000), (1, 'GENERAL_ELECTRICITY', 'TEST electricity bill', 20000);
+SELECT pg_temp.expect_error('pool: selling costs are not manufacturing overhead',
+    'INSERT INTO overhead_pool_lines (pool_id, category, description, amount) VALUES (1, ''SELLING'', ''x'', 1)', 'RROKA_POOL_CATEGORY');
+SELECT pg_temp.expect_error('pool: a direct worker is not indirect labour too',
+    'INSERT INTO overhead_pool_lines (pool_id, category, description, amount, employee_id) VALUES (1, ''INDIRECT_LABOR'', ''x'', 1, 20)', 'RROKA_DOUBLE_COUNT_LABOR');
+SELECT pg_temp.expect_ok('pool: a supervisor without a direct-labour card is overhead',
+    'INSERT INTO overhead_pool_lines (pool_id, category, description, amount, employee_id) VALUES (1, ''SUPERVISION'', ''TEST supervisor'', 0, 21)');
+SELECT pg_temp.expect_error('pool: a machine with an hour rate is not depreciated again',
+    'INSERT INTO overhead_pool_lines (pool_id, category, description, amount, machine_id) VALUES (1, ''DEPRECIATION'', ''x'', 1, 50)', 'RROKA_DOUBLE_COUNT_MACHINE');
+INSERT INTO overhead_pools (id, kind, cost_center_id, effective_from, period_to, driver, practical_capacity, source)
+    VALUES (2, 'MANUFACTURING', 2, '2026-01-01', '2026-12-31', 'LABOR_HOURS', 1600, 'TEST');
+SELECT pg_temp.expect_eq('pool: a cost centre pool uses the centre''s driver', (SELECT driver FROM overhead_pools WHERE id = 2), 'MACHINE_HOURS'::text);
+SELECT pg_temp.expect_error('pool: factory electricity only in the whole-factory pool',
+    'INSERT INTO overhead_pool_lines (pool_id, category, description, amount) VALUES (2, ''GENERAL_ELECTRICITY'', ''x'', 1)', 'RROKA_POOL_CATEGORY');
+SELECT pg_temp.expect_error('pool: cannot approve an empty pool',
+    'UPDATE overhead_pools SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 2', 'RROKA_POOL_EMPTY');
+SELECT pg_temp.expect_ok('pool: approve the factory pool',
+    'UPDATE overhead_pools SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 1');
+SELECT pg_temp.expect_eq('pool: machine electricity (10 × 0.5 × 0.18 × 1,600 = 1,440) is taken out of the bill',
+    (SELECT machine_energy_deduction FROM overhead_pools WHERE id = 1), 1440.00::numeric);
+SELECT pg_temp.expect_eq('pool: rate = (80,000 − 1,440) ÷ 8,000 labour hours = 9.82',
+    (SELECT rate FROM overhead_pools WHERE id = 1), 9.8200::numeric);
+SELECT pg_temp.expect_error('pool: approved lines are final',
+    'UPDATE overhead_pool_lines SET amount = 1 WHERE pool_id = 1', 'RROKA_COST_RECORD_LOCKED');
+INSERT INTO overhead_pools (id, kind, effective_from, period_to, driver, practical_capacity, source)
+    VALUES (3, 'MANUFACTURING', '2026-07-01', '2027-06-30', 'LABOR_HOURS', 8000, 'TEST');
+INSERT INTO overhead_pool_lines (pool_id, category, description, amount) VALUES (3, 'RENT', 'TEST', 1);
+SELECT pg_temp.expect_error('pool: no two approved pools for the same period',
+    'UPDATE overhead_pools SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 3', 'RROKA_POOL_OVERLAP');
+INSERT INTO overhead_pools (id, kind, effective_from, period_to, driver, practical_capacity, source)
+    VALUES (4, 'MANUFACTURING', '2027-01-01', '2027-12-31', 'LABOR_HOURS', 8000, 'TEST');
+INSERT INTO overhead_pool_lines (pool_id, category, description, amount) VALUES (4, 'GENERAL_ELECTRICITY', 'TEST', 100);
+SELECT pg_temp.expect_error('pool: a bill below the machines'' own electricity means double counting',
+    'UPDATE overhead_pools SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 4', 'RROKA_DOUBLE_COUNT_ELECTRICITY');
+INSERT INTO overhead_pools (id, kind, effective_from, period_to, driver, budgeted_manufacturing_cost, source)
+    VALUES (5, 'SELLING_ADMIN', '2026-01-01', '2026-12-31', 'PCT_OF_MANUFACTURING_COST', 400000, 'TEST');
+SELECT pg_temp.expect_error('pool: rent belongs to manufacturing, not selling & admin',
+    'INSERT INTO overhead_pool_lines (pool_id, category, description, amount) VALUES (5, ''RENT'', ''x'', 1)', 'RROKA_POOL_CATEGORY');
+INSERT INTO overhead_pool_lines (pool_id, category, description, amount) VALUES (5, 'SELLING', 'TEST marketing', 30000), (5, 'ADMINISTRATIVE', 'TEST office', 50000);
+UPDATE overhead_pools SET status = 'APPROVED', approved_by = 2, approved_at = now() WHERE id = 5;
+SELECT pg_temp.expect_eq('selling & admin: 80,000 ÷ 400,000 manufacturing cost = 20%', (SELECT rate FROM overhead_pools WHERE id = 5), 20.0000::numeric);
+SELECT pg_temp.expect_eq('validity: a version runs until the next one starts',
+    (SELECT effective_to FROM v_cost_rate_periods WHERE table_name = 'energy_rates' AND id = 1), NULL::date);
+
+-- ---------------------------------------------------------------------
 -- Report
 -- ---------------------------------------------------------------------
 \pset footer off

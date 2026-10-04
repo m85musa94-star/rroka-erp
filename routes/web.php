@@ -4,6 +4,7 @@ use App\Http\Controllers\Web\AttendanceController;
 use App\Http\Controllers\Web\AuthController;
 use App\Http\Controllers\Web\ClientController;
 use App\Http\Controllers\Web\ContractController;
+use App\Http\Controllers\Web\CostingController;
 use App\Http\Controllers\Web\CostRateController;
 use App\Http\Controllers\Web\DaftraSettingsController;
 use App\Http\Controllers\Web\DashboardController;
@@ -11,10 +12,14 @@ use App\Http\Controllers\Web\DemoDataController;
 use App\Http\Controllers\Web\DepartmentController;
 use App\Http\Controllers\Web\DesignController;
 use App\Http\Controllers\Web\EmployeeController;
+use App\Http\Controllers\Web\EmployeeCostCardController;
 use App\Http\Controllers\Web\ExpenseController;
 use App\Http\Controllers\Web\LeaveController;
 use App\Http\Controllers\Web\LocaleController;
+use App\Http\Controllers\Web\MachineCostCardController;
 use App\Http\Controllers\Web\MaterialController;
+use App\Http\Controllers\Web\MaterialCostController;
+use App\Http\Controllers\Web\OverheadPoolController;
 use App\Http\Controllers\Web\PaymentAccountController;
 use App\Http\Controllers\Web\ProductionController;
 use App\Http\Controllers\Web\ProjectController;
@@ -89,6 +94,50 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::post('/machines/{machine}/rates', [CostRateController::class, 'storeMachineRate'])->name('machines.rate');
         Route::post('/overhead', [CostRateController::class, 'storeOverhead'])->name('overhead.store');
     });
+
+    // Costing engine: cost centres and versioned rates (entered, then approved and frozen).
+    Route::middleware('permission:settings.cost_rates|cost_rates.approve')->prefix('costing')->name('costing.')->group(function () {
+        Route::get('/', [CostingController::class, 'index'])->name('index');
+        Route::get('/centers', [CostingController::class, 'centers'])->name('centers');
+        Route::get('/energy', [CostingController::class, 'energy'])->name('energy');
+        Route::get('/employee-cards', [EmployeeCostCardController::class, 'index'])->name('employee-cards.index');
+        Route::get('/employee-cards/{card}', [EmployeeCostCardController::class, 'show'])->name('employee-cards.show')->whereNumber('card');
+        Route::get('/machine-cards', [MachineCostCardController::class, 'index'])->name('machine-cards.index');
+        Route::get('/machine-cards/{card}', [MachineCostCardController::class, 'show'])->name('machine-cards.show')->whereNumber('card');
+        Route::get('/pools', [OverheadPoolController::class, 'index'])->name('pools.index');
+        Route::get('/pools/{pool}', [OverheadPoolController::class, 'show'])->name('pools.show')->whereNumber('pool');
+        Route::get('/prices', [MaterialCostController::class, 'prices'])->name('prices');
+        Route::get('/waste', [MaterialCostController::class, 'waste'])->name('waste');
+    });
+    Route::middleware('permission:settings.cost_rates')->prefix('costing')->name('costing.')->group(function () {
+        Route::post('/centers', [CostingController::class, 'centerStore'])->name('centers.store');
+        Route::post('/centers/from-spec', [CostingController::class, 'centersFromSpec'])->name('centers.spec');
+        Route::put('/centers/{center}', [CostingController::class, 'centerUpdate'])->name('centers.update')->whereNumber('center');
+        Route::post('/energy', [CostingController::class, 'energyStore'])->name('energy.store');
+        Route::get('/employee-cards/create', [EmployeeCostCardController::class, 'create'])->name('employee-cards.create');
+        Route::post('/employee-cards', [EmployeeCostCardController::class, 'store'])->name('employee-cards.store');
+        Route::get('/employee-cards/{card}/edit', [EmployeeCostCardController::class, 'edit'])->name('employee-cards.edit')->whereNumber('card');
+        Route::put('/employee-cards/{card}', [EmployeeCostCardController::class, 'update'])->name('employee-cards.update')->whereNumber('card');
+        Route::post('/employee-cards/{card}/shares', [EmployeeCostCardController::class, 'shareStore'])->name('employee-cards.shares.store')->whereNumber('card');
+        Route::delete('/employee-cards/{card}/shares/{share}', [EmployeeCostCardController::class, 'shareDestroy'])->name('employee-cards.shares.destroy')->whereNumber(['card', 'share']);
+        Route::get('/machine-cards/create', [MachineCostCardController::class, 'create'])->name('machine-cards.create');
+        Route::post('/machine-cards', [MachineCostCardController::class, 'store'])->name('machine-cards.store');
+        Route::get('/machine-cards/{card}/edit', [MachineCostCardController::class, 'edit'])->name('machine-cards.edit')->whereNumber('card');
+        Route::put('/machine-cards/{card}', [MachineCostCardController::class, 'update'])->name('machine-cards.update')->whereNumber('card');
+        Route::post('/machines', [MachineCostCardController::class, 'machineStore'])->name('machines.store');
+        Route::put('/machines/{machine}', [MachineCostCardController::class, 'machineUpdate'])->name('machines.update')->whereNumber('machine');
+        Route::get('/pools/create', [OverheadPoolController::class, 'create'])->name('pools.create');
+        Route::post('/pools', [OverheadPoolController::class, 'store'])->name('pools.store');
+        Route::get('/pools/{pool}/edit', [OverheadPoolController::class, 'edit'])->name('pools.edit')->whereNumber('pool');
+        Route::put('/pools/{pool}', [OverheadPoolController::class, 'update'])->name('pools.update')->whereNumber('pool');
+        Route::post('/pools/{pool}/lines', [OverheadPoolController::class, 'lineStore'])->name('pools.lines.store')->whereNumber('pool');
+        Route::delete('/pools/{pool}/lines/{line}', [OverheadPoolController::class, 'lineDestroy'])->name('pools.lines.destroy')->whereNumber(['pool', 'line']);
+        Route::post('/prices', [MaterialCostController::class, 'priceStore'])->name('prices.store');
+        Route::post('/waste', [MaterialCostController::class, 'wasteStore'])->name('waste.store');
+        Route::post('/{type}/{id}/cancel', [CostingController::class, 'cancel'])->name('cancel')->whereNumber('id');
+    });
+    Route::post('/costing/{type}/{id}/approve', [CostingController::class, 'approve'])->name('costing.approve')
+        ->whereNumber('id')->middleware('permission:cost_rates.approve');
 
     // Manufacturing: inventory, designs and BOM, production orders. Stage order, stock
     // limits and frozen BOMs are enforced by the database; these only gate who may act.

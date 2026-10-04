@@ -74,6 +74,19 @@ return [
         'RROKA_CUSTODY_LIMIT' => 'التحويل يجعل العهدة تتجاوز حدها الأعلى.',
         'RROKA_TRANSFER_TRANSITION' => 'التحويل يبدأ مسودة.',
         'RROKA_TRANSFER_LOCKED' => 'التحويل المعتمد أو الملغى لا يُعدَّل.',
+        'RROKA_COST_RECORD_TRANSITION' => 'سجل التكلفة يبدأ مسودة.',
+        'RROKA_COST_RECORD_LOCKED' => 'السجل المعتمد أو الملغى لا يُعدَّل؛ أي تغيير يكون بإصدار جديد.',
+        'RROKA_RATE_BACKDATED' => 'يوجد إصدار معتمد يبدأ في التاريخ نفسه أو بعده؛ الإصدار الجديد يبدأ بعده حتى لا تتغير تكلفة أعمال سابقة.',
+        'RROKA_RATE_DATE_TAKEN' => 'يوجد معدل مُسجَّل يبدأ في التاريخ نفسه؛ اختر تاريخ سريان آخر.',
+        'RROKA_RATE_ZERO' => 'تكلفة ساعة الآلة يجب أن تكون أكبر من صفر.',
+        'RROKA_COST_SHARES_INCOMPLETE' => 'وزّع ساعات الموظف على مراكز التكلفة بمجموع 100% قبل الاعتماد.',
+        'RROKA_ENERGY_RATE_MISSING' => 'لا يوجد سعر كهرباء معتمد في تاريخ سريان البطاقة؛ اعتمد سعر الكهرباء أولًا.',
+        'RROKA_POOL_CATEGORY' => 'هذا البند لا يناسب هذا الوعاء: المصاريف البيعية والإدارية في وعائها فقط، وكهرباء المصنع العامة في وعاء المصنع كله.',
+        'RROKA_POOL_OVERLAP' => 'يوجد وعاء معتمد للمركز نفسه يغطي جزءًا من هذه الفترة.',
+        'RROKA_POOL_EMPTY' => 'لا يُعتمد وعاء بلا بنود.',
+        'RROKA_DOUBLE_COUNT_LABOR' => 'هذا الموظف محسوب عمالة مباشرة في بطاقة تكلفته؛ لا يُحمَّل مرة ثانية كعمالة غير مباشرة.',
+        'RROKA_DOUBLE_COUNT_MACHINE' => 'إهلاك هذه الآلة داخل في تكلفة ساعتها؛ لا يُحمَّل مرة ثانية.',
+        'RROKA_DOUBLE_COUNT_ELECTRICITY' => 'فاتورة الكهرباء أقل من كهرباء الآلات المحمّلة في تكلفة ساعاتها؛ راجع الأرقام حتى لا تُحسب الكهرباء مرتين.',
         'CHECK_VIOLATION' => 'البيانات المُدخلة تخالف أحد شروط الصحة.',
         'DUPLICATE' => 'هذا السجل موجود مسبقًا.',
         'INVALID_REFERENCE' => 'مرجع غير صالح.',
@@ -90,6 +103,7 @@ return [
     ],
 
     'permission_groups' => [
+        'cost_rates' => 'محرك التكلفة',
         'clients' => 'العملاء', 'surveys' => 'المعاينات', 'quotations' => 'عروض الأسعار',
         'projects' => 'المشاريع', 'designs' => 'التصاميم', 'bom' => 'قوائم المواد',
         'inventory' => 'المخزون', 'production' => 'الإنتاج', 'quality' => 'الجودة',
@@ -98,6 +112,7 @@ return [
     ],
 
     'entities' => [
+        'cost_centers' => 'مركز التكلفة', 'energy_rates' => 'سعر الكهرباء', 'employee_cost_cards' => 'بطاقة تكلفة الموظف', 'employee_cost_card_shares' => 'حصة مركز التكلفة', 'machine_cost_cards' => 'بطاقة تكلفة الآلة', 'material_standard_prices' => 'السعر المعياري', 'waste_defaults' => 'نسبة الهالك', 'overhead_pools' => 'وعاء التكاليف غير المباشرة', 'overhead_pool_lines' => 'بند الوعاء',
         'payment_accounts' => 'الحساب', 'treasury_transfers' => 'التحويل', 'suppliers' => 'المورد', 'purchase_invoices' => 'فاتورة المورد', 'purchase_invoice_lines' => 'بند فاتورة المورد', 'expenses' => 'المصروف', 'expense_categories' => 'تصنيف المصروف',
         'employee_contracts' => 'العقد', 'leave_requests' => 'طلب الإجازة', 'leave_allocations' => 'رصيد الإجازة', 'attendances' => 'سجل الحضور', 'leave_types' => 'نوع الإجازة',
         'workers' => 'الموظف', 'departments' => 'القسم', 'job_positions' => 'المسمى الوظيفي', 'employee_documents' => 'الوثيقة',
@@ -109,6 +124,7 @@ return [
     'fields' => [
         'supplier_id' => 'المورد', 'supplier_invoice_no' => 'رقم فاتورة المورد', 'invoice_date' => 'تاريخ الفاتورة', 'due_date' => 'تاريخ الاستحقاق', 'vat_amount' => 'الضريبة', 'attachment_id' => 'صورة المستند', 'expense_date' => 'التاريخ', 'category_id' => 'التصنيف', 'payee' => 'الجهة', 'amount' => 'المبلغ', 'payment_method' => 'طريقة الدفع', 'paid_by_employee_id' => 'من عهدة', 'reference' => 'المرجع', 'is_overhead' => 'غير مباشر', 'daftra_account_ref' => 'حساب دفترة', 'line_no' => 'رقم البند',
         'payment_account_id' => 'دُفع من', 'from_account_id' => 'من', 'to_account_id' => 'إلى', 'transfer_date' => 'التاريخ', 'kind' => 'النوع', 'bank_name' => 'البنك', 'employee_id' => 'الموظف', 'custody_limit' => 'الحد الأعلى للعهدة', 'daftra_treasury_ref' => 'خزينة دفترة',
+        'version' => 'الإصدار', 'effective_from' => 'ساري من', 'source' => 'المصدر', 'estimated' => 'تقديري', 'driver' => 'المحرك', 'rate_per_kwh' => 'سعر الكيلوواط ساعة', 'price_basis' => 'أساس السعر', 'share_pct' => 'الحصة %', 'cost_center_id' => 'مركز التكلفة', 'housing' => 'السكن', 'transportation' => 'النقل', 'insurance' => 'التأمينات', 'government_fees' => 'الإقامة والرسوم الحكومية', 'allowances' => 'البدلات', 'other_costs' => 'تكاليف أخرى', 'theoretical_hours' => 'الساعات النظرية', 'practical_hours' => 'الساعات العملية', 'hourly_rate' => 'تكلفة الساعة', 'monthly_cost' => 'التكلفة الشهرية', 'acquisition_cost' => 'تكلفة الشراء', 'residual_value' => 'القيمة المتبقية', 'useful_life_years' => 'العمر الإنتاجي (سنوات)', 'theoretical_annual_hours' => 'الساعات السنوية النظرية', 'practical_annual_hours' => 'الساعات السنوية العملية', 'power_kw' => 'القدرة kW', 'load_factor' => 'معامل التحميل', 'annual_maintenance' => 'الصيانة السنوية', 'annual_spare_parts' => 'قطع الغيار السنوية', 'annual_other' => 'تكاليف تشغيل أخرى سنوية', 'period_to' => 'إلى', 'practical_capacity' => 'الطاقة العملية', 'theoretical_capacity' => 'الطاقة النظرية', 'budgeted_manufacturing_cost' => 'تكلفة التصنيع المتوقعة', 'rate' => 'المعدل', 'gross_cost' => 'الإجمالي', 'net_cost' => 'الصافي', 'machine_energy_deduction' => 'كهرباء الآلات المطروحة', 'machine_id' => 'الآلة', 'pool_id' => 'الوعاء', 'card_id' => 'البطاقة',
         'contract_type' => 'نوع العقد', 'end_date' => 'تاريخ النهاية', 'basic_salary' => 'الراتب الأساسي', 'housing_allowance' => 'بدل السكن', 'transport_allowance' => 'بدل النقل', 'other_allowance' => 'بدلات أخرى', 'weekly_hours' => 'الساعات الأسبوعية', 'check_in' => 'الحضور', 'check_out' => 'الانصراف', 'date_from' => 'من', 'date_to' => 'إلى', 'days' => 'الأيام', 'refusal_reason' => 'سبب الرفض',
         'department_id' => 'القسم', 'job_id' => 'المسمى الوظيفي', 'trade' => 'المهنة', 'work_phone' => 'هاتف العمل', 'work_email' => 'بريد العمل', 'mobile' => 'الجوال الشخصي', 'nationality' => 'الجنسية', 'id_type' => 'نوع الهوية', 'id_number' => 'رقم الهوية', 'birth_date' => 'تاريخ الميلاد', 'gender' => 'الجنس', 'hire_date' => 'تاريخ التعيين', 'employment_type' => 'نوع التوظيف', 'is_direct_labor' => 'عمالة مباشرة', 'termination_date' => 'انتهاء الخدمة', 'termination_reason' => 'سبب انتهاء الخدمة', 'iban' => 'الآيبان', 'emergency_contact' => 'جهة الطوارئ', 'emergency_phone' => 'هاتف الطوارئ', 'doc_type' => 'نوع الوثيقة', 'doc_number' => 'رقم الوثيقة', 'issue_date' => 'تاريخ الإصدار', 'expiry_date' => 'تاريخ الانتهاء', 'parent_id' => 'يتبع', 'user_id' => 'حساب المستخدم',
         'code' => 'الرمز', 'name' => 'الاسم', 'uom' => 'الوحدة', 'is_active' => 'نشط', 'file_url' => 'ملف التصميم', 'change_notes' => 'ملاحظات النسخة', 'planned_start' => 'البدء المخطط', 'planned_end' => 'الانتهاء المخطط', 'started_at' => 'بدأ', 'client_approved_at' => 'موافقة العميل', 'released_at' => 'تاريخ الإصدار للإنتاج', 'released_by' => 'أصدرها', 'waste_pct' => 'نسبة الهالك', 'material_id' => 'الخامة',
@@ -139,6 +155,17 @@ return [
     'contract_type' => ['FIXED_TERM' => 'محدد المدة', 'INDEFINITE' => 'غير محدد المدة'],
 
     'payment_method' => ['CASH' => 'نقدًا', 'BANK' => 'تحويل بنكي', 'CARD' => 'بطاقة', 'PETTY_CASH' => 'من عهدة موظف'],
+
+    'driver' => ['LABOR_HOURS' => 'ساعات العمل المباشر', 'MACHINE_HOURS' => 'ساعات الآلات', 'PCT_OF_MANUFACTURING_COST' => 'نسبة من تكلفة التصنيع'],
+
+    'pool_kind' => ['MANUFACTURING' => 'تكاليف صناعية غير مباشرة', 'SELLING_ADMIN' => 'مصاريف بيعية وإدارية'],
+
+    'cost_category' => ['RENT' => 'إيجار المصنع', 'GENERAL_ELECTRICITY' => 'كهرباء المصنع العامة', 'SUPERVISION' => 'الإشراف على الإنتاج',
+        'INDIRECT_LABOR' => 'عمالة إنتاج غير مباشرة', 'CLEANING' => 'نظافة المصنع', 'MAINTENANCE' => 'صيانة المصنع', 'CONSUMABLES' => 'مستهلكات المصنع',
+        'DEPRECIATION' => 'إهلاك معدات غير محمّل على آلة', 'INSURANCE' => 'تأمين المصنع', 'OTHER_PRODUCTION' => 'تكاليف إنتاج أخرى',
+        'SELLING' => 'مصاريف بيعية', 'ADMINISTRATIVE' => 'مصاريف إدارية'],
+
+    'price_basis' => ['LAST_PURCHASE' => 'آخر سعر شراء', 'AVERAGE_COST' => 'متوسط تكلفة المخزون', 'SUPPLIER_QUOTE' => 'عرض سعر مورد', 'MANUAL' => 'إدخال يدوي'],
 
     'account_kind' => ['CASH' => 'صندوق نقدي', 'BANK' => 'حساب بنكي', 'CUSTODY' => 'عهدة موظف'],
 

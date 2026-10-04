@@ -3,14 +3,20 @@
 namespace Tests\Feature;
 
 use App\Models\Client;
+use App\Models\CostCenter;
 use App\Models\Department;
 use App\Models\DesignVersion;
 use App\Models\Employee;
 use App\Models\EmployeeContract;
+use App\Models\EmployeeCostCard;
+use App\Models\EnergyRate;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\JobPosition;
 use App\Models\LeaveType;
+use App\Models\Machine;
+use App\Models\MachineCostCard;
+use App\Models\OverheadPool;
 use App\Models\PaymentAccount;
 use App\Models\Permission;
 use App\Models\ProductionOrder;
@@ -117,6 +123,27 @@ class LocalizationTest extends ApiTestCase
         $this->actingAs($admin)->post('/production', ['design_version_id' => $versionId]);
         $orderId = ProductionOrder::value('id');
         $this->actingAs($admin)->post("/production/{$orderId}/stage/IN_PROGRESS");
+        // Costing engine records in English.
+        $this->actingAs($admin)->post('/costing/centers', ['code' => 'CARP', 'name' => 'Carpentry', 'driver' => 'LABOR_HOURS']);
+        $centerId = CostCenter::value('id');
+        $this->actingAs($admin)->post('/costing/energy', ['effective_from' => '2026-01-01', 'rate_per_kwh' => 0.18, 'source' => 'Bill', 'estimated' => 1]);
+        $this->actingAs($admin)->post('/costing/energy/'.EnergyRate::value('id').'/approve');
+        $this->actingAs($admin)->post('/costing/employee-cards', ['employee_id' => $employeeId, 'effective_from' => '2026-01-01', 'basic_salary' => 3000, 'housing' => 500,
+            'transportation' => 200, 'insurance' => 100, 'government_fees' => 100, 'allowances' => 100, 'other_costs' => 0, 'theoretical_hours' => 208, 'break_hours' => 20,
+            'cleaning_hours' => 4, 'maintenance_hours' => 4, 'setup_hours' => 4, 'meeting_hours' => 2, 'downtime_hours' => 2, 'waiting_hours' => 2, 'other_nonproductive_hours' => 0, 'source' => 'Contract']);
+        $empCardId = EmployeeCostCard::value('id');
+        $this->actingAs($admin)->post("/costing/employee-cards/{$empCardId}/shares", ['cost_center_id' => $centerId, 'share_pct' => 60]);
+        $this->actingAs($admin)->post('/costing/machines', ['code' => 'R1', 'name' => 'Router', 'cost_center_id' => $centerId]);
+        $this->actingAs($admin)->post('/costing/machine-cards', ['machine_id' => Machine::where('code', 'R1')->value('id'), 'effective_from' => '2026-02-01', 'acquisition_cost' => 1000,
+            'residual_value' => 0, 'useful_life_years' => 5, 'theoretical_annual_hours' => 2000, 'practical_annual_hours' => 1600, 'power_kw' => 5, 'load_factor' => 0.5,
+            'annual_maintenance' => 100, 'annual_spare_parts' => 100, 'annual_other' => 0, 'source' => 'Invoice']);
+        $machineCardId = MachineCostCard::value('id');
+        $this->actingAs($admin)->post('/costing/pools', ['kind' => 'MANUFACTURING', 'effective_from' => '2026-01-01', 'period_to' => '2026-12-31', 'driver' => 'LABOR_HOURS',
+            'practical_capacity' => 8000, 'source' => 'Budget']);
+        $poolId = OverheadPool::value('id');
+        $this->actingAs($admin)->post("/costing/pools/{$poolId}/lines", ['category' => 'GENERAL_ELECTRICITY', 'description' => 'Bill', 'amount' => 9000]);
+        $this->actingAs($admin)->post('/costing/prices', ['material_id' => $materialId, 'effective_from' => '2026-01-01', 'unit_price' => 90, 'price_basis' => 'MANUAL', 'source' => 'Quote']);
+        $this->actingAs($admin)->post('/costing/waste', ['category' => 'Boards', 'effective_from' => '2026-01-01', 'waste_pct' => 10, 'source' => 'Records']);
         $draft = $this->actingAs($admin)->postJson('/api/quotations', [
             'client_id' => $client->id, 'discount_amount' => 0,
             'lines' => [['description' => 'Kitchen', 'quantity' => 1, 'unit' => 'pc', 'unit_price' => 5000, 'studio_asset_id' => $assetId]],
@@ -129,6 +156,10 @@ class LocalizationTest extends ApiTestCase
             '/settings/rates', '/users', '/users/create', "/users/{$admin->id}/edit",
             '/roles', '/roles/create', "/roles/{$roleId}/edit",
             '/reports', '/settings/daftra', '/settings/demo',
+            '/costing', '/costing/centers', '/costing/energy', '/costing/employee-cards', '/costing/employee-cards?g=employee', "/costing/employee-cards/create?employee_id={$employeeId}&from_contract=1",
+            "/costing/employee-cards/{$empCardId}", "/costing/employee-cards/{$empCardId}/edit", '/costing/machine-cards', '/costing/machine-cards/create',
+            "/costing/machine-cards/{$machineCardId}", "/costing/machine-cards/{$machineCardId}/edit", '/costing/pools', '/costing/pools/create', '/costing/pools/create?kind=SELLING_ADMIN',
+            "/costing/pools/{$poolId}", "/costing/pools/{$poolId}/edit", '/costing/prices', '/costing/waste',
             '/employees', '/employees?v=list&g=department', '/employees/create', "/employees/{$employeeId}", "/employees/{$employeeId}/edit", '/departments',
             '/contracts', '/contracts/create', "/contracts/{$contractId}", "/contracts/{$contractId}/edit",
             '/attendance', '/attendance/records', '/attendance/records?g=employee', '/leaves', '/leaves/create', '/leaves/settings',
