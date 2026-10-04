@@ -8,6 +8,7 @@
 1. **النظام = Operations & Costing فقط.** لا محرك محاسبي ولا ضريبي داخلي.
    الفوترة الرسمية، القيود، التحصيل، VAT/ZATCA/Zakat → **دفترة (Daftra)** عبر API.
    تفسير معتمد (2026-09-30، تجربة): مستندات المشتريات والمصروفات تُلتقط هنا مرة واحدة وتُرسل لدفترة؛ لا قيود ولا احتساب ضريبة هنا.
+   تفسير معتمد (2026-10-05): ضريبة القيمة المضافة تُحسب على عرض السعر فقط من نسبة يختارها المستخدم (`vat_rates`، بلا نسبة = بلا ضريبة)؛ لا تدخل الإيراد ولا الربح، والفاتورة والإقرار في دفترة.
 2. **Zero Assumption Policy.** معدلات التكلفة (أجر ساعة العامل، تكلفة ساعة الآلة،
    نسبة تحميل المصاريف غير المباشرة) تبقى `NULL` صراحةً — لا صفر، ولا متوسطات صناعية.
    أي حساب يعتمد عليها يجب أن يُرجع "غير مُفعَّل" لا رقمًا.
@@ -52,5 +53,6 @@
 - المشتريات والمصروفات: `PurchaseController` (اعتماد الفاتورة يُدخل المخزون عبر `fn_purchase_invoice_post`)، `ExpenseController` (المصروف على مشروع يدخل `v_project_actual_cost.direct_expense_cost`). الاستلام اليدوي في المخزون ملغى. صور المستندات فئة `DOCUMENT` في الاستوديو ولا تظهر في المعرض (`scopeGallery`).
 - الخزينة والعهد: `PaymentAccountController` (صندوق/بنك/عهدة موظف + كشف حركات وتصدير CSV)، `TreasuryTransferController` (صرف العهدة وإرجاعها والتحويل). كل مصروف معتمد له `payment_account_id`. الرصيد للعهدة فقط (`fn_custody_balance`، `v_payment_account_summary`)؛ لا رصيد للصندوق أو البنك هنا لأن التحصيل في دفترة.
 - محرك التكلفة (المرحلة ١): `CostingController` (البداية، مراكز التكلفة، الكهرباء، اعتماد/إلغاء موحّد عبر `CostingController::TYPES`)، `EmployeeCostCardController`، `MachineCostCardController`، `OverheadPoolController`، `MaterialCostController`. كل سجل معدل يستخدم `fn_cost_record_guard` (إصدار، مسودة→معتمد نهائي، منع الرجوع بالتاريخ) و`VersionedCostRecord`. المعادلات أعمدة محسوبة في قاعدة البيانات؛ الخطة في `docs/COSTING_ENGINE_PLAN.md`.
+- محرك التكلفة (المرحلة ٢): `CostEstimateController` (ورقة تكلفة لكل بند عرض: `/quotations/{q}/lines/{n}/costing`)، والتقدير مربوط برقم البند (`cost_estimates.quotation_id + line_no`) لأن البنود تُعاد كتابتها عند التعديل (`Quotation::dropOrphanEstimates`). الأرقام من `v_estimate_costs`؛ الاعتماد يمر عبر `fn_quotation_costing_gate` (يرفض الناقص ويجمّد `cost_estimate_snapshots`). الاختبارات غير الخاصة بالتكلفة تعمل بعروض معفاة (`ApiTestCase::$costingGate = false`).
 - المظهر: فاتح/داكن/تلقائي لكل مستخدم (`users.theme`، `App\Support\Theme`، `data-theme` على `<html>`). **لا ألوان ثابتة في القوالب أو CSS المكوّنات**: كل لون متغير في `:root` له قيمة داكنة في النطاقين (`@media (prefers-color-scheme: dark)` و`:root[data-theme="dark"]`). ألوان الرسوم `--series-1..7` مُتحقَّق منها لكل وضع، والطباعة فاتحة دائمًا.
   الملفات الثابتة تُربط دائمًا عبر `App\Support\Asset::url()` (رابط بإصدار من محتوى الملف)؛ الرابط الثابت جعل المتصفح يحتفظ بملف ألوان قديم فلم يعمل الوضع الداكن.

@@ -87,6 +87,12 @@ return [
         'RROKA_DOUBLE_COUNT_LABOR' => 'هذا الموظف محسوب عمالة مباشرة في بطاقة تكلفته؛ لا يُحمَّل مرة ثانية كعمالة غير مباشرة.',
         'RROKA_DOUBLE_COUNT_MACHINE' => 'إهلاك هذه الآلة داخل في تكلفة ساعتها؛ لا يُحمَّل مرة ثانية.',
         'RROKA_DOUBLE_COUNT_ELECTRICITY' => 'فاتورة الكهرباء أقل من كهرباء الآلات المحمّلة في تكلفة ساعاتها؛ راجع الأرقام حتى لا تُحسب الكهرباء مرتين.',
+        'RROKA_VAT_RATE_LOCKED' => 'نسبة الضريبة لا تُعدَّل؛ أضف نسبة جديدة.',
+        'RROKA_VAT_RATE_INACTIVE' => 'نسبة الضريبة المختارة موقوفة.',
+        'RROKA_ESTIMATE_LOCKED' => 'تقدير التكلفة مجمّد بعد اعتماد عرض السعر أو إغلاقه.',
+        'RROKA_ESTIMATE_NO_LINE' => 'لا يوجد هذا البند في عرض السعر.',
+        'RROKA_QUOTATION_COSTING_INCOMPLETE' => 'لا يُعتمد العرض قبل اكتمال تقدير التكلفة لكل بنوده (انظر ورقة التكلفة لكل بند).',
+        'RROKA_SNAPSHOT_IMMUTABLE' => 'التكلفة المعيارية المجمّدة عند الاعتماد لا تتغير.',
         'CHECK_VIOLATION' => 'البيانات المُدخلة تخالف أحد شروط الصحة.',
         'DUPLICATE' => 'هذا السجل موجود مسبقًا.',
         'INVALID_REFERENCE' => 'مرجع غير صالح.',
@@ -112,6 +118,7 @@ return [
     ],
 
     'entities' => [
+        'cost_estimates' => 'تقدير التكلفة', 'cost_estimate_materials' => 'مادة التقدير', 'cost_estimate_operations' => 'عملية التقدير', 'cost_estimate_direct_costs' => 'تكلفة مباشرة', 'cost_estimate_snapshots' => 'التكلفة المجمّدة', 'vat_rates' => 'نسبة الضريبة', 'pricing_policies' => 'سياسة التسعير',
         'cost_centers' => 'مركز التكلفة', 'energy_rates' => 'سعر الكهرباء', 'employee_cost_cards' => 'بطاقة تكلفة الموظف', 'employee_cost_card_shares' => 'حصة مركز التكلفة', 'machine_cost_cards' => 'بطاقة تكلفة الآلة', 'material_standard_prices' => 'السعر المعياري', 'waste_defaults' => 'نسبة الهالك', 'overhead_pools' => 'وعاء التكاليف غير المباشرة', 'overhead_pool_lines' => 'بند الوعاء',
         'payment_accounts' => 'الحساب', 'treasury_transfers' => 'التحويل', 'suppliers' => 'المورد', 'purchase_invoices' => 'فاتورة المورد', 'purchase_invoice_lines' => 'بند فاتورة المورد', 'expenses' => 'المصروف', 'expense_categories' => 'تصنيف المصروف',
         'employee_contracts' => 'العقد', 'leave_requests' => 'طلب الإجازة', 'leave_allocations' => 'رصيد الإجازة', 'attendances' => 'سجل الحضور', 'leave_types' => 'نوع الإجازة',
@@ -166,6 +173,21 @@ return [
         'SELLING' => 'مصاريف بيعية', 'ADMINISTRATIVE' => 'مصاريف إدارية'],
 
     'price_basis' => ['LAST_PURCHASE' => 'آخر سعر شراء', 'AVERAGE_COST' => 'متوسط تكلفة المخزون', 'SUPPLIER_QUOTE' => 'عرض سعر مورد', 'MANUAL' => 'إدخال يدوي'],
+
+    'pricing_method' => ['MARGIN' => 'هامش من السعر', 'MARKUP' => 'إضافة على التكلفة (Markup)'],
+
+    'direct_cost_type' => ['EXTERNAL_MANUFACTURING' => 'تصنيع خارجي', 'SUBCONTRACTOR' => 'مقاول باطن', 'SPECIAL_DELIVERY' => 'توصيل خاص',
+        'INSTALLATION' => 'تركيب', 'CRANE' => 'رافعة', 'SPECIAL_TRANSPORT' => 'نقل خاص', 'EXTERNAL_PAINTING' => 'دهان خارجي',
+        'SPECIAL_DESIGN' => 'تصميم خاص', 'COMMISSION' => 'عمولة خاصة بالمشروع', 'OTHER' => 'أخرى'],
+
+    'cost_basis' => ['PER_UNIT' => 'لكل وحدة', 'ONE_TIME' => 'مرة واحدة للدفعة'],
+
+    'costing_missing' => ['EMPTY_ESTIMATE' => 'التقدير فارغ', 'MATERIAL_PRICE_OR_WASTE_MISSING' => 'سعر معياري أو نسبة هالك ناقصة لمادة',
+        'LABOR_RATE_MISSING' => 'أجر ساعة ناقص (موظف أو مركز تكلفة بلا بطاقة معتمدة)', 'MACHINE_RATE_MISSING' => 'تكلفة ساعة آلة ناقصة',
+        'OVERHEAD_POOL_MISSING' => 'مركز تكلفة بلا وعاء تكاليف غير مباشرة معتمد في تاريخ العرض', 'SELLING_ADMIN_POOL_MISSING' => 'لا يوجد وعاء مصاريف بيعية وإدارية معتمد في تاريخ العرض'],
+
+    'costing_warning' => ['BELOW_FULLY_LOADED' => 'السعر أقل من التكلفة الكاملة', 'BELOW_TARGET' => 'السعر أقل من السعر المقترح بالنسبة المستهدفة',
+        'BELOW_MIN_MARGIN' => 'الهامش بعد التكاليف الكاملة أقل من الحد الأدنى'],
 
     'account_kind' => ['CASH' => 'صندوق نقدي', 'BANK' => 'حساب بنكي', 'CUSTODY' => 'عهدة موظف'],
 

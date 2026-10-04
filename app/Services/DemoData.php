@@ -238,8 +238,9 @@ class DemoData
 
         // ---- Quotations and projects ---------------------------------------------
         $quote = function (int $client, int $day, float $discount, array $lines, string $to) use ($u) {
+            // Demo quotations carry no cost estimate (no real rates exist to build one from).
             $q = $this->add('quotations', ['client_id' => $client, 'issue_date' => $this->day($day), 'valid_until' => $this->day($day + 30),
-                'discount_amount' => $discount, 'notes' => self::NOTE, 'created_by' => $u]);
+                'discount_amount' => $discount, 'notes' => self::NOTE, 'created_by' => $u, 'requires_costing' => false]);
             foreach ($lines as $i => [$desc, $qty, $unit, $price, $asset]) {
                 $this->add('quotation_lines', ['quotation_id' => $q, 'line_no' => $i + 1, 'description' => $this->name($desc), 'quantity' => $qty,
                     'unit' => $unit, 'unit_price' => $price, 'studio_asset_id' => $asset]);

@@ -59,18 +59,39 @@
     <h2>{{ __('البنود') }}</h2>
     <div class="table-wrap"><table>
         @php($hasImg = $q->lines->contains(fn ($l) => $l->studio_asset_id))
-        <tr><th>#</th>@if($hasImg)<th>{{ __('الصورة') }}</th>@endif<th>{{ __('الوصف') }}</th><th class="num">{{ __('الكمية') }}</th><th>{{ __('الوحدة') }}</th><th class="num">{{ __('سعر الوحدة') }}</th><th class="num">{{ __('الإجمالي') }}</th></tr>
+        @php($canCost = auth()->user()->hasPermission('costing.view') || auth()->user()->hasPermission('quotations.manage'))
+        <tr><th>#</th>@if($hasImg)<th>{{ __('الصورة') }}</th>@endif<th>{{ __('الوصف') }}</th><th class="num">{{ __('الكمية') }}</th><th>{{ __('الوحدة') }}</th><th class="num">{{ __('سعر الوحدة') }}</th><th class="num">{{ __('الإجمالي') }}</th>@if($canCost)<th>{{ __('التكلفة') }}</th>@endif</tr>
         @foreach($q->lines as $l)
             <tr><td>{{ $l->line_no }}</td>
                 @if($hasImg)<td>@if($l->studioAsset)<a href="{{ auth()->user()->hasPermission('studio.view') ? route('studio.show', $l->studioAsset) : $l->studioAsset->url(false) }}"><img class="q-line-img" src="{{ $l->studioAsset->url() }}" alt="{{ $l->studioAsset->title }}"></a>@endif</td>@endif
                 <td>{{ $l->description }}</td><td class="num">{{ rtrim(rtrim($l->quantity, '0'), '.') }}</td>
-                <td>{{ $l->unit }}</td><td class="num">{{ number_format($l->unit_price, 2) }}</td><td class="num">{{ number_format($l->line_total, 2) }}</td></tr>
+                <td>{{ $l->unit }}</td><td class="num">{{ number_format($l->unit_price, 2) }}</td><td class="num">{{ number_format($l->line_total, 2) }}</td>
+                @if($canCost)
+                    @php($est = $estimates[$l->line_no] ?? null)
+                    @php($miss = $est ? \App\Models\CostEstimate::pgArray($est->missing) : [])
+                    @php($warn = $est ? \App\Models\CostEstimate::pgArray($est->warnings) : [])
+                    <td><a href="{{ route('estimates.show', [$q->id, $l->line_no]) }}">
+                        @if(! $est)<span class="badge b-CANCELLED">{{ __('بلا تقدير') }}</span>
+                        @elseif($est->snapshot_id)<span class="badge b-SUCCESS">{{ __('مجمّدة') }}</span> {{ number_format($est->frozen_cost, 2) }}
+                        @elseif($miss)<span class="badge b-ON_HOLD">{{ __('ناقص') }}</span>
+                        @else<span class="badge b-ACTIVE">{{ __('مكتمل') }}</span> {{ number_format($est->manufacturing_cost, 2) }} @if($est->gross_margin_pct !== null)<span class="muted">({{ number_format($est->gross_margin_pct, 1) }}%)</span>@endif
+                        @endif
+                        @if($warn)<span class="badge b-ON_HOLD" title="{{ collect($warn)->map(fn ($w) => __("rroka.costing_warning.$w"))->join(' · ') }}">!</span>@endif
+                    </a></td>
+                @endif</tr>
         @endforeach
         <tr><td colspan="{{ $hasImg ? 6 : 5 }}">{{ __('المجموع') }}</td><td class="num">{{ number_format($totals['subtotal'], 2) }}</td></tr>
         <tr><td colspan="{{ $hasImg ? 6 : 5 }}">{{ __('الخصم') }}</td><td class="num">{{ number_format($totals['discount_amount'], 2) }}</td></tr>
         <tr><th colspan="{{ $hasImg ? 6 : 5 }}">{{ __('الصافي قبل ضريبة القيمة المضافة') }}</th><th class="num">{{ number_format($totals['net_before_vat'], 2) }}</th></tr>
+        @if($totals['vat_pct'] !== null)
+            <tr><td colspan="{{ $hasImg ? 6 : 5 }}">{{ __('ضريبة القيمة المضافة :p%', ['p' => rtrim(rtrim(number_format($totals['vat_pct'], 2), '0'), '.')]) }}</td><td class="num">{{ number_format($totals['vat_amount'], 2) }}</td></tr>
+            <tr><th colspan="{{ $hasImg ? 6 : 5 }}">{{ __('الإجمالي شامل الضريبة') }}</th><th class="num">{{ number_format($totals['total_incl_vat'], 2) }}</th></tr>
+        @else
+            <tr><td colspan="{{ $hasImg ? 6 : 5 }}">{{ __('بلا ضريبة قيمة مضافة') }}</td><td class="num">—</td></tr>
+        @endif
     </table></div>
-    <p class="hint">{{ __('ضريبة القيمة المضافة والفاتورة الرسمية تصدران من دفترة.') }}</p>
+    <p class="hint">{{ __('الضريبة محسوبة هنا للعرض فقط؛ الفاتورة الرسمية والإقرار الضريبي من دفترة.') }}</p>
+    @if($q->requires_costing && in_array($q->status, ['DRAFT', 'SENT'], true))<p class="hint">{{ __('لا يُعتمد هذا العرض قبل اكتمال تقدير التكلفة لكل بنوده.') }}</p>@endif
 </div>
 
 @include('partials.sync-log', ['log' => $syncLog])

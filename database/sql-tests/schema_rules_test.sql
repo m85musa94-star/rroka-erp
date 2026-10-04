@@ -45,7 +45,8 @@ SELECT setval('users_id_seq', 10);
 SELECT set_config('rroka.user_id', '1', false);
 
 INSERT INTO clients (id, business_name) VALUES (1, 'TEST client A'), (2, 'TEST client B');
-INSERT INTO quotations (id, client_id) VALUES (1, 1), (2, 1), (3, 2);
+-- Quotations of the workflow tests predate the costing gate (tested in its own section).
+INSERT INTO quotations (id, client_id, requires_costing) VALUES (1, 1, false), (2, 1, false), (3, 2, false);
 INSERT INTO quotation_lines (quotation_id, line_no, description, quantity, unit_price) VALUES
     (1, 1, 'خزانة', 2, 1500), (1, 2, 'طاولة', 1, 1000), (2, 1, 'رف', 1, 300);
 
@@ -312,7 +313,7 @@ SELECT pg_temp.expect_error('project stage: completed project is final',
 -- ---------------------------------------------------------------------
 -- Studio (image library)
 -- ---------------------------------------------------------------------
-INSERT INTO quotations (id, client_id) VALUES (20, 1), (21, 2);
+INSERT INTO quotations (id, client_id, requires_costing) VALUES (20, 1, false), (21, 2, false);
 INSERT INTO studio_assets (id, title, category, client_id, disk, path, mime_type, size_bytes, sha256) VALUES
     (1, 'TEST client A photo', 'CLIENT_REFERENCE', 1, 'studio', 't/1.jpg', 'image/jpeg', 100, repeat('a', 64)),
     (2, 'TEST finished wardrobe', 'FINISHED_WORK', NULL, 'studio', 't/2.jpg', 'image/jpeg', 100, repeat('b', 64));
@@ -724,6 +725,102 @@ UPDATE overhead_pools SET status = 'APPROVED', approved_by = 2, approved_at = no
 SELECT pg_temp.expect_eq('selling & admin: 80,000 ÷ 400,000 manufacturing cost = 20%', (SELECT rate FROM overhead_pools WHERE id = 5), 20.0000::numeric);
 SELECT pg_temp.expect_eq('validity: a version runs until the next one starts',
     (SELECT effective_to FROM v_cost_rate_periods WHERE table_name = 'energy_rates' AND id = 1), NULL::date);
+
+-- ---------------------------------------------------------------------
+-- Costing engine phase 2: standard cost, pricing, VAT, approval gate, snapshot
+-- (uses the phase 1 fixtures: CARP/CNC centres, worker 20 at 25/h, machine 50 at
+-- 10.15/h, factory pool 9.82/labour h, selling & admin 20%, fabric 45 + 12% waste)
+-- ---------------------------------------------------------------------
+INSERT INTO overhead_pools (id, kind, cost_center_id, effective_from, period_to, driver, practical_capacity, source)
+    VALUES (6, 'MANUFACTURING', 1, '2026-01-01', '2026-12-31', 'LABOR_HOURS', 2000, 'TEST');
+INSERT INTO overhead_pool_lines (pool_id, category, description, amount) VALUES (6, 'MAINTENANCE', 'TEST carpentry tools', 10000);
+INSERT INTO overhead_pool_lines (pool_id, category, description, amount) VALUES (2, 'MAINTENANCE', 'TEST CNC upkeep', 3200);
+UPDATE overhead_pools SET status = 'APPROVED', approved_by = 2, approved_at = now() WHERE id = 2;   -- CNC: 3,200 ÷ 1,600 = 2 per machine hour
+
+INSERT INTO vat_rates (id, name, rate_pct) VALUES (1, 'TEST VAT 15', 15), (2, 'TEST old', 5);
+UPDATE vat_rates SET is_active = false WHERE id = 2;
+SELECT pg_temp.expect_error('vat: a rate cannot be changed', 'UPDATE vat_rates SET rate_pct = 10 WHERE id = 1', 'RROKA_VAT_RATE_LOCKED');
+
+INSERT INTO quotations (id, client_id, issue_date) VALUES (100, 1, '2026-06-01');
+SELECT pg_temp.expect_eq('costing: new quotations require costing', (SELECT requires_costing FROM quotations WHERE id = 100), true);
+INSERT INTO quotation_lines (quotation_id, line_no, description, quantity, unit_price) VALUES (100, 1, 'TEST sofa', 2, 3000), (100, 2, 'TEST side table', 1, 1000);
+UPDATE quotations SET discount_amount = 700 WHERE id = 100;
+SELECT pg_temp.expect_error('vat: an inactive rate cannot be chosen', 'UPDATE quotations SET vat_rate_id = 2 WHERE id = 100', 'RROKA_VAT_RATE_INACTIVE');
+SELECT pg_temp.expect_eq('vat: no rate chosen = no VAT', (SELECT vat_amount FROM v_quotation_totals WHERE quotation_id = 100), 0.00::numeric);
+UPDATE quotations SET vat_rate_id = 1 WHERE id = 100;
+SELECT pg_temp.expect_eq('vat: 15% of the net after discount (6,300) = 945', (SELECT vat_amount FROM v_quotation_totals WHERE quotation_id = 100), 945.00::numeric);
+SELECT pg_temp.expect_eq('vat: total including VAT = 7,245', (SELECT total_incl_vat FROM v_quotation_totals WHERE quotation_id = 100), 7245.00::numeric);
+
+SELECT pg_temp.expect_error('estimate: only for an existing line',
+    'INSERT INTO cost_estimates (quotation_id, line_no, pricing_method, target_pct) VALUES (100, 9, ''MARGIN'', 30)', 'RROKA_ESTIMATE_NO_LINE');
+SELECT pg_temp.expect_error('estimate: a margin target must be below 100%',
+    'INSERT INTO cost_estimates (quotation_id, line_no, pricing_method, target_pct) VALUES (100, 1, ''MARGIN'', 100)', 'check constraint');
+INSERT INTO cost_estimates (id, quotation_id, line_no, pricing_method, target_pct) VALUES (1, 100, 1, 'MARGIN', 30);
+INSERT INTO cost_estimates (id, quotation_id, line_no, pricing_method, target_pct, min_margin_pct) VALUES (2, 100, 2, 'MARKUP', 25, 40);
+SELECT setval('cost_estimates_id_seq', 10);
+SELECT pg_temp.expect_eq('estimate: an empty estimate is incomplete', (SELECT 'EMPTY_ESTIMATE' = ANY(missing) FROM v_estimate_costs WHERE estimate_id = 1), true);
+
+-- Line 1 (2 units): fabric 10 m/unit, standard 12% waste, standard price 45 → 10 × 1.12 × 2 × 45 = 1,008.00;
+-- velvet 2 m/unit, its own 18% waste, quoted price 80 → 2 × 1.18 × 2 × 80 = 377.60.
+SELECT pg_temp.expect_error('estimate: an overriding price names its source',
+    'INSERT INTO cost_estimate_materials (estimate_id, material_id, quantity, unit_price) VALUES (1, 61, 2, 80)', 'check constraint');
+INSERT INTO cost_estimate_materials (estimate_id, material_id, quantity) VALUES (1, 60, 10);
+INSERT INTO cost_estimate_materials (estimate_id, material_id, quantity, unit_price, price_source) VALUES (1, 61, 2, 80, 'TEST supplier quote');
+SELECT pg_temp.expect_eq('materials: adjusted quantity = 10 × (1 + 12%) = 11.2', (SELECT adjusted_qty_per_unit FROM v_estimate_material_lines WHERE estimate_id = 1 AND material_id = 60), 11.2000::numeric);
+SELECT pg_temp.expect_eq('materials: fabric = 11.2 × 2 units × 45 = 1,008', (SELECT total_cost FROM v_estimate_material_lines WHERE estimate_id = 1 AND material_id = 60), 1008.00::numeric);
+SELECT pg_temp.expect_eq('materials: velvet uses its own 18% waste', (SELECT waste_source || ' ' || waste_pct FROM v_estimate_material_lines WHERE estimate_id = 1 AND material_id = 61), 'STANDARD 18.00'::text);
+-- Operations: CNC cut 0.5 h/unit + 1 h setup (labour), 1 machine h/unit + 0.5 setup;
+-- carpentry by worker 20, 4 h/unit.
+SELECT pg_temp.expect_error('operation: machine hours need a machine',
+    'INSERT INTO cost_estimate_operations (estimate_id, seq, operation, cost_center_id, labor_hours, setup_hours, machine_hours) VALUES (1, 9, ''x'', 2, 0, 0, 1)', 'check constraint');
+INSERT INTO cost_estimate_operations (estimate_id, seq, operation, cost_center_id, labor_hours, setup_hours, machine_id, machine_hours, machine_setup_hours)
+    VALUES (1, 1, 'TEST cutting', 2, 0.5, 1, 50, 1, 0.5);
+INSERT INTO cost_estimate_operations (estimate_id, seq, operation, cost_center_id, employee_id, labor_hours, setup_hours)
+    VALUES (1, 2, 'TEST carpentry', 1, 20, 4, 0);
+SELECT pg_temp.expect_eq('batch: setup counted once — labour hours 0.5 × 2 + 1 = 2', (SELECT total_labor_hours FROM v_estimate_operation_lines WHERE estimate_id = 1 AND seq = 1), 2.000::numeric);
+SELECT pg_temp.expect_eq('labour: centre rate blended from approved cards = 25/h', (SELECT labor_rate FROM v_estimate_operation_lines WHERE estimate_id = 1 AND seq = 1), 25.0000::numeric);
+SELECT pg_temp.expect_eq('machine: (1 × 2 + 0.5) h × 10.15 = 25.38', (SELECT machine_cost FROM v_estimate_operation_lines WHERE estimate_id = 1 AND seq = 1), 25.38::numeric);
+SELECT pg_temp.expect_eq('overhead: CNC driver is machine hours: 2.5 × 2 = 5', (SELECT overhead_cost FROM v_estimate_operation_lines WHERE estimate_id = 1 AND seq = 1), 5.00::numeric);
+SELECT pg_temp.expect_eq('overhead: a centre without an approved pool is missing, not zero',
+    (SELECT 'OVERHEAD_POOL_MISSING' = ANY(missing) FROM v_estimate_costs WHERE estimate_id = 1), true);
+INSERT INTO cost_estimate_direct_costs (estimate_id, cost_type, description, amount, basis) VALUES
+    (1, 'INSTALLATION', 'TEST install crew', 150, 'ONE_TIME'), (1, 'COMMISSION', 'TEST commission', 20, 'PER_UNIT');
+INSERT INTO cost_estimate_direct_costs (estimate_id, cost_type, description, amount, basis) VALUES (2, 'EXTERNAL_MANUFACTURING', 'TEST bought-in table', 500, 'ONE_TIME');
+
+UPDATE quotations SET status = 'SENT' WHERE id = 100;
+SELECT pg_temp.expect_error('approval: refused while a line''s cost estimate is incomplete',
+    'UPDATE quotations SET status = ''APPROVED'', approved_at = now(), approved_by = 2 WHERE id = 100', 'RROKA_QUOTATION_COSTING_INCOMPLETE');
+UPDATE overhead_pools SET status = 'APPROVED', approved_by = 2, approved_at = now() WHERE id = 6;   -- carpentry: 10,000 ÷ 2,000 = 5 per labour hour
+
+SELECT pg_temp.expect_eq('estimate: complete once every rate exists', (SELECT cardinality(missing) FROM v_estimate_costs WHERE estimate_id = 1), 0);
+SELECT pg_temp.expect_eq('cost: materials 1,008 + 377.60 = 1,385.60', (SELECT materials_cost FROM v_estimate_costs WHERE estimate_id = 1), 1385.60::numeric);
+SELECT pg_temp.expect_eq('cost: labour (2 + 8 h) × 25 = 250', (SELECT labor_cost FROM v_estimate_costs WHERE estimate_id = 1), 250.0000::numeric);
+SELECT pg_temp.expect_eq('cost: other direct = 150 once + 20 × 2 = 190', (SELECT direct_other_cost FROM v_estimate_costs WHERE estimate_id = 1), 190.00::numeric);
+SELECT pg_temp.expect_eq('cost: direct cost = 1,385.60 + 250 + 25.38 + 190 = 1,850.98', (SELECT direct_cost FROM v_estimate_costs WHERE estimate_id = 1), 1850.98::numeric);
+SELECT pg_temp.expect_eq('overhead: centres 5 + 40, factory 10 labour h × 9.82 = 98.20 → 143.20', (SELECT overhead_cost FROM v_estimate_costs WHERE estimate_id = 1), 143.20::numeric);
+SELECT pg_temp.expect_eq('cost: manufacturing cost = 1,994.18', (SELECT manufacturing_cost FROM v_estimate_costs WHERE estimate_id = 1), 1994.18::numeric);
+SELECT pg_temp.expect_eq('cost: fully loaded = 1,994.18 × 1.20 = 2,393.02', (SELECT fully_loaded_cost FROM v_estimate_costs WHERE estimate_id = 1), 2393.02::numeric);
+SELECT pg_temp.expect_eq('pricing: margin method = cost ÷ (1 − 30%) = 3,418.60 (not cost × 1.30)', (SELECT recommended_price FROM v_estimate_costs WHERE estimate_id = 1), 3418.60::numeric);
+SELECT pg_temp.expect_eq('discount: lowers the price, not the cost — line share 700 × 6,000 ÷ 7,000 = 600', (SELECT net_price FROM v_estimate_costs WHERE estimate_id = 1), 5400.00::numeric);
+SELECT pg_temp.expect_eq('profit: gross margin = (5,400 − 1,994.18) ÷ 5,400 = 63.07%', (SELECT gross_margin_pct FROM v_estimate_costs WHERE estimate_id = 1), 63.07::numeric);
+SELECT pg_temp.expect_eq('profit: markup = profit ÷ cost = 170.79%', (SELECT markup_pct FROM v_estimate_costs WHERE estimate_id = 1), 170.79::numeric);
+SELECT pg_temp.expect_eq('pricing: markup method = cost × (1 + 25%): 500 × 1.20 × 1.25 = 750', (SELECT recommended_price FROM v_estimate_costs WHERE estimate_id = 2), 750.00::numeric);
+SELECT pg_temp.expect_eq('pricing: 900 after discount leaves 33% after overheads — below the 40% minimum, warned not changed',
+    (SELECT warnings FROM v_estimate_costs WHERE estimate_id = 2), ARRAY['BELOW_MIN_MARGIN']::text[]);
+SELECT pg_temp.expect_eq('vat: never part of price or profit', (SELECT net_price FROM v_estimate_costs WHERE estimate_id = 2), 900.00::numeric);
+
+SELECT pg_temp.expect_ok('approval: complete estimates → approved',
+    'UPDATE quotations SET status = ''APPROVED'', approved_at = now(), approved_by = 2 WHERE id = 100');
+SELECT pg_temp.expect_eq('snapshot: one frozen cost sheet per line', (SELECT count(*) FROM cost_estimate_snapshots WHERE quotation_id = 100), 2::bigint);
+SELECT pg_temp.expect_eq('snapshot: keeps the manufacturing cost', (SELECT manufacturing_cost FROM cost_estimate_snapshots WHERE estimate_id = 1), 1994.18::numeric);
+SELECT pg_temp.expect_eq('snapshot: traces the standard price version used',
+    (SELECT (detail -> 'materials' -> 0 ->> 'standard_price_id')::bigint FROM cost_estimate_snapshots WHERE estimate_id = 1), 1::bigint);
+SELECT pg_temp.expect_error('snapshot: frozen for good', 'UPDATE cost_estimate_snapshots SET manufacturing_cost = 1 WHERE estimate_id = 1', 'RROKA_SNAPSHOT_IMMUTABLE');
+SELECT pg_temp.expect_error('estimate: locked once the quotation is approved',
+    'INSERT INTO cost_estimate_materials (estimate_id, material_id, quantity) VALUES (1, 60, 1)', 'RROKA_ESTIMATE_LOCKED');
+SELECT pg_temp.expect_error('estimate: its figures cannot be edited after approval',
+    'UPDATE cost_estimates SET target_pct = 10 WHERE id = 1', 'RROKA_ESTIMATE_LOCKED');
+SELECT pg_temp.expect_eq('vat: chosen percentage frozen with the quotation', (SELECT vat_pct FROM quotations WHERE id = 100), 15.00::numeric);
 
 -- ---------------------------------------------------------------------
 -- Report

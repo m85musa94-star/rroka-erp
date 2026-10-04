@@ -6,12 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\DaftraSyncLog;
 use App\Models\Quotation;
+use App\Models\VatRate;
 use App\Services\Daftra\DaftraSyncService;
 use App\Support\ActivityLog;
 use App\Support\ListView;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class QuotationController extends Controller
@@ -71,6 +73,7 @@ class QuotationController extends Controller
             'quotation' => new Quotation(['client_id' => $request->query('client_id'), 'discount_amount' => 0]),
             'lines' => [],
             'clients' => Client::orderBy('business_name')->get(['id', 'business_name', 'client_no']),
+            'vatRates' => VatRate::where('is_active', true)->orderBy('name')->get(),
         ]);
     }
 
@@ -95,6 +98,10 @@ class QuotationController extends Controller
         return view('quotations.show', [
             'q' => $quotation->load('lines.studioAsset', 'client', 'project'),
             'totals' => $quotation->totals(),
+            'estimates' => DB::table('cost_estimates as e')->leftJoin('v_estimate_costs as c', 'c.estimate_id', '=', 'e.id')
+                ->leftJoin('cost_estimate_snapshots as s', 's.estimate_id', '=', 'e.id')->where('e.quotation_id', $quotation->id)
+                ->get(['e.line_no', 'c.missing', 'c.warnings', 'c.manufacturing_cost', 'c.fully_loaded_cost', 'c.gross_margin_pct', 's.id as snapshot_id',
+                    's.manufacturing_cost as frozen_cost', 's.gross_margin_pct as frozen_margin'])->keyBy('line_no'),
             'syncLog' => DaftraSyncLog::where(['entity_type' => 'QUOTATION', 'entity_id' => $quotation->id])->orderByDesc('id')->get(),
             'approver' => $quotation->approved_by ? DB::table('users')->where('id', $quotation->approved_by)->value('name') : null,
             'activity' => ActivityLog::for([
@@ -116,6 +123,7 @@ class QuotationController extends Controller
             'quotation' => $quotation,
             'lines' => $quotation->lines->map->only('description', 'quantity', 'unit', 'unit_price', 'studio_asset_id')->all(),
             'clients' => Client::orderBy('business_name')->get(['id', 'business_name', 'client_no']),
+            'vatRates' => VatRate::where('is_active', true)->orderBy('name')->get(),
         ]);
     }
 
@@ -128,6 +136,7 @@ class QuotationController extends Controller
             $quotation->lines()->delete();
             $quotation->update(collect($data)->except('lines')->all());
             $this->writeLines($quotation, $data['lines']);
+            $quotation->dropOrphanEstimates();
         });
 
         return redirect()->route('quotations.show', $quotation)->with('ok', __('تم تحديث عرض السعر.'));
@@ -170,6 +179,7 @@ class QuotationController extends Controller
             'valid_until' => ['nullable', 'date', 'after_or_equal:issue_date'],
             'discount_amount' => ['required', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string'],
+            'vat_rate_id' => ['nullable', 'integer', Rule::exists('vat_rates', 'id')->where('is_active', true)],
             'lines' => ['required', 'array', 'min:1'],
             'lines.*.description' => ['required', 'string'],
             'lines.*.quantity' => ['required', 'numeric', 'gt:0'],

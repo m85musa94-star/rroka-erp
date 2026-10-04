@@ -56,6 +56,12 @@
             <div class="field"><label>{{ __('المجموع') }}</label><input id="subtotal" readonly dir="ltr"></div>
             <div class="field"><label>{{ __('الخصم') }}</label><input name="discount_amount" id="discount" type="number" step="0.01" min="0" value="{{ old('discount_amount', $quotation->discount_amount ?? 0) }}" required dir="ltr"></div>
             <div class="field"><label>{{ __('الصافي قبل الضريبة') }}</label><input id="net" readonly dir="ltr"></div>
+            <div class="field"><label>{{ __('ضريبة القيمة المضافة') }}</label>
+                <select name="vat_rate_id" id="vat"><option value="" data-pct="0">{{ __('بلا ضريبة') }}</option>
+                    @foreach($vatRates as $vr)<option value="{{ $vr->id }}" data-pct="{{ $vr->rate_pct }}" @selected((string) old('vat_rate_id', $quotation->vat_rate_id) === (string) $vr->id)>{{ $vr->name }} ({{ rtrim(rtrim(number_format($vr->rate_pct, 2), '0'), '.') }}%)</option>@endforeach
+                </select></div>
+            <div class="field"><label>{{ __('الضريبة') }}</label><input id="vat-amount" readonly dir="ltr"></div>
+            <div class="field"><label>{{ __('الإجمالي شامل الضريبة') }}</label><input id="gross" readonly dir="ltr"></div>
         </div>
         <div class="field"><label>{{ __('ملاحظات') }}</label><textarea name="notes">{{ old('notes', $quotation->notes) }}</textarea></div>
     </div>
@@ -89,7 +95,12 @@
             sub += Math.round(t * 100) / 100;
         });
         document.getElementById('subtotal').value = fmt(sub);
-        document.getElementById('net').value = fmt(sub - (parseFloat(document.getElementById('discount').value) || 0));
+        const net = sub - (parseFloat(document.getElementById('discount').value) || 0);
+        const pct = parseFloat(document.getElementById('vat').selectedOptions[0]?.dataset.pct || 0);
+        const vat = Math.round(net * pct) / 100;
+        document.getElementById('net').value = fmt(net);
+        document.getElementById('vat-amount').value = fmt(vat);
+        document.getElementById('gross').value = fmt(net + vat);
     }
     function setImage(tr, id, thumb) {
         tr.querySelector('.asset').value = id || '';

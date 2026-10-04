@@ -148,6 +148,13 @@ class LocalizationTest extends ApiTestCase
             'client_id' => $client->id, 'discount_amount' => 0,
             'lines' => [['description' => 'Kitchen', 'quantity' => 1, 'unit' => 'pc', 'unit_price' => 5000, 'studio_asset_id' => $assetId]],
         ])->assertCreated()->json();
+        $this->actingAs($admin)->post('/costing/vat-rates', ['name' => 'VAT', 'rate_pct' => 15]);
+        $this->actingAs($admin)->post('/costing/pricing', ['effective_from' => '2026-01-01', 'pricing_method' => 'MARGIN', 'target_pct' => 30, 'min_margin_pct' => 10, 'source' => 'Board']);
+        $sheet = "/quotations/{$draft['id']}/lines/1/costing";
+        $this->actingAs($admin)->post($sheet, ['pricing_method' => 'MARGIN', 'target_pct' => 30, 'installation_required' => 1]);
+        $this->actingAs($admin)->post("{$sheet}/materials", ['material_id' => $materialId, 'quantity' => 2]);
+        $this->actingAs($admin)->post("{$sheet}/operations", ['operation' => 'Build', 'cost_center_id' => $centerId, 'labor_hours' => 3, 'setup_hours' => 1]);
+        $this->actingAs($admin)->post("{$sheet}/direct", ['cost_type' => 'INSTALLATION', 'description' => 'Crew', 'amount' => 100, 'basis' => 'ONE_TIME']);
 
         $pages = [
             '/', '/clients', '/clients?v=kanban', '/clients?g=city', '/clients/create', "/clients/{$client->id}", "/clients/{$client->id}/edit",
@@ -159,7 +166,7 @@ class LocalizationTest extends ApiTestCase
             '/costing', '/costing/centers', '/costing/energy', '/costing/employee-cards', '/costing/employee-cards?g=employee', "/costing/employee-cards/create?employee_id={$employeeId}&from_contract=1",
             "/costing/employee-cards/{$empCardId}", "/costing/employee-cards/{$empCardId}/edit", '/costing/machine-cards', '/costing/machine-cards/create',
             "/costing/machine-cards/{$machineCardId}", "/costing/machine-cards/{$machineCardId}/edit", '/costing/pools', '/costing/pools/create', '/costing/pools/create?kind=SELLING_ADMIN',
-            "/costing/pools/{$poolId}", "/costing/pools/{$poolId}/edit", '/costing/prices', '/costing/waste',
+            "/costing/pools/{$poolId}", "/costing/pools/{$poolId}/edit", '/costing/prices', '/costing/waste', '/costing/pricing', "/quotations/{$draft['id']}/lines/1/costing",
             '/employees', '/employees?v=list&g=department', '/employees/create', "/employees/{$employeeId}", "/employees/{$employeeId}/edit", '/departments',
             '/contracts', '/contracts/create', "/contracts/{$contractId}", "/contracts/{$contractId}/edit",
             '/attendance', '/attendance/records', '/attendance/records?g=employee', '/leaves', '/leaves/create', '/leaves/settings',

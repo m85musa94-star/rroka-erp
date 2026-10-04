@@ -6,11 +6,27 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 abstract class ApiTestCase extends TestCase
 {
     use RefreshDatabase;
+
+    /**
+     * Tests of other modules approve quotations without costing them, as quotations
+     * created before the costing gate do. Costing tests turn the gate on.
+     * (ALTER is transactional: undone with the test's transaction.)
+     */
+    protected bool $costingGate = false;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        if (! $this->costingGate) {
+            DB::statement('ALTER TABLE quotations ALTER COLUMN requires_costing SET DEFAULT false');
+        }
+    }
 
     protected function userWith(array $permissions): User
     {

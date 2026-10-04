@@ -150,6 +150,7 @@ class AppMenu
                     ['غير المباشرة', 'costing.pools.index', [], ['settings.cost_rates', 'cost_rates.approve']],
                     ['أسعار المواد', 'costing.prices', [], ['settings.cost_rates', 'cost_rates.approve']],
                     ['الهالك', 'costing.waste', [], ['settings.cost_rates', 'cost_rates.approve']],
+                    ['التسعير والضريبة', 'costing.pricing', [], ['settings.cost_rates', 'cost_rates.approve']],
                 ],
                 'treasury' => [
                     ['الصناديق والبنوك والعهد', 'treasury.accounts.index', [], ['treasury.view', 'treasury.manage']],

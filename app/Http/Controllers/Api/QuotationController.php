@@ -8,6 +8,7 @@ use App\Services\Daftra\DaftraSyncService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class QuotationController extends Controller
 {
@@ -54,6 +55,7 @@ class QuotationController extends Controller
             $quotation->lines()->delete();
             $quotation->update(collect($data)->except('lines')->all());
             $this->writeLines($quotation, $data['lines']);
+            $quotation->dropOrphanEstimates();
         });
 
         return $this->show($quotation->refresh());
@@ -100,6 +102,7 @@ class QuotationController extends Controller
             'valid_until' => ['nullable', 'date'],
             'discount_amount' => ['sometimes', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string'],
+            'vat_rate_id' => ['nullable', 'integer', Rule::exists('vat_rates', 'id')->where('is_active', true)],
             'lines' => ['required', 'array', 'min:1'],
             'lines.*.description' => ['required', 'string'],
             'lines.*.quantity' => ['required', 'numeric', 'gt:0'],

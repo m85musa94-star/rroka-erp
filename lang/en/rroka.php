@@ -87,6 +87,12 @@ return [
         'RROKA_DOUBLE_COUNT_LABOR' => 'This employee is costed as direct labour in their cost card; they cannot be charged again as indirect labour.',
         'RROKA_DOUBLE_COUNT_MACHINE' => 'This machine\'s depreciation is already in its hour rate; it cannot be charged again.',
         'RROKA_DOUBLE_COUNT_ELECTRICITY' => 'The electricity bill is less than the machines\' electricity already in their hour rates; check the figures so electricity is not counted twice.',
+        'RROKA_VAT_RATE_LOCKED' => 'A VAT rate cannot change; add a new one.',
+        'RROKA_VAT_RATE_INACTIVE' => 'The chosen VAT rate is inactive.',
+        'RROKA_ESTIMATE_LOCKED' => 'The cost estimate is frozen once the quotation is approved or closed.',
+        'RROKA_ESTIMATE_NO_LINE' => 'The quotation has no such line.',
+        'RROKA_QUOTATION_COSTING_INCOMPLETE' => 'The quotation cannot be approved until every line has a complete cost estimate (see each line\'s cost sheet).',
+        'RROKA_SNAPSHOT_IMMUTABLE' => 'The standard cost frozen at approval cannot change.',
         'CHECK_VIOLATION' => 'The entered data breaks one of the validity rules.',
         'DUPLICATE' => 'This record already exists.',
         'INVALID_REFERENCE' => 'Invalid reference.',
@@ -112,6 +118,7 @@ return [
     ],
 
     'entities' => [
+        'cost_estimates' => 'cost estimate', 'cost_estimate_materials' => 'estimate material', 'cost_estimate_operations' => 'estimate operation', 'cost_estimate_direct_costs' => 'direct cost', 'cost_estimate_snapshots' => 'frozen cost', 'vat_rates' => 'VAT rate', 'pricing_policies' => 'pricing policy',
         'cost_centers' => 'cost centre', 'energy_rates' => 'electricity price', 'employee_cost_cards' => 'employee cost card', 'employee_cost_card_shares' => 'cost centre share', 'machine_cost_cards' => 'machine cost card', 'material_standard_prices' => 'standard price', 'waste_defaults' => 'waste rate', 'overhead_pools' => 'overhead pool', 'overhead_pool_lines' => 'pool line',
         'payment_accounts' => 'account', 'treasury_transfers' => 'transfer', 'suppliers' => 'supplier', 'purchase_invoices' => 'supplier invoice', 'purchase_invoice_lines' => 'supplier invoice line', 'expenses' => 'expense', 'expense_categories' => 'expense category',
         'employee_contracts' => 'contract', 'leave_requests' => 'time-off request', 'leave_allocations' => 'allocation', 'attendances' => 'attendance', 'leave_types' => 'time-off type',
@@ -166,6 +173,21 @@ return [
         'SELLING' => 'Selling expenses', 'ADMINISTRATIVE' => 'Administrative expenses'],
 
     'price_basis' => ['LAST_PURCHASE' => 'Last purchase price', 'AVERAGE_COST' => 'Average stock cost', 'SUPPLIER_QUOTE' => 'Supplier quotation', 'MANUAL' => 'Manual entry'],
+
+    'pricing_method' => ['MARGIN' => 'Margin on price', 'MARKUP' => 'Markup on cost'],
+
+    'direct_cost_type' => ['EXTERNAL_MANUFACTURING' => 'External manufacturing', 'SUBCONTRACTOR' => 'Subcontractor', 'SPECIAL_DELIVERY' => 'Special delivery',
+        'INSTALLATION' => 'Installation', 'CRANE' => 'Crane', 'SPECIAL_TRANSPORT' => 'Special transportation', 'EXTERNAL_PAINTING' => 'External painting',
+        'SPECIAL_DESIGN' => 'Special design', 'COMMISSION' => 'Project-specific commission', 'OTHER' => 'Other'],
+
+    'cost_basis' => ['PER_UNIT' => 'Per unit', 'ONE_TIME' => 'Once per batch'],
+
+    'costing_missing' => ['EMPTY_ESTIMATE' => 'The estimate is empty', 'MATERIAL_PRICE_OR_WASTE_MISSING' => 'A material lacks a standard price or waste rate',
+        'LABOR_RATE_MISSING' => 'Missing hour rate (employee or cost centre without an approved card)', 'MACHINE_RATE_MISSING' => 'Missing machine hour rate',
+        'OVERHEAD_POOL_MISSING' => 'A cost centre has no approved overhead pool on the quotation date', 'SELLING_ADMIN_POOL_MISSING' => 'No approved selling & admin pool on the quotation date'],
+
+    'costing_warning' => ['BELOW_FULLY_LOADED' => 'Price is below the fully loaded cost', 'BELOW_TARGET' => 'Price is below the recommended price at the target',
+        'BELOW_MIN_MARGIN' => 'Margin after full costs is below the minimum'],
 
     'account_kind' => ['CASH' => 'Cash box', 'BANK' => 'Bank account', 'CUSTODY' => 'Employee custody'],
 

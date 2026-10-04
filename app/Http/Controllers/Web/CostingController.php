@@ -9,6 +9,8 @@ use App\Models\EnergyRate;
 use App\Models\MachineCostCard;
 use App\Models\MaterialStandardPrice;
 use App\Models\OverheadPool;
+use App\Models\PricingPolicy;
+use App\Models\VatRate;
 use App\Models\WasteDefault;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
@@ -32,6 +34,7 @@ class CostingController extends Controller
         'prices' => MaterialStandardPrice::class,
         'waste' => WasteDefault::class,
         'pools' => OverheadPool::class,
+        'pricing' => PricingPolicy::class,
     ];
 
     /** The cost centres listed in the costing specification (section 6); created only on request. */
@@ -112,6 +115,49 @@ class CostingController extends Controller
         $rate->save();
 
         return back()->with('ok', __('حُفظ سعر الكهرباء كمسودة؛ يُستخدم بعد اعتماده.'));
+    }
+
+    /** Pricing policy versions and the VAT rates a quotation can pick from. */
+    public function pricing(): View
+    {
+        return view('costing.pricing', [
+            'policies' => PricingPolicy::orderByDesc('effective_from')->orderByDesc('id')->get(),
+            'vatRates' => VatRate::orderByDesc('is_active')->orderBy('name')->get(),
+            'names' => $this->userNames(),
+        ]);
+    }
+
+    public function policyStore(Request $request): RedirectResponse
+    {
+        $policy = new PricingPolicy($request->validate([
+            'effective_from' => ['required', 'date'],
+            'pricing_method' => ['required', Rule::in(PricingPolicy::METHODS)],
+            'target_pct' => ['required', 'numeric', 'min:0', $request->input('pricing_method') === 'MARGIN' ? 'lt:100' : 'max:1000'],
+            'min_margin_pct' => ['nullable', 'numeric', 'min:0', 'lt:100'],
+            'source' => ['required', 'string', 'max:500'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]) + ['estimated' => $request->boolean('estimated')]);
+        $policy->created_by = $request->user()->id;
+        $policy->save();
+
+        return back()->with('ok', __('حُفظت سياسة التسعير كمسودة؛ تُستخدم بعد اعتمادها.'));
+    }
+
+    public function vatStore(Request $request): RedirectResponse
+    {
+        VatRate::create($request->validate([
+            'name' => ['required', 'string', 'max:120', 'unique:vat_rates,name'],
+            'rate_pct' => ['required', 'numeric', 'min:0', 'lt:100'],
+        ]));
+
+        return back()->with('ok', __('أُضيفت نسبة الضريبة.'));
+    }
+
+    public function vatToggle(VatRate $rate): RedirectResponse
+    {
+        $rate->update(['is_active' => ! $rate->is_active]);
+
+        return back()->with('ok', $rate->is_active ? __('فُعّلت نسبة الضريبة.') : __('أُوقفت نسبة الضريبة؛ لا تُختار في العروض الجديدة.'));
     }
 
     /** Approval makes a cost record final (the database freezes it and checks its rules). */

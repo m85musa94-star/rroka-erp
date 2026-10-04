@@ -4,6 +4,7 @@ use App\Http\Controllers\Web\AttendanceController;
 use App\Http\Controllers\Web\AuthController;
 use App\Http\Controllers\Web\ClientController;
 use App\Http\Controllers\Web\ContractController;
+use App\Http\Controllers\Web\CostEstimateController;
 use App\Http\Controllers\Web\CostingController;
 use App\Http\Controllers\Web\CostRateController;
 use App\Http\Controllers\Web\DaftraSettingsController;
@@ -95,6 +96,18 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::post('/overhead', [CostRateController::class, 'storeOverhead'])->name('overhead.store');
     });
 
+    // Cost sheet of a quotation line: viewed by costing or quotation staff, edited by quotation staff.
+    Route::middleware('permission:costing.view|quotations.manage')->group(function () {
+        Route::get('/quotations/{quotation}/lines/{line}/costing', [CostEstimateController::class, 'show'])->name('estimates.show')->whereNumber(['quotation', 'line']);
+    });
+    Route::middleware('permission:quotations.manage')->prefix('quotations/{quotation}/lines/{line}/costing')->name('estimates.')->whereNumber(['quotation', 'line'])->group(function () {
+        Route::post('/', [CostEstimateController::class, 'save'])->name('save');
+        Route::post('/materials', [CostEstimateController::class, 'materialStore'])->name('materials.store');
+        Route::post('/operations', [CostEstimateController::class, 'operationStore'])->name('operations.store');
+        Route::post('/direct', [CostEstimateController::class, 'directStore'])->name('direct.store');
+        Route::delete('/{kind}/{id}', [CostEstimateController::class, 'destroyItem'])->name('items.destroy')->whereIn('kind', ['materials', 'operations', 'direct'])->whereNumber('id');
+    });
+
     // Costing engine: cost centres and versioned rates (entered, then approved and frozen).
     Route::middleware('permission:settings.cost_rates|cost_rates.approve')->prefix('costing')->name('costing.')->group(function () {
         Route::get('/', [CostingController::class, 'index'])->name('index');
@@ -108,6 +121,7 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::get('/pools/{pool}', [OverheadPoolController::class, 'show'])->name('pools.show')->whereNumber('pool');
         Route::get('/prices', [MaterialCostController::class, 'prices'])->name('prices');
         Route::get('/waste', [MaterialCostController::class, 'waste'])->name('waste');
+        Route::get('/pricing', [CostingController::class, 'pricing'])->name('pricing');
     });
     Route::middleware('permission:settings.cost_rates')->prefix('costing')->name('costing.')->group(function () {
         Route::post('/centers', [CostingController::class, 'centerStore'])->name('centers.store');
@@ -134,6 +148,9 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::delete('/pools/{pool}/lines/{line}', [OverheadPoolController::class, 'lineDestroy'])->name('pools.lines.destroy')->whereNumber(['pool', 'line']);
         Route::post('/prices', [MaterialCostController::class, 'priceStore'])->name('prices.store');
         Route::post('/waste', [MaterialCostController::class, 'wasteStore'])->name('waste.store');
+        Route::post('/pricing', [CostingController::class, 'policyStore'])->name('pricing.store');
+        Route::post('/vat-rates', [CostingController::class, 'vatStore'])->name('vat.store');
+        Route::post('/vat-rates/{rate}/toggle', [CostingController::class, 'vatToggle'])->name('vat.toggle')->whereNumber('rate');
         Route::post('/{type}/{id}/cancel', [CostingController::class, 'cancel'])->name('cancel')->whereNumber('id');
     });
     Route::post('/costing/{type}/{id}/approve', [CostingController::class, 'approve'])->name('costing.approve')
