@@ -11,45 +11,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
-/** Trial balance and the monthly periods (closing rules are enforced by the database). */
+/** The monthly periods (closing rules are enforced by the database). The reports live in FinancialReportController. */
 class AccountingController extends Controller
 {
-    /** Opening, movement and closing per postable account; the totals must balance. */
-    public function trialBalance(Request $request): View
-    {
-        $start = $this->booksStart();
-        $from = $request->date('from')?->toDateString() ?? $start ?? today()->startOfYear()->toDateString();
-        $to = $request->date('to')?->toDateString() ?? today()->toDateString();
-        if ($from > $to) {
-            [$from, $to] = [$to, $from];
-        }
-        $rows = DB::select(
-            'SELECT a.id, a.code, a.name, a.name_en, a.account_type,
-                    COALESCE(sum(l.net) FILTER (WHERE l.entry_date < ?), 0) AS opening,
-                    COALESCE(sum(l.debit) FILTER (WHERE l.entry_date BETWEEN ? AND ?), 0) AS debit,
-                    COALESCE(sum(l.credit) FILTER (WHERE l.entry_date BETWEEN ? AND ?), 0) AS credit
-               FROM accounts a
-               JOIN v_ledger_lines l ON l.account_id = a.id AND l.entry_date <= ?
-           GROUP BY a.id ORDER BY a.code', [$from, $from, $to, $from, $to, $to]);
-        $t = ['od' => 0.0, 'oc' => 0.0, 'd' => 0.0, 'c' => 0.0, 'cd' => 0.0, 'cc' => 0.0];
-        foreach ($rows as $r) {
-            $r->closing = (float) $r->opening + (float) $r->debit - (float) $r->credit;
-            $r->label = app()->getLocale() === 'en' && $r->name_en ? $r->name_en : $r->name;
-            $t['od'] += max((float) $r->opening, 0);
-            $t['oc'] += max(-(float) $r->opening, 0);
-            $t['d'] += (float) $r->debit;
-            $t['c'] += (float) $r->credit;
-            $t['cd'] += max($r->closing, 0);
-            $t['cc'] += max(-$r->closing, 0);
-        }
-
-        return view('accounting.trial-balance', [
-            'rows' => $rows, 't' => $t, 'from' => $from, 'to' => $to,
-            'balanced' => abs($t['d'] - $t['c']) < 0.005 && abs($t['cd'] - $t['cc']) < 0.005,
-            'drafts' => DB::table('journal_entries')->where('status', 'DRAFT')->whereBetween('entry_date', [$from, $to])->count(),
-        ]);
-    }
-
     /** Every month from the books start to now, with its status and entries. */
     public function periods(): View
     {

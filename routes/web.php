@@ -17,6 +17,7 @@ use App\Http\Controllers\Web\DesignController;
 use App\Http\Controllers\Web\EmployeeController;
 use App\Http\Controllers\Web\EmployeeCostCardController;
 use App\Http\Controllers\Web\ExpenseController;
+use App\Http\Controllers\Web\FinancialReportController;
 use App\Http\Controllers\Web\JournalEntryController;
 use App\Http\Controllers\Web\LeaveController;
 use App\Http\Controllers\Web\LocaleController;
@@ -36,6 +37,7 @@ use App\Http\Controllers\Web\SupplierController;
 use App\Http\Controllers\Web\ThemeController;
 use App\Http\Controllers\Web\TreasuryTransferController;
 use App\Http\Controllers\Web\UserController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Language switch works for guests (login page) and signed-in users alike.
@@ -324,7 +326,9 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::get('/journal', [JournalEntryController::class, 'index'])->name('journal.index');
         Route::get('/journal/create', [JournalEntryController::class, 'create'])->name('journal.create')->middleware('permission:accounting.manage');
         Route::get('/journal/{entry}', [JournalEntryController::class, 'show'])->name('journal.show')->whereNumber('entry');
-        Route::get('/trial-balance', [AccountingController::class, 'trialBalance'])->name('trial-balance');
+        Route::get('/trial-balance', fn (Request $r) => redirect()->route('accounting.reports.show', ['key' => 'trial-balance'] + $r->query()))->name('trial-balance');
+        Route::get('/reports', [FinancialReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/{key}', [FinancialReportController::class, 'show'])->name('reports.show')->whereIn('key', ['profit-loss', 'balance-sheet', 'general-ledger', 'trial-balance']);
         Route::get('/periods', [AccountingController::class, 'periods'])->name('periods');
     });
     Route::middleware('permission:accounting.manage')->prefix('accounting')->name('accounting.')->group(function () {

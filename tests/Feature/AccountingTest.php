@@ -2,9 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Accounting\FinancialReports;
+use App\Accounting\ReportOptions;
 use App\Models\Account;
 use App\Models\FiscalPeriod;
 use App\Models\JournalEntry;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class AccountingTest extends ApiTestCase
@@ -71,7 +74,7 @@ class AccountingTest extends ApiTestCase
         // Ledger with running balance; trial balance balances.
         $this->actingAs($admin)->get("/accounting/accounts/{$bank}?from=2026-01-01&to=2026-01-31")->assertOk()->assertSee('48,850.00')->assertSee('JV-2026-00002');
         $this->actingAs($admin)->get("/accounting/accounts/{$banks}")->assertOk()->assertSee('48,850.00');   // the group shows what is under it
-        $this->actingAs($admin)->get('/accounting/trial-balance?from=2026-01-01&to=2026-01-31')->assertOk()
+        $this->actingAs($admin)->get('/accounting/reports/trial-balance?from=2026-01-01&to=2026-01-31')->assertOk()
             ->assertSee('الميزان متوازن')->assertSee('51,150.00');
         $this->actingAs($admin)->get('/accounting/accounts')->assertOk()->assertSee('48,850.00');
 
@@ -128,11 +131,60 @@ class AccountingTest extends ApiTestCase
         $this->actingAs($admin)->get('/accounting/periods')->assertOk()->assertSee('2026-01')->assertSee('TEST late invoice');
     }
 
+    public function test_financial_reports_odoo_style(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin)->post('/accounting/accounts/template');
+        $this->actingAs($admin)->post('/accounting/accounts', ['code' => '110201', 'name' => 'TEST bank', 'detail_type' => 'BANK_CASH', 'parent_id' => $this->acc('1102')]);
+        $bank = $this->acc('110201');
+        $post = function (string $date, array $lines) use ($admin) {
+            $e = $this->entry($admin, $date, $lines);
+            $this->actingAs($admin)->post("/accounting/journal/{$e->id}/post")->assertSessionHasNoErrors();
+        };
+        // Owner funds 50,000; rent 1,000 + 150 VAT; a sale of 5,000 on credit; its cost 2,000 paid by bank.
+        $post('2026-01-05', [['account_id' => $bank, 'debit' => 50000], ['account_id' => $this->acc('3201'), 'credit' => 50000]]);
+        $post('2026-01-10', [['account_id' => $this->acc('5202'), 'debit' => 1000], ['account_id' => $this->acc('1140'), 'debit' => 150], ['account_id' => $bank, 'credit' => 1150]]);
+        $post('2026-02-01', [['account_id' => $this->acc('1110'), 'debit' => 5000], ['account_id' => $this->acc('4101'), 'credit' => 5000]]);
+        $post('2026-02-02', [['account_id' => $this->acc('5101'), 'debit' => 2000], ['account_id' => $bank, 'credit' => 2000]]);
+
+        // P&L: income 5,000 − cost of revenue 2,000 = gross 3,000; − rent 1,000 = net 2,000.
+        $r = FinancialReports::build('profit-loss', new ReportOptions(Request::create('/', 'GET', ['date' => 'custom', 'from' => '2026-01-01', 'to' => '2026-12-31'])));
+        $line = fn ($id) => collect($r['lines'])->firstWhere('id', $id)['values']['c0'];
+        $this->assertEquals([5000, 2000, 3000, 1000, 2000], [$line('income'), $line('cor'), $line('gross'), $line('expenses'), $line('net')]);
+        $this->actingAs($admin)->get('/accounting/reports/profit-loss?date=custom&from=2026-01-01&to=2026-12-31')->assertOk()
+            ->assertSee('مجمل الربح')->assertSee('3,000.00')->assertSee('صافي الربح');
+
+        // Comparison: February against January (previous period of the same length).
+        $r = FinancialReports::build('profit-loss', new ReportOptions(Request::create('/', 'GET', ['date' => 'custom', 'from' => '2026-02-01', 'to' => '2026-02-28', 'cmp' => 'previous'])));
+        $net = collect($r['lines'])->firstWhere('id', 'net')['values'];
+        $this->assertEquals([3000, -1000], [$net['c0'], $net['c1']]);
+        $this->assertSame('2026-01-01', $r['columns'][1]['from']);
+
+        // Balance sheet balances: assets 46,850 bank + 5,000 receivable + 150 VAT = 52,000 = owner 50,000 + earnings 2,000.
+        $r = FinancialReports::build('balance-sheet', new ReportOptions(Request::create('/', 'GET', ['date' => 'custom', 'from' => '2026-01-01', 'to' => '2026-03-31'])));
+        $line = fn ($id) => collect($r['lines'])->firstWhere('id', $id)['values']['c0'];
+        $this->assertEquals([52000, 0, 52000, 2000], [$line('total_assets'), $line('total_liab'), $line('total_le'), $line('cye')]);
+        $this->assertTrue($r['checks'][0]['ok']);
+        $this->actingAs($admin)->get('/accounting/reports/balance-sheet?date=custom&to=2026-03-31')->assertOk()->assertSee('متوازنة')->assertSee('52,000.00');
+
+        // General ledger: folded by default, unfolded on request with the opening balance and the entries.
+        $this->actingAs($admin)->get('/accounting/reports/general-ledger?date=custom&from=2026-02-01&to=2026-02-28')->assertOk()->assertDontSee('JV-2026-00004');
+        $this->actingAs($admin)->get("/accounting/reports/general-ledger?date=custom&from=2026-02-01&to=2026-02-28&acc[]={$bank}")->assertOk()
+            ->assertSee('رصيد أول المدة')->assertSee('48,850.00')->assertSee('JV-2026-00004')->assertSee('46,850.00');
+
+        // Exports: a real spreadsheet, and the print view on the letterhead.
+        $x = $this->actingAs($admin)->get('/accounting/reports/balance-sheet?export=xlsx')->assertOk();
+        $this->assertStringContainsString('spreadsheetml', $x->headers->get('Content-Type'));
+        $this->assertStringStartsWith('PK', $x->getContent());
+        $this->actingAs($admin)->get('/accounting/reports/profit-loss?print=1')->assertOk()->assertSee('img/letterhead-a4.png')->assertSee('قائمة الدخل');
+        $this->actingAs($admin)->get('/accounting/trial-balance?from=2026-01-01&to=2026-01-31')->assertRedirect();
+    }
+
     public function test_permissions(): void
     {
         $viewer = $this->userWith(['accounting.view']);
         $this->actingAs($viewer)->get('/accounting/journal')->assertOk();
-        $this->actingAs($viewer)->get('/accounting/trial-balance')->assertOk();
+        $this->actingAs($viewer)->get('/accounting/reports/trial-balance')->assertOk();
         $this->actingAs($viewer)->get('/accounting/journal/create')->assertForbidden();
         $this->actingAs($viewer)->post('/accounting/accounts/template')->assertForbidden();
 

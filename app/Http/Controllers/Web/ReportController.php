@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Accounting\FinancialReports;
 use App\Http\Controllers\Controller;
 use App\Reports\Report;
 use App\Reports\ReportRegistry;
+use App\Support\AppMenu;
 use App\Support\ListView;
+use App\Support\Xlsx;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -15,12 +19,13 @@ class ReportController extends Controller
     public function index(Request $request): View
     {
         $reports = ReportRegistry::forUser($request->user());
-        abort_if($reports === [], 403, __('ليست لديك صلاحية على أي تقرير.'));
+        $financial = AppMenu::can($request->user(), ['accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close']) ? FinancialReports::all() : [];
+        abort_if($reports === [] && $financial === [], 403, __('ليست لديك صلاحية على أي تقرير.'));
 
-        return view('reports.index', ['reports' => $reports]);
+        return view('reports.index', ['reports' => $reports, 'financial' => $financial]);
     }
 
-    public function show(Request $request, string $key): View|StreamedResponse
+    public function show(Request $request, string $key): View|StreamedResponse|Response
     {
         $report = ReportRegistry::all()[$key] ?? abort(404);
         abort_unless(ReportRegistry::allowed($report, $request->user()), 403, __('ليست لديك صلاحية لهذا التقرير.'));
@@ -51,6 +56,12 @@ class ReportController extends Controller
         if ($request->query('export') === 'csv') {
             return $this->csv($report, $pivot, $row, $col, $measure, $range);
         }
+        if ($request->query('export') === 'xlsx') {
+            return $this->xlsx($report, $pivot, $row, $col, $measure, $range);
+        }
+        if ($request->boolean('print')) {
+            return view('reports.print', compact('report', 'pivot', 'row', 'col', 'measure', 'dims', 'measures', 'range'));
+        }
 
         return view('reports.show', compact('report', 'lv', 'pivot', 'row', 'col', 'measure', 'dims', 'measures', 'from', 'to', 'range', 'swapped'));
     }
@@ -74,6 +85,41 @@ class ReportController extends Controller
             (bool) $to => __('حتى :to', ['to' => $to]),
             default => null,
         };
+    }
+
+    /** A real spreadsheet: numbers stay numbers, totals bold, right to left in Arabic. */
+    private function xlsx(Report $report, array $p, string $row, ?string $col, string $measure, ?string $range): Response
+    {
+        $fmt = $report->measures()[$measure]['format'];
+        $cell = fn ($v, bool $bold = false) => ['v' => $v === null ? null : ($fmt === 'int' ? (int) $v : round((float) $v, $fmt === 'pct' ? 1 : 2)),
+            's' => $fmt === 'pct' ? 'pct' : ($bold ? 'money_bold' : 'money')];
+        $rows = [
+            [['v' => $report->title(), 's' => 'title']],
+            [['v' => __('إر روكا للأثاث').' — '.$report->measures()[$measure]['label'].' — '.$report->dateLabel().': '.($range ?? __('كل الفترات')), 's' => 'muted']],
+            [],
+            array_merge([['v' => $report->dimensions()[$row]['label'].($col ? ' / '.$report->dimensions()[$col]['label'] : ''), 's' => 'head']],
+                array_map(fn ($c) => ['v' => $c['label'], 's' => 'head'], $p['cols']), [['v' => __('الإجمالي'), 's' => 'head']]),
+        ];
+        foreach ($p['rows'] as $r) {
+            $line = [['v' => $r['label']]];
+            foreach ($p['cols'] as $c) {
+                $line[] = $cell($p['cells'][$r['key']][$c['key']] ?? null);
+            }
+            $line[] = $cell($p['rowTotals'][$r['key']] ?? null, true);
+            $rows[] = $line;
+        }
+        $total = [['v' => __('الإجمالي'), 's' => 'bold']];
+        foreach ($p['cols'] as $c) {
+            $total[] = $cell($p['colTotals'][$c['key']] ?? null, true);
+        }
+        $total[] = $cell($p['grand'], true);
+        $rows[] = $total;
+        $bytes = Xlsx::build($report->title(), $rows, array_merge([34], array_fill(0, count($p['cols']) + 1, 16)), app()->getLocale() === 'ar');
+
+        return response($bytes, 200, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="'.$report->key().'-'.now()->format('Y-m-d').'.xlsx"',
+        ]);
     }
 
     /** UTF-8 CSV with BOM so Excel opens Arabic correctly. */

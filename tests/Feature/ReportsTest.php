@@ -108,7 +108,7 @@ class ReportsTest extends ApiTestCase
         // Inclusive on both ends: Feb + Mar = 600.
         $this->actingAs($admin)->get('/reports/quotations?rows=month&m=value&from=2026-02-10&to=2026-03-05')->assertOk()
             ->assertSee('من <bdi dir="ltr">2026-02-10</bdi> إلى <bdi dir="ltr">2026-03-05</bdi>', false)
-            ->assertDontSee('2026-01')
+            ->assertDontSee('<td>2026-01</td>', false)
             ->assertSeeInOrder(['2026-02', '200.00', '2026-03', '400.00', 'الإجمالي', '600.00']);
 
         // Only "to": Jan + Feb = 300.

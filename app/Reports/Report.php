@@ -170,7 +170,8 @@ abstract class Report
         return match ($format) {
             'int' => number_format($v, 0),
             'pct' => number_format($v, 1).'%',
-            default => number_format($v, 2),
+            // Accounting convention: a negative amount in parentheses.
+            default => $v < -0.004 ? '('.number_format(abs($v), 2).')' : number_format($v, 2),
         };
     }
 }

@@ -17,7 +17,7 @@
     @foreach($rows as $r)
         @php($status = $r['p']?->status ?? 'OPEN')
         <tr>
-            <td class="num"><a href="{{ route('accounting.trial-balance', ['from' => $r['start'], 'to' => \Carbon\Carbon::parse($r['start'])->endOfMonth()->toDateString()]) }}">{{ $r['month'] }}</a></td>
+            <td class="num"><a href="{{ route('accounting.reports.show', ['key' => 'trial-balance', 'from' => $r['start'], 'to' => \Carbon\Carbon::parse($r['start'])->endOfMonth()->toDateString()]) }}">{{ $r['month'] }}</a></td>
             <td>@include('partials.badge', ['s' => $status])</td>
             <td class="num">{{ $r['posted'] }}</td>
             <td class="num">@if($r['drafts'])<a href="{{ route('accounting.journal.index', ['f' => ['draft']]) }}">{{ $r['drafts'] }}</a>@else 0 @endif</td>

@@ -28,6 +28,21 @@
     {{ $report->dateLabel() }}: <strong>{!! $rangeHtml ?? __('كل الفترات') !!}</strong>
     @if($swapped)<span class="muted">{{ __('— عُكس التاريخان لأن تاريخ البداية كان بعد تاريخ النهاية.') }}</span>@endif
 </p>
+@php
+    $today = \Carbon\CarbonImmutable::today();
+    $quick = [
+        __('هذا الشهر') => [$today->startOfMonth(), $today->endOfMonth()],
+        __('الشهر الماضي') => [$today->subMonthNoOverflow()->startOfMonth(), $today->subMonthNoOverflow()->endOfMonth()],
+        __('هذا الربع') => [$today->startOfQuarter(), $today->endOfQuarter()],
+        __('هذه السنة') => [$today->startOfYear(), $today->endOfYear()],
+        __('السنة الماضية') => [$today->subYear()->startOfYear(), $today->subYear()->endOfYear()],
+    ];
+@endphp
+<div class="quick-dates">
+    @foreach($quick as $label => [$qf, $qt])
+        <a href="{{ request()->fullUrlWithQuery(['from' => $qf->toDateString(), 'to' => $qt->toDateString()]) }}" @class(['on' => $from === $qf->toDateString() && $to === $qt->toDateString()])>{{ $label }}</a>
+    @endforeach
+</div>
 <form method="get" class="card report-bar">
     @foreach($lv->active as $f)<input type="hidden" name="f[]" value="{{ $f }}">@endforeach
     <input type="hidden" name="v" value="{{ $lv->view }}">
@@ -60,7 +75,9 @@
         @if($col)
             <a class="btn ghost sm" href="{{ request()->fullUrlWithQuery(['rows' => $col, 'cols' => $row]) }}" title="{{ __('تبديل الصفوف والأعمدة') }}">{{ __('⇄ تبديل') }}</a>
         @endif
-        <a class="btn ghost sm" href="{{ request()->fullUrlWithQuery(['export' => 'csv']) }}">{{ __('تصدير إلى إكسل') }}</a>
+        <a class="btn ghost sm" href="{{ request()->fullUrlWithQuery(['print' => 1, 'autoprint' => 1]) }}" target="_blank" rel="noopener">{{ __('PDF / طباعة') }}</a>
+        <a class="btn ghost sm" href="{{ request()->fullUrlWithQuery(['export' => 'xlsx']) }}">{{ __('Excel') }}</a>
+        <a class="btn ghost sm" href="{{ request()->fullUrlWithQuery(['export' => 'csv']) }}">CSV</a>
     </div>
 </form>
 

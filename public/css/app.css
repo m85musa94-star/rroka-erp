@@ -440,3 +440,46 @@ tr.draft-line td { color: var(--muted); font-style: italic; }
 .smart-btn span { font-size: 12px; color: var(--muted); }
 td.center, th.center { text-align: center; }
 .input-lg { font-size: 20px; font-weight: 600; }
+
+/* Financial reports (Odoo style): options bar, report sheet, lines by kind. */
+.fin-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 14px; }
+.fin-drop { position: relative; }
+.fin-drop > summary { list-style: none; cursor: pointer; padding: 6px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 14px; }
+.fin-drop > summary::-webkit-details-marker { display: none; }
+.fin-drop[open] > summary { border-color: var(--brand); }
+.fin-menu { position: absolute; z-index: 30; top: calc(100% + 4px); inset-inline-start: 0; min-width: 240px; background: var(--menu-bg); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow-md); padding: 6px; display: grid; gap: 2px; }
+.fin-menu a { padding: 7px 10px; border-radius: 6px; color: var(--ink); text-decoration: none; }
+.fin-menu a:hover { background: var(--hover); }
+.fin-menu a.on { font-weight: 600; background: var(--brand-soft); }
+.fin-menu a.on::before { content: "✓ "; }
+.fin-menu hr { border: 0; border-top: 1px solid var(--line); margin: 4px 0; }
+.fin-custom { display: grid; gap: 6px; padding: 4px 6px; }
+.fin-custom label { display: grid; gap: 2px; font-size: 13px; color: var(--muted); }
+.fin-sheet { padding: 22px 26px; }
+.fin-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 14px; }
+.fin-head h1 { margin: 0 0 4px; font-size: 22px; }
+.fin-checks { display: flex; gap: 6px; flex-wrap: wrap; }
+.fin-report { width: 100%; border-collapse: collapse; font-size: 14px; }
+.fin-report th { text-align: start; font-weight: 600; color: var(--muted); font-size: 13px; padding: 8px 10px; border-bottom: 2px solid var(--line); background: transparent; }
+.fin-report th.grp-head { text-align: center; color: var(--ink); border-bottom: 1px solid var(--line); }
+.fin-report td { padding: 7px 10px; border-bottom: 1px solid var(--line); }
+.fin-report td.num { text-align: end; direction: ltr; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fin-report td.num.neg { color: var(--bad); }
+.fin-report .code { color: var(--muted); margin-inline-end: 8px; font-variant-numeric: tabular-nums; }
+.fin-report .fold { display: inline-block; width: 16px; color: var(--muted); text-decoration: none; }
+.fin-report tr.fr-heading td { font-weight: 700; font-size: 15px; padding-top: 16px; border-bottom: none; color: var(--ink); }
+.fin-report tr.fr-section td { font-weight: 600; background: var(--surface-2); }
+.fin-report tr.fr-account:hover td, .fin-report tr.fr-detail:hover td { background: var(--hover); }
+.fin-report tr.fr-total td { font-weight: 700; border-top: 1px solid var(--ink); }
+.fin-report tr.fr-grand td { font-weight: 700; font-size: 15px; border-top: 1.5px solid var(--ink); border-bottom: 3px double var(--ink); }
+.fin-report tr.fr-detail td, .fin-report tr.fr-initial td { font-size: 13px; color: var(--muted); }
+.fin-report tr.fr-initial td { font-style: italic; }
+.fin-report .fr-note { font-size: 12px; margin-inline-start: 6px; }
+.fin-foot { margin-bottom: 0; }
+@media print { .fin-bar { display: none; } }
+.quick-dates { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 2px 10px; }
+.quick-dates a { padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px; font-size: 13px; color: var(--ink); text-decoration: none; background: var(--surface); }
+.quick-dates a:hover { background: var(--hover); }
+.quick-dates a.on { border-color: var(--brand); background: var(--brand-soft); font-weight: 600; }
+.report-group { font-size: 16px; margin: 6px 2px 10px; color: var(--muted); font-weight: 600; }
+.report-group ~ .report-group { margin-top: 22px; }
