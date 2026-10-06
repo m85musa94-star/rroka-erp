@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Support\ActivityLog;
 use App\Support\ChartTemplate;
+use App\Support\ListView;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -21,32 +22,108 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class AccountController extends Controller
 {
+    /** Odoo «Chart of Accounts»: postable accounts with their debit, credit and balance. */
     public function index(Request $request): View
     {
-        $accounts = Account::orderBy('code')->get();
-        $sums = DB::table('v_ledger_lines')->groupBy('account_id')->selectRaw('account_id, sum(debit) AS debit, sum(credit) AS credit')->get()->keyBy('account_id');
+        $cls = fn (string $t) => fn ($q) => $q->where('accounts.account_type', $t);
+        $lv = new ListView($request,
+            filters: [
+                'assets' => ['label' => __('الأصول'), 'group' => 'cls', 'apply' => $cls('ASSET')],
+                'liabilities' => ['label' => __('الخصوم'), 'group' => 'cls', 'apply' => $cls('LIABILITY')],
+                'equity' => ['label' => __('حقوق الملكية'), 'group' => 'cls', 'apply' => $cls('EQUITY')],
+                'income' => ['label' => __('الإيرادات'), 'group' => 'cls', 'apply' => $cls('REVENUE')],
+                'expenses' => ['label' => __('المصروفات'), 'group' => 'cls', 'apply' => $cls('EXPENSE')],
+                'reconcile' => ['label' => __('تسمح بالتسوية'), 'group' => 'x', 'apply' => fn ($q) => $q->where('reconcile', true)],
+                'with_balance' => ['label' => __('عليها حركة'), 'group' => 'y', 'apply' => fn ($q) => $q->whereNotNull('t.account_id')],
+                'untyped' => ['label' => __('بلا نوع (للمراجعة)'), 'group' => 'z', 'apply' => fn ($q) => $q->whereNull('detail_type')],
+                'archived' => ['label' => __('المؤرشفة'), 'group' => 'arc', 'apply' => fn ($q) => $q->where('accounts.is_active', false)],
+            ],
+            groups: [
+                'type' => ['label' => __('النوع'), 'key' => fn ($a) => $a->detail_type ?? '', 'title' => fn ($a) => $a->detail_type ? __("rroka.detail_type.$a->detail_type") : __('بلا نوع')],
+                'class' => ['label' => __('التصنيف الرئيسي'), 'key' => fn ($a) => array_search($a->account_type, Account::TYPES, true), 'title' => fn ($a) => __("rroka.account_type.$a->account_type")],
+                'group' => ['label' => __('مجموعة الحسابات'), 'key' => fn ($a) => $a->parent_id ?? 0, 'title' => fn ($a) => $a->parent ? $a->parent->code.' '.$a->parent->label() : __('بلا مجموعة')],
+            ],
+        );
+        $sums = DB::table('v_ledger_lines')->groupBy('account_id')->selectRaw('account_id, sum(debit) AS debit, sum(credit) AS credit');
+        $query = $lv->applyFilters(Account::with('parent')->where('accounts.is_postable', true)
+            ->leftJoinSub($sums, 't', 't.account_id', '=', 'accounts.id')
+            ->select('accounts.*', 't.debit', 't.credit')
+            ->orderBy('accounts.code'));
+        if (! in_array('archived', $lv->active, true)) {
+            $query->where('accounts.is_active', true);
+        }
+        if ($lv->q !== '') {
+            $s = $lv->q;
+            $query->where(fn ($q) => $q->where('accounts.code', 'like', "{$s}%")->orWhere('accounts.name', 'ilike', "%{$s}%")->orWhere('accounts.name_en', 'ilike', "%{$s}%"));
+        }
 
         return view('accounting.accounts.index', [
-            'rows' => $this->tree($accounts, $sums, $request->boolean('inactive')),
-            'groups' => $accounts->where('is_postable', false),
-            'usedRoles' => $accounts->pluck('system_role')->filter()->all(),
-            'edit' => $request->integer('edit') ? $accounts->firstWhere('id', $request->integer('edit')) : null,
-            'empty' => $accounts->isEmpty(),
+            'lv' => $lv,
+            'accounts' => $lv->group ? null : $query->paginate(80)->withQueryString(),
+            'groups' => $lv->group ? $lv->grouped($query->get()) : null,
+            'empty' => ! Account::exists(),
+            'untyped' => Account::where('is_postable', true)->whereNull('detail_type')->count(),
         ]);
+    }
+
+    public function create(Request $request): View
+    {
+        return view('accounting.accounts.form', ['a' => new Account(['detail_type' => $request->query('type'), 'is_active' => true]), ...$this->choices(), 'activity' => collect()]);
+    }
+
+    public function edit(Account $account): View|RedirectResponse
+    {
+        if (! $account->is_postable) {
+            return redirect()->route('accounting.accounts.groups', ['edit' => $account->id]);
+        }
+        $t = DB::table('v_ledger_lines')->where('account_id', $account->id)->selectRaw('count(*) AS n, sum(debit) AS debit, sum(credit) AS credit')->first();
+
+        return view('accounting.accounts.form', ['a' => $account, ...$this->choices($account), 'totals' => $t,
+            'activity' => ActivityLog::for(['accounts' => [$account->id]])]);
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $account = Account::create($this->validated($request));
+        $account = Account::create($this->validated($request) + ['is_postable' => true]);
 
-        return redirect()->route('accounting.accounts.index')->with('ok', __('أُضيف الحساب :code.', ['code' => $account->code]));
+        return redirect()->route('accounting.accounts.edit', $account)->with('ok', __('أُضيف الحساب :code.', ['code' => $account->code]));
     }
 
     public function update(Request $request, Account $account): RedirectResponse
     {
-        $account->update($this->validated($request, $account) + ['is_active' => $request->boolean('is_active')]);
+        $account->update($this->validated($request, $account) + ['is_active' => ! $request->boolean('archived')]);
 
-        return redirect()->route('accounting.accounts.index')->with('ok', __('حُدّث الحساب :code.', ['code' => $account->code]));
+        return redirect()->route('accounting.accounts.edit', $account)->with('ok', __('حُدّث الحساب :code.', ['code' => $account->code]));
+    }
+
+    /** Odoo «Account Groups»: the group accounts as a tree, with the totals under each. */
+    public function groups(Request $request): View
+    {
+        $accounts = Account::orderBy('code')->get();
+        $sums = DB::table('v_ledger_lines')->groupBy('account_id')->selectRaw('account_id, sum(debit) AS debit, sum(credit) AS credit')->get()->keyBy('account_id');
+        $rows = array_values(array_filter($this->tree($accounts, $sums), fn ($r) => ! $r['a']->is_postable));
+
+        return view('accounting.accounts.groups', [
+            'rows' => $rows,
+            'groupList' => $accounts->where('is_postable', false),
+            'edit' => $request->integer('edit') ? $accounts->where('is_postable', false)->firstWhere('id', $request->integer('edit')) : null,
+            'counts' => $accounts->where('is_postable', true)->countBy('parent_id'),
+        ]);
+    }
+
+    public function storeGroup(Request $request): RedirectResponse
+    {
+        Account::create($this->validatedGroup($request) + ['is_postable' => false]);
+
+        return redirect()->route('accounting.accounts.groups')->with('ok', __('أُضيفت المجموعة.'));
+    }
+
+    public function updateGroup(Request $request, Account $account): RedirectResponse
+    {
+        abort_if($account->is_postable, 404);
+        $account->update($this->validatedGroup($request, $account));
+
+        return redirect()->route('accounting.accounts.groups')->with('ok', __('حُدّثت المجموعة.'));
     }
 
     /** Creates the proposed chart, only into an empty chart; the owner then reviews and edits it. */
@@ -56,8 +133,8 @@ class AccountController extends Controller
             throw ValidationException::withMessages(['rule' => __('يوجد دليل حسابات بالفعل؛ الدليل المقترح يُنشأ في دليل فارغ فقط.')]);
         }
         $ids = [];
-        foreach (ChartTemplate::rows() as [$code, $name, $nameEn, $type, $parent, $postable, $role]) {
-            $ids[$code] = Account::create(['code' => $code, 'name' => $name, 'name_en' => $nameEn, 'account_type' => $type,
+        foreach (ChartTemplate::rows() as [$code, $name, $nameEn, $type, $parent, $postable, $role, $detail]) {
+            $ids[$code] = Account::create(['code' => $code, 'name' => $name, 'name_en' => $nameEn, 'account_type' => $type, 'detail_type' => $detail,
                 'parent_id' => $parent ? $ids[$parent] : null, 'is_postable' => $postable, 'system_role' => $role])->id;
         }
 
@@ -93,6 +170,7 @@ class AccountController extends Controller
         ]);
     }
 
+    /** A postable account: its class follows its detailed type (the database derives it too). */
     private function validated(Request $request, ?Account $a = null): array
     {
         $request->merge(['code' => trim((string) $request->input('code')), 'system_role' => $request->input('system_role') ?: null]);
@@ -100,17 +178,38 @@ class AccountController extends Controller
             'code' => ['required', 'regex:/^[0-9]{1,12}$/', Rule::unique('accounts', 'code')->ignore($a?->id)],
             'name' => ['required', 'string', 'max:150'],
             'name_en' => ['nullable', 'string', 'max:150'],
-            'account_type' => ['required', Rule::in(Account::TYPES)],
-            'parent_id' => ['nullable', 'integer', Rule::exists('accounts', 'id')->where('is_postable', 'false'), Rule::notIn(array_filter([$a?->id]))],
+            'detail_type' => ['required', Rule::in(array_keys(Account::DETAIL_TYPES))],
+            'parent_id' => ['nullable', 'integer', Rule::exists('accounts', 'id')->where('is_postable', 'false')],
             'system_role' => ['nullable', Rule::in(Account::ROLES), Rule::unique('accounts', 'system_role')->ignore($a?->id)],
             'notes' => ['nullable', 'string', 'max:1000'],
         ], ['code.regex' => __('رمز الحساب أرقام فقط (حتى 12 رقمًا).')]);
 
-        return $data + ['is_postable' => $request->boolean('is_postable')];
+        return $data + ['account_type' => Account::DETAIL_TYPES[$data['detail_type']], 'reconcile' => $request->boolean('reconcile')];
+    }
+
+    private function validatedGroup(Request $request, ?Account $a = null): array
+    {
+        $request->merge(['code' => trim((string) $request->input('code'))]);
+
+        return $request->validate([
+            'code' => ['required', 'regex:/^[0-9]{1,12}$/', Rule::unique('accounts', 'code')->ignore($a?->id)],
+            'name' => ['required', 'string', 'max:150'],
+            'name_en' => ['nullable', 'string', 'max:150'],
+            'account_type' => ['required', Rule::in(Account::TYPES)],
+            'parent_id' => ['nullable', 'integer', Rule::exists('accounts', 'id')->where('is_postable', 'false'), Rule::notIn(array_filter([$a?->id]))],
+        ], ['code.regex' => __('رمز الحساب أرقام فقط (حتى 12 رقمًا).')]);
+    }
+
+    private function choices(?Account $a = null): array
+    {
+        return [
+            'groupList' => Account::where('is_postable', false)->where('is_active', true)->orderBy('code')->get(),
+            'usedRoles' => Account::whereNotNull('system_role')->when($a, fn ($q) => $q->whereKeyNot($a->id))->pluck('system_role')->all(),
+        ];
     }
 
     /** Depth-first rows with the balance of each account (groups roll up their children). */
-    private function tree(Collection $accounts, Collection $sums, bool $withInactive): array
+    private function tree(Collection $accounts, Collection $sums): array
     {
         $byParent = $accounts->groupBy(fn ($a) => $a->parent_id ?? 0);
         $rows = [];
@@ -132,7 +231,7 @@ class AccountController extends Controller
         };
         $walk(0, 0);
 
-        return array_values(array_filter($rows, fn ($r) => $withInactive || $r['a']->is_active));
+        return $rows;
     }
 
     private function descendants(Account $account): array

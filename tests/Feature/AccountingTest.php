@@ -32,9 +32,20 @@ class AccountingTest extends ApiTestCase
 
         // A real bank account is added under «Banks»; a postable parent is refused.
         $banks = $this->acc('1102');
-        $this->actingAs($admin)->post('/accounting/accounts', ['code' => '110201', 'name' => 'TEST bank', 'account_type' => 'ASSET', 'parent_id' => $banks, 'is_postable' => 1])->assertSessionHasNoErrors();
-        $this->actingAs($admin)->post('/accounting/accounts', ['code' => '110301', 'name' => 'TEST', 'account_type' => 'ASSET', 'parent_id' => $this->acc('1103'), 'is_postable' => 1])->assertSessionHasErrors('parent_id');
-        $this->actingAs($admin)->post('/accounting/accounts', ['code' => '1A', 'name' => 'TEST', 'account_type' => 'ASSET', 'is_postable' => 1])->assertSessionHasErrors('code');
+        $this->actingAs($admin)->post('/accounting/accounts', ['code' => '110201', 'name' => 'TEST bank', 'detail_type' => 'BANK_CASH', 'parent_id' => $banks])->assertSessionHasNoErrors();
+        $this->actingAs($admin)->post('/accounting/accounts', ['code' => '110301', 'name' => 'TEST', 'detail_type' => 'CURRENT_ASSETS', 'parent_id' => $this->acc('1103')])->assertSessionHasErrors('parent_id');
+        $this->actingAs($admin)->post('/accounting/accounts', ['code' => '1A', 'name' => 'TEST', 'detail_type' => 'BANK_CASH'])->assertSessionHasErrors('code');
+        $this->actingAs($admin)->post('/accounting/accounts', ['code' => '1199', 'name' => 'TEST'])->assertSessionHasErrors('detail_type');   // the type is required
+        // Odoo-style: the type decides the class; receivables always allow reconciliation.
+        $this->assertSame(['ASSET', true], [Account::where('code', '1110')->value('account_type'), Account::where('code', '1110')->value('reconcile')]);
+        $this->actingAs($admin)->post('/accounting/accounts', ['code' => '1170', 'name' => 'TEST staff receivable', 'detail_type' => 'RECEIVABLE', 'parent_id' => $this->acc('11')])->assertSessionHasNoErrors();
+        $this->assertTrue(Account::where('code', '1170')->value('reconcile'));
+        $this->actingAs($admin)->post('/accounting/accounts', ['code' => '1180', 'name' => 'TEST', 'detail_type' => 'PAYABLE', 'parent_id' => $this->acc('11')])->assertSessionHasErrors('rule');   // a liability under an asset group
+        $this->actingAs($admin)->get('/accounting/accounts?g=type')->assertOk()->assertSee('البنك والنقدية')->assertSee('مدينون (عملاء)');
+        $this->actingAs($admin)->get('/accounting/accounts?f[]=liabilities')->assertOk()->assertSee('2101')->assertDontSee('TEST staff receivable');
+        $this->actingAs($admin)->get('/accounting/account-groups')->assertOk()->assertSee('البنوك');
+        $this->actingAs($admin)->post('/accounting/account-groups', ['code' => '1105', 'name' => 'TEST petty cash group', 'account_type' => 'ASSET', 'parent_id' => $this->acc('11')])->assertSessionHasNoErrors();
+        $this->assertFalse(Account::where('code', '1105')->value('is_postable'));
 
         // Owner funds the bank, then rent is paid (1,000 + 150 VAT).
         $bank = $this->acc('110201');
@@ -85,8 +96,14 @@ class AccountingTest extends ApiTestCase
             'lines' => [['account_id' => $banks, 'debit' => 5], ['account_id' => $this->acc('3101'), 'credit' => 5]]])->assertSessionHasErrors('lines.0.account_id');
 
         // The account with entries keeps its type.
-        $this->actingAs($admin)->put("/accounting/accounts/{$bank}", ['code' => '110201', 'name' => 'TEST bank', 'account_type' => 'EXPENSE', 'parent_id' => null, 'is_postable' => 1, 'is_active' => 1])
+        $this->actingAs($admin)->put("/accounting/accounts/{$bank}", ['code' => '110201', 'name' => 'TEST bank', 'detail_type' => 'EXPENSES', 'parent_id' => null])
             ->assertSessionHasErrors('rule');
+        $this->actingAs($admin)->get("/accounting/accounts/{$bank}/edit")->assertOk()->assertSee('50,000.00');   // smart button: balance (rent reversed)
+        $this->actingAs($admin)->put("/accounting/accounts/{$bank}", ['code' => '110201', 'name' => 'TEST bank (main)', 'detail_type' => 'BANK_CASH', 'parent_id' => $banks, 'archived' => 1])
+            ->assertSessionHasNoErrors();
+        $this->assertFalse(Account::find($bank)->is_active);
+        $this->actingAs($admin)->get('/accounting/accounts')->assertDontSee('TEST bank (main)');
+        $this->actingAs($admin)->get('/accounting/accounts?f[]=archived')->assertSee('TEST bank (main)');
     }
 
     public function test_periods_close_in_order_and_block_posting(): void

@@ -162,6 +162,7 @@ class AppMenu
                 'accounting' => [
                     ['القيود', 'accounting.journal.index', [], ['accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close']],
                     ['دليل الحسابات', 'accounting.accounts.index', [], ['accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close']],
+                    ['مجموعات الحسابات', 'accounting.accounts.groups', [], ['accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close']],
                     ['ميزان المراجعة', 'accounting.trial-balance', [], ['accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close']],
                     ['الفترات المالية', 'accounting.periods', [], ['accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close']],
                 ],

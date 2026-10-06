@@ -6,7 +6,8 @@
 @section('content')
 <div class="card">
     <h1 class="rec-title">{{ $a->code }} — {{ $a->label() }}</h1>
-    <p class="rec-sub">{{ __("rroka.account_type.$a->account_type") }}
+    @if($a->is_postable && auth()->user()->hasPermission('accounting.manage'))<div class="actions" style="float:inline-end"><a class="btn ghost sm" href="{{ route('accounting.accounts.edit', $a) }}">{{ __('إعدادات الحساب') }}</a></div>@endif
+    <p class="rec-sub">{{ $a->detail_type ? __("rroka.detail_type.$a->detail_type") : __("rroka.account_type.$a->account_type") }}
         @if($a->parent) · {{ __('تحت') }} <a href="{{ route('accounting.accounts.show', $a->parent) }}">{{ $a->parent->code }} — {{ $a->parent->label() }}</a>@endif
         @if($isGroup) · {{ __('حساب تجميعي: يعرض حركة كل الحسابات تحته') }}@endif
         @if($a->system_role) · {{ __("rroka.account_role.$a->system_role") }}@endif</p>

@@ -320,6 +320,7 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
     Route::middleware('permission:accounting.view|accounting.manage|accounting.post|accounting.close')->prefix('accounting')->name('accounting.')->group(function () {
         Route::get('/accounts', [AccountController::class, 'index'])->name('accounts.index');
         Route::get('/accounts/{account}', [AccountController::class, 'show'])->name('accounts.show')->whereNumber('account');
+        Route::get('/account-groups', [AccountController::class, 'groups'])->name('accounts.groups');
         Route::get('/journal', [JournalEntryController::class, 'index'])->name('journal.index');
         Route::get('/journal/create', [JournalEntryController::class, 'create'])->name('journal.create')->middleware('permission:accounting.manage');
         Route::get('/journal/{entry}', [JournalEntryController::class, 'show'])->name('journal.show')->whereNumber('entry');
@@ -327,7 +328,11 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::get('/periods', [AccountingController::class, 'periods'])->name('periods');
     });
     Route::middleware('permission:accounting.manage')->prefix('accounting')->name('accounting.')->group(function () {
+        Route::get('/accounts/create', [AccountController::class, 'create'])->name('accounts.create');
+        Route::get('/accounts/{account}/edit', [AccountController::class, 'edit'])->name('accounts.edit')->whereNumber('account');
         Route::post('/accounts', [AccountController::class, 'store'])->name('accounts.store');
+        Route::post('/account-groups', [AccountController::class, 'storeGroup'])->name('accounts.groups.store');
+        Route::put('/account-groups/{account}', [AccountController::class, 'updateGroup'])->name('accounts.groups.update')->whereNumber('account');
         Route::post('/accounts/template', [AccountController::class, 'fromTemplate'])->name('accounts.template');
         Route::put('/accounts/{account}', [AccountController::class, 'update'])->name('accounts.update')->whereNumber('account');
         Route::post('/journal', [JournalEntryController::class, 'store'])->name('journal.store');

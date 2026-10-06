@@ -827,15 +827,15 @@ SELECT pg_temp.expect_eq('vat: chosen percentage frozen with the quotation', (SE
 -- ---------------------------------------------------------------------
 INSERT INTO accounts (id, code, name, account_type, is_postable) VALUES
     (900, '1', 'TEST assets', 'ASSET', false), (901, '5', 'TEST expenses', 'EXPENSE', false), (902, '3', 'TEST equity', 'EQUITY', false);
-INSERT INTO accounts (id, code, name, account_type, parent_id, system_role) VALUES
-    (910, '1102', 'TEST bank', 'ASSET', 900, 'BANK'), (911, '5101', 'TEST rent', 'EXPENSE', 901, NULL),
-    (912, '3201', 'TEST owner current', 'EQUITY', 902, 'OWNER_CURRENT');
+INSERT INTO accounts (id, code, name, account_type, parent_id, system_role, detail_type) VALUES
+    (910, '1102', 'TEST bank', 'ASSET', 900, 'BANK', 'BANK_CASH'), (911, '5101', 'TEST rent', 'EXPENSE', 901, NULL, 'EXPENSES'),
+    (912, '3201', 'TEST owner current', 'EQUITY', 902, 'OWNER_CURRENT', 'EQUITY');
 SELECT setval('accounts_id_seq', 1000);
 
 SELECT pg_temp.expect_error('chart: a child must have the type of its parent',
-    'INSERT INTO accounts (code, name, account_type, parent_id) VALUES (''5999'', ''TEST'', ''ASSET'', 901)', 'RROKA_ACCOUNT_PARENT');
+    'INSERT INTO accounts (code, name, account_type, parent_id, is_postable) VALUES (''5999'', ''TEST'', ''ASSET'', 901, false)', 'RROKA_ACCOUNT_PARENT');
 SELECT pg_temp.expect_error('chart: a postable account cannot have children',
-    'INSERT INTO accounts (code, name, account_type, parent_id) VALUES (''51011'', ''TEST'', ''EXPENSE'', 911)', 'RROKA_ACCOUNT_PARENT');
+    'INSERT INTO accounts (code, name, account_type, parent_id, detail_type) VALUES (''51011'', ''TEST'', ''EXPENSE'', 911, ''EXPENSES'')', 'RROKA_ACCOUNT_PARENT');
 SELECT pg_temp.expect_error('chart: a group with children cannot become postable',
     'UPDATE accounts SET is_postable = true WHERE id = 901', 'RROKA_ACCOUNT_PARENT');
 INSERT INTO accounts (id, code, name, account_type, parent_id, is_postable) VALUES (903, '51', 'TEST sub-group', 'EXPENSE', 901, false);
@@ -843,9 +843,21 @@ SELECT pg_temp.expect_error('chart: no cycles', 'UPDATE accounts SET parent_id =
 SELECT pg_temp.expect_error('chart: a system role needs a postable account',
     'UPDATE accounts SET system_role = ''WIP'' WHERE id = 903', 'RROKA_ACCOUNT_ROLE');
 SELECT pg_temp.expect_error('chart: one account per system role',
-    'INSERT INTO accounts (code, name, account_type, parent_id, system_role) VALUES (''1103'', ''TEST'', ''ASSET'', 900, ''BANK'')', 'accounts_system_role_key');
+    'INSERT INTO accounts (code, name, account_type, parent_id, system_role, detail_type) VALUES (''1103'', ''TEST'', ''ASSET'', 900, ''BANK'', ''BANK_CASH'')', 'accounts_system_role_key');
 SELECT pg_temp.expect_error('chart: account codes are digits',
-    'INSERT INTO accounts (code, name, account_type) VALUES (''A1'', ''TEST'', ''ASSET'')', 'accounts_code_check');
+    'INSERT INTO accounts (code, name, account_type, detail_type) VALUES (''A1'', ''TEST'', ''ASSET'', ''BANK_CASH'')', 'accounts_code_check');
+SELECT pg_temp.expect_error('chart: a postable account needs its detailed type',
+    'INSERT INTO accounts (code, name, account_type, parent_id) VALUES (''1199'', ''TEST'', ''ASSET'', 900)', 'RROKA_ACCOUNT_DETAIL_TYPE');
+SELECT pg_temp.expect_error('chart: a group carries no detailed type',
+    'INSERT INTO accounts (code, name, account_type, is_postable, detail_type) VALUES (''7'', ''TEST'', ''ASSET'', false, ''BANK_CASH'')', 'accounts_group_no_detail_type');
+INSERT INTO accounts (id, code, name, account_type, parent_id, detail_type) VALUES (913, '1110', 'TEST customers', 'EXPENSE', 900, 'RECEIVABLE');
+SELECT pg_temp.expect_eq('chart: the detailed type decides the class (receivable → asset)', (SELECT account_type FROM accounts WHERE id = 913), 'ASSET');
+SELECT pg_temp.expect_eq('chart: a receivable always allows reconciliation', (SELECT reconcile FROM accounts WHERE id = 913), true);
+SELECT pg_temp.expect_error('chart: a liability type cannot sit under an asset group',
+    'INSERT INTO accounts (code, name, account_type, parent_id, detail_type) VALUES (''1198'', ''TEST'', ''ASSET'', 900, ''PAYABLE'')', 'RROKA_ACCOUNT_PARENT');
+INSERT INTO accounts (code, name, account_type, parent_id, detail_type) VALUES ('3302', 'TEST current year earnings', 'EQUITY', 902, 'CURRENT_YEAR_EARNINGS');
+SELECT pg_temp.expect_error('chart: only one current-year-earnings account',
+    'INSERT INTO accounts (code, name, account_type, parent_id, detail_type) VALUES (''3303'', ''TEST'', ''EQUITY'', 902, ''CURRENT_YEAR_EARNINGS'')', 'ux_accounts_current_year_earnings');
 
 -- Entry 1: rent 1,000 paid from the bank.
 INSERT INTO journal_entries (id, entry_date, description, created_by) VALUES (1, '2026-02-10', 'TEST rent February', 1);
@@ -876,7 +888,7 @@ SELECT pg_temp.expect_error('journal: lines of a posted entry cannot change',
 SELECT pg_temp.expect_error('journal: no line can be added to a posted entry',
     'INSERT INTO journal_lines (entry_id, account_id, debit) VALUES (1, 911, 1)', 'RROKA_JOURNAL_LOCKED');
 SELECT pg_temp.expect_error('chart: an account with entries keeps its type',
-    'UPDATE accounts SET account_type = ''ASSET'' WHERE id = 911', 'RROKA_ACCOUNT');
+    'UPDATE accounts SET parent_id = NULL, detail_type = ''BANK_CASH'' WHERE id = 911', 'RROKA_ACCOUNT_USED');
 
 -- A rolled-back posting does not consume a number (gap-free).
 INSERT INTO journal_entries (id, entry_date, description, created_by) VALUES (2, '2026-02-12', 'TEST owner deposit', 1);

@@ -18,11 +18,21 @@ class Account extends Model
         'CUSTOMER_ADVANCES', 'CAPITAL', 'OWNER_CURRENT', 'RETAINED_EARNINGS', 'SALES', 'SALES_DISCOUNT', 'COST_OF_SALES',
         'FIXED_ASSETS', 'ACCUMULATED_DEPRECIATION', 'DEPRECIATION'];
 
-    protected $fillable = ['code', 'name', 'name_en', 'account_type', 'parent_id', 'is_postable', 'system_role', 'is_active', 'notes'];
+    /** Odoo-style detailed type => class. The database derives the class from it (fn_account_class). */
+    public const DETAIL_TYPES = [
+        'RECEIVABLE' => 'ASSET', 'BANK_CASH' => 'ASSET', 'CURRENT_ASSETS' => 'ASSET', 'NON_CURRENT_ASSETS' => 'ASSET',
+        'PREPAYMENTS' => 'ASSET', 'FIXED_ASSETS' => 'ASSET',
+        'PAYABLE' => 'LIABILITY', 'CREDIT_CARD' => 'LIABILITY', 'CURRENT_LIABILITIES' => 'LIABILITY', 'NON_CURRENT_LIABILITIES' => 'LIABILITY',
+        'EQUITY' => 'EQUITY', 'CURRENT_YEAR_EARNINGS' => 'EQUITY',
+        'INCOME' => 'REVENUE', 'OTHER_INCOME' => 'REVENUE',
+        'EXPENSES' => 'EXPENSE', 'DEPRECIATION' => 'EXPENSE', 'COST_OF_REVENUE' => 'EXPENSE',
+    ];
+
+    protected $fillable = ['code', 'name', 'name_en', 'account_type', 'detail_type', 'reconcile', 'parent_id', 'is_postable', 'system_role', 'is_active', 'notes'];
 
     protected function casts(): array
     {
-        return ['is_postable' => 'boolean', 'is_active' => 'boolean'];
+        return ['is_postable' => 'boolean', 'is_active' => 'boolean', 'reconcile' => 'boolean'];
     }
 
     public function parent(): BelongsTo

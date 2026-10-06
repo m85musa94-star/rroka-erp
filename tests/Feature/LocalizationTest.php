@@ -163,8 +163,8 @@ class LocalizationTest extends ApiTestCase
         $this->actingAs($admin)->post('/accounting/accounts/template');
         $cashAcc = Account::where('code', '1101')->value('id');
         $ownerAcc = Account::where('code', '3201')->value('id');
-        $this->actingAs($admin)->post('/accounting/accounts', ['code' => '110201', 'name' => 'Main bank', 'account_type' => 'ASSET',
-            'parent_id' => Account::where('code', '1102')->value('id'), 'is_postable' => 1]);
+        $this->actingAs($admin)->post('/accounting/accounts', ['code' => '110201', 'name' => 'Main bank', 'detail_type' => 'BANK_CASH',
+            'parent_id' => Account::where('code', '1102')->value('id')]);
         $bankAcc = Account::where('code', '110201')->value('id');
         $this->actingAs($admin)->post('/accounting/journal', ['entry_date' => '2026-01-05', 'description' => 'Owner deposit', 'source_type' => 'MANUAL',
             'lines' => [['account_id' => $cashAcc, 'debit' => 100], ['account_id' => $ownerAcc, 'credit' => 100]]]);
@@ -196,7 +196,8 @@ class LocalizationTest extends ApiTestCase
             '/expenses', '/expenses/create', '/expenses?g=category', "/expenses/{$expenseId}", "/expenses/{$expenseId}/edit", '/expense-categories',
             '/treasury/accounts', '/treasury/accounts?v=list', '/treasury/accounts?g=kind', '/treasury/accounts/create', "/treasury/accounts/{$custodyId}", "/treasury/accounts/{$cashId}", "/treasury/accounts/{$custodyId}/edit",
             '/treasury/transfers', '/treasury/transfers/create', "/treasury/transfers/{$transferId}",
-            '/accounting/accounts', "/accounting/accounts?edit={$bankAcc}", "/accounting/accounts/{$cashAcc}", '/accounting/accounts/'.Account::where('code', '1')->value('id'),
+            '/accounting/accounts', '/accounting/accounts?g=type', '/accounting/accounts?g=group', '/accounting/accounts?f[]=untyped', '/accounting/accounts/create', "/accounting/accounts/{$bankAcc}/edit",
+            '/accounting/account-groups', "/accounting/accounts/{$cashAcc}", '/accounting/accounts/'.Account::where('code', '1')->value('id'),
             '/accounting/journal', '/accounting/journal?g=month', '/accounting/journal/create', "/accounting/journal/{$postedId}", "/accounting/journal/{$draftEntryId}",
             "/accounting/journal/{$manualDraftId}", "/accounting/journal/{$manualDraftId}/edit", '/accounting/trial-balance', '/accounting/trial-balance?from=2026-01-01&to=2026-01-31', '/accounting/periods',
             '/designs', '/designs/create', "/design-versions/{$versionId}",
