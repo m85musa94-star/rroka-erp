@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Web\AccountController;
+use App\Http\Controllers\Web\AccountingController;
 use App\Http\Controllers\Web\AttendanceController;
 use App\Http\Controllers\Web\AuthController;
 use App\Http\Controllers\Web\ClientController;
@@ -15,6 +17,7 @@ use App\Http\Controllers\Web\DesignController;
 use App\Http\Controllers\Web\EmployeeController;
 use App\Http\Controllers\Web\EmployeeCostCardController;
 use App\Http\Controllers\Web\ExpenseController;
+use App\Http\Controllers\Web\JournalEntryController;
 use App\Http\Controllers\Web\LeaveController;
 use App\Http\Controllers\Web\LocaleController;
 use App\Http\Controllers\Web\MachineCostCardController;
@@ -312,6 +315,34 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
     });
     Route::post('/treasury/transfers/{transfer}/approve', [TreasuryTransferController::class, 'approve'])->name('treasury.transfers.approve')
         ->whereNumber('transfer')->middleware('permission:treasury.approve');
+
+    // Accounting (governing rule 1 changed 2026-10-06): chart, journal, ledger, trial balance, periods.
+    Route::middleware('permission:accounting.view|accounting.manage|accounting.post|accounting.close')->prefix('accounting')->name('accounting.')->group(function () {
+        Route::get('/accounts', [AccountController::class, 'index'])->name('accounts.index');
+        Route::get('/accounts/{account}', [AccountController::class, 'show'])->name('accounts.show')->whereNumber('account');
+        Route::get('/journal', [JournalEntryController::class, 'index'])->name('journal.index');
+        Route::get('/journal/create', [JournalEntryController::class, 'create'])->name('journal.create')->middleware('permission:accounting.manage');
+        Route::get('/journal/{entry}', [JournalEntryController::class, 'show'])->name('journal.show')->whereNumber('entry');
+        Route::get('/trial-balance', [AccountingController::class, 'trialBalance'])->name('trial-balance');
+        Route::get('/periods', [AccountingController::class, 'periods'])->name('periods');
+    });
+    Route::middleware('permission:accounting.manage')->prefix('accounting')->name('accounting.')->group(function () {
+        Route::post('/accounts', [AccountController::class, 'store'])->name('accounts.store');
+        Route::post('/accounts/template', [AccountController::class, 'fromTemplate'])->name('accounts.template');
+        Route::put('/accounts/{account}', [AccountController::class, 'update'])->name('accounts.update')->whereNumber('account');
+        Route::post('/journal', [JournalEntryController::class, 'store'])->name('journal.store');
+        Route::get('/journal/{entry}/edit', [JournalEntryController::class, 'edit'])->name('journal.edit')->whereNumber('entry');
+        Route::put('/journal/{entry}', [JournalEntryController::class, 'update'])->name('journal.update')->whereNumber('entry');
+        Route::delete('/journal/{entry}', [JournalEntryController::class, 'destroy'])->name('journal.destroy')->whereNumber('entry');
+    });
+    Route::middleware('permission:accounting.post')->prefix('accounting')->name('accounting.')->group(function () {
+        Route::post('/journal/{entry}/post', [JournalEntryController::class, 'post'])->name('journal.post')->whereNumber('entry');
+        Route::post('/journal/{entry}/reverse', [JournalEntryController::class, 'reverse'])->name('journal.reverse')->whereNumber('entry');
+    });
+    Route::middleware('permission:accounting.close')->prefix('accounting')->name('accounting.')->group(function () {
+        Route::post('/periods/{month}/close', [AccountingController::class, 'closePeriod'])->name('periods.close');
+        Route::post('/periods/{month}/reopen', [AccountingController::class, 'reopenPeriod'])->name('periods.reopen');
+    });
 
     Route::middleware('permission:studio.view|quotations.view|purchases.view|expenses.view')->group(function () {
         Route::get('/studio/{asset}/file/{variant}', [StudioController::class, 'file'])->name('studio.file')->whereNumber('asset')->whereIn('variant', ['thumb', 'full']);

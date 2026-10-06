@@ -1,0 +1,130 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Account;
+use App\Models\FiscalPeriod;
+use App\Models\JournalEntry;
+use Illuminate\Support\Facades\DB;
+
+class AccountingTest extends ApiTestCase
+{
+    private function entry($user, string $date, array $lines, string $description = 'TEST entry', string $type = 'MANUAL'): JournalEntry
+    {
+        $this->actingAs($user)->post('/accounting/journal', ['entry_date' => $date, 'description' => $description, 'source_type' => $type, 'lines' => $lines])
+            ->assertSessionHasNoErrors();
+
+        return JournalEntry::latest('id')->first();
+    }
+
+    private function acc(string $code): int
+    {
+        return Account::where('code', $code)->value('id');
+    }
+
+    public function test_chart_template_entry_posting_reversal_and_trial_balance(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin)->get('/accounting/accounts')->assertOk()->assertSee('إنشاء الدليل المقترح');
+        $this->actingAs($admin)->post('/accounting/accounts/template')->assertSessionHasNoErrors();
+        $this->assertSame('INPUT_VAT', Account::where('code', '1140')->value('system_role'));
+        $this->actingAs($admin)->post('/accounting/accounts/template')->assertSessionHasErrors('rule');   // only into an empty chart
+
+        // A real bank account is added under «Banks»; a postable parent is refused.
+        $banks = $this->acc('1102');
+        $this->actingAs($admin)->post('/accounting/accounts', ['code' => '110201', 'name' => 'TEST bank', 'account_type' => 'ASSET', 'parent_id' => $banks, 'is_postable' => 1])->assertSessionHasNoErrors();
+        $this->actingAs($admin)->post('/accounting/accounts', ['code' => '110301', 'name' => 'TEST', 'account_type' => 'ASSET', 'parent_id' => $this->acc('1103'), 'is_postable' => 1])->assertSessionHasErrors('parent_id');
+        $this->actingAs($admin)->post('/accounting/accounts', ['code' => '1A', 'name' => 'TEST', 'account_type' => 'ASSET', 'is_postable' => 1])->assertSessionHasErrors('code');
+
+        // Owner funds the bank, then rent is paid (1,000 + 150 VAT).
+        $bank = $this->acc('110201');
+        $deposit = $this->entry($admin, '2026-01-05', [['account_id' => $bank, 'debit' => 50000], ['account_id' => $this->acc('3201'), 'credit' => 50000]], 'TEST owner deposit');
+        $rent = $this->entry($admin, '2026-01-10', [
+            ['account_id' => $this->acc('5202'), 'debit' => 1000], ['account_id' => $this->acc('1140'), 'debit' => 150], ['account_id' => $bank, 'credit' => 1100],
+        ], 'TEST rent');
+        $this->actingAs($admin)->post("/accounting/journal/{$rent->id}/post")->assertSessionHasErrors('rule');   // 1,150 ≠ 1,100
+        $this->assertSame('DRAFT', $rent->fresh()->status);
+        $this->actingAs($admin)->put("/accounting/journal/{$rent->id}", ['entry_date' => '2026-01-10', 'description' => 'TEST rent', 'source_type' => 'MANUAL', 'lines' => [
+            ['account_id' => $this->acc('5202'), 'debit' => 1000], ['account_id' => $this->acc('1140'), 'debit' => 150], ['account_id' => $bank, 'credit' => 1150],
+        ]])->assertSessionHasNoErrors();
+        $this->actingAs($admin)->post("/accounting/journal/{$deposit->id}/post")->assertSessionHasNoErrors();
+        $this->actingAs($admin)->post("/accounting/journal/{$rent->id}/post")->assertSessionHasNoErrors();
+        $this->assertSame(['JV-2026-00001', 'JV-2026-00002'], [$deposit->fresh()->entry_no, $rent->fresh()->entry_no]);
+
+        // Posted is final: no edit, no delete; the database refuses even if the app did not.
+        $this->actingAs($admin)->put("/accounting/journal/{$rent->id}", ['entry_date' => '2026-01-10', 'description' => 'x', 'source_type' => 'MANUAL', 'lines' => [
+            ['account_id' => $bank, 'debit' => 1], ['account_id' => $bank, 'credit' => 1]]])->assertSessionHasErrors('rule');
+        $this->actingAs($admin)->delete("/accounting/journal/{$rent->id}")->assertSessionHasErrors('rule');
+        $this->assertSame('TEST rent', $rent->fresh()->description);
+
+        // Ledger with running balance; trial balance balances.
+        $this->actingAs($admin)->get("/accounting/accounts/{$bank}?from=2026-01-01&to=2026-01-31")->assertOk()->assertSee('48,850.00')->assertSee('JV-2026-00002');
+        $this->actingAs($admin)->get("/accounting/accounts/{$banks}")->assertOk()->assertSee('48,850.00');   // the group shows what is under it
+        $this->actingAs($admin)->get('/accounting/trial-balance?from=2026-01-01&to=2026-01-31')->assertOk()
+            ->assertSee('الميزان متوازن')->assertSee('51,150.00');
+        $this->actingAs($admin)->get('/accounting/accounts')->assertOk()->assertSee('48,850.00');
+
+        // Correction = reversal mirror, then the right entry.
+        $this->actingAs($admin)->post("/accounting/journal/{$rent->id}/reverse", ['entry_date' => '2026-01-09', 'reason' => 'TEST'])->assertSessionHasErrors('entry_date');
+        $this->actingAs($admin)->post("/accounting/journal/{$rent->id}/reverse", ['entry_date' => '2026-01-15', 'reason' => 'TEST wrong month'])->assertSessionHasNoErrors();
+        $rev = JournalEntry::where('reverses_id', $rent->id)->sole();
+        $this->assertSame('REVERSAL', $rev->source_type);
+        $this->assertEquals(1150, (float) $rev->lines()->where('account_id', $bank)->value('debit'));
+        $this->actingAs($admin)->post("/accounting/journal/{$rev->id}/post")->assertSessionHasNoErrors();
+        $this->assertEquals(0, (float) DB::table('v_ledger_lines')->where('account_id', $this->acc('5202'))->sum('net'));
+        $this->actingAs($admin)->get("/accounting/journal/{$rent->id}")->assertOk()->assertSee($rev->fresh()->entry_no);
+
+        // Opening entry must be dated at the books start.
+        $this->actingAs($admin)->post('/accounting/journal', ['entry_date' => '2026-02-01', 'description' => 'TEST', 'source_type' => 'OPENING',
+            'lines' => [['account_id' => $bank, 'debit' => 1], ['account_id' => $this->acc('3101'), 'credit' => 1]]])->assertSessionHasErrors('entry_date');
+        // A line is debit or credit.
+        $this->actingAs($admin)->post('/accounting/journal', ['entry_date' => '2026-02-01', 'description' => 'TEST', 'source_type' => 'MANUAL',
+            'lines' => [['account_id' => $bank, 'debit' => 5, 'credit' => 5], ['account_id' => $this->acc('3101'), 'credit' => 5]]])->assertSessionHasErrors('lines.0.debit');
+        // Group accounts take no lines.
+        $this->actingAs($admin)->post('/accounting/journal', ['entry_date' => '2026-02-01', 'description' => 'TEST', 'source_type' => 'MANUAL',
+            'lines' => [['account_id' => $banks, 'debit' => 5], ['account_id' => $this->acc('3101'), 'credit' => 5]]])->assertSessionHasErrors('lines.0.account_id');
+
+        // The account with entries keeps its type.
+        $this->actingAs($admin)->put("/accounting/accounts/{$bank}", ['code' => '110201', 'name' => 'TEST bank', 'account_type' => 'EXPENSE', 'parent_id' => null, 'is_postable' => 1, 'is_active' => 1])
+            ->assertSessionHasErrors('rule');
+    }
+
+    public function test_periods_close_in_order_and_block_posting(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin)->post('/accounting/accounts/template');
+        $cash = Account::where('code', '1101')->value('id');
+        $owner = Account::where('code', '3201')->value('id');
+        $jan = $this->entry($admin, '2026-01-20', [['account_id' => $cash, 'debit' => 100], ['account_id' => $owner, 'credit' => 100]]);
+        $this->actingAs($admin)->post('/accounting/periods/2026-01/close')->assertSessionHasErrors('rule');   // a draft in January
+        $this->actingAs($admin)->post("/accounting/journal/{$jan->id}/post")->assertSessionHasNoErrors();
+        $this->actingAs($admin)->post('/accounting/periods/2026-02/close')->assertSessionHasErrors('rule');   // January still open
+        $this->actingAs($admin)->post('/accounting/periods/2026-01/close')->assertSessionHasNoErrors();
+        $this->assertSame('CLOSED', FiscalPeriod::where('period_start', '2026-01-01')->value('status'));
+
+        $late = $this->entry($admin, '2026-01-25', [['account_id' => $cash, 'debit' => 10], ['account_id' => $owner, 'credit' => 10]]);
+        $this->actingAs($admin)->post("/accounting/journal/{$late->id}/post")->assertSessionHasErrors('rule');
+        $this->actingAs($admin)->post('/accounting/periods/2025-12/close')->assertSessionHasErrors('rule');   // before the books start
+        $this->actingAs($admin)->post('/accounting/periods/2026-01/reopen', ['reopen_reason' => ''])->assertSessionHasErrors('reopen_reason');
+        $this->actingAs($admin)->post('/accounting/periods/2026-01/reopen', ['reopen_reason' => 'TEST late invoice'])->assertSessionHasNoErrors();
+        $this->actingAs($admin)->post("/accounting/journal/{$late->id}/post")->assertSessionHasNoErrors();
+        $this->actingAs($admin)->get('/accounting/periods')->assertOk()->assertSee('2026-01')->assertSee('TEST late invoice');
+    }
+
+    public function test_permissions(): void
+    {
+        $viewer = $this->userWith(['accounting.view']);
+        $this->actingAs($viewer)->get('/accounting/journal')->assertOk();
+        $this->actingAs($viewer)->get('/accounting/trial-balance')->assertOk();
+        $this->actingAs($viewer)->get('/accounting/journal/create')->assertForbidden();
+        $this->actingAs($viewer)->post('/accounting/accounts/template')->assertForbidden();
+
+        $clerk = $this->userWith(['accounting.manage']);
+        $this->actingAs($clerk)->post('/accounting/accounts/template')->assertSessionHasNoErrors();
+        $e = $this->entry($clerk, '2026-03-01', [['account_id' => Account::where('code', '1101')->value('id'), 'debit' => 5], ['account_id' => Account::where('code', '3201')->value('id'), 'credit' => 5]]);
+        $this->actingAs($clerk)->post("/accounting/journal/{$e->id}/post")->assertForbidden();   // posting is a separate permission
+        $this->actingAs($clerk)->post('/accounting/periods/2026-03/close')->assertForbidden();
+
+        $this->actingAs($this->userWith(['expenses.view']))->get('/accounting/journal')->assertForbidden();
+    }
+}

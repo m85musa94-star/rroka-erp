@@ -1,0 +1,168 @@
+<?php
+
+namespace App\Http\Controllers\Web;
+
+use App\Http\Controllers\Controller;
+use App\Models\Account;
+use App\Support\ActivityLog;
+use App\Support\ChartTemplate;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+
+/**
+ * Chart of accounts and the ledger of one account. Balances come from posted lines only
+ * (v_ledger_lines); a group account shows the total of everything under it.
+ */
+class AccountController extends Controller
+{
+    public function index(Request $request): View
+    {
+        $accounts = Account::orderBy('code')->get();
+        $sums = DB::table('v_ledger_lines')->groupBy('account_id')->selectRaw('account_id, sum(debit) AS debit, sum(credit) AS credit')->get()->keyBy('account_id');
+
+        return view('accounting.accounts.index', [
+            'rows' => $this->tree($accounts, $sums, $request->boolean('inactive')),
+            'groups' => $accounts->where('is_postable', false),
+            'usedRoles' => $accounts->pluck('system_role')->filter()->all(),
+            'edit' => $request->integer('edit') ? $accounts->firstWhere('id', $request->integer('edit')) : null,
+            'empty' => $accounts->isEmpty(),
+        ]);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $account = Account::create($this->validated($request));
+
+        return redirect()->route('accounting.accounts.index')->with('ok', __('أُضيف الحساب :code.', ['code' => $account->code]));
+    }
+
+    public function update(Request $request, Account $account): RedirectResponse
+    {
+        $account->update($this->validated($request, $account) + ['is_active' => $request->boolean('is_active')]);
+
+        return redirect()->route('accounting.accounts.index')->with('ok', __('حُدّث الحساب :code.', ['code' => $account->code]));
+    }
+
+    /** Creates the proposed chart, only into an empty chart; the owner then reviews and edits it. */
+    public function fromTemplate(): RedirectResponse
+    {
+        if (Account::exists()) {
+            throw ValidationException::withMessages(['rule' => __('يوجد دليل حسابات بالفعل؛ الدليل المقترح يُنشأ في دليل فارغ فقط.')]);
+        }
+        $ids = [];
+        foreach (ChartTemplate::rows() as [$code, $name, $nameEn, $type, $parent, $postable, $role]) {
+            $ids[$code] = Account::create(['code' => $code, 'name' => $name, 'name_en' => $nameEn, 'account_type' => $type,
+                'parent_id' => $parent ? $ids[$parent] : null, 'is_postable' => $postable, 'system_role' => $role])->id;
+        }
+
+        return redirect()->route('accounting.accounts.index')->with('ok', __('أُنشئ الدليل المقترح. راجعه وعدّله، وأضف حساباتكم البنكية تحت «البنوك».'));
+    }
+
+    /** Ledger: opening balance, the posted lines of the range with a running balance, closing balance. */
+    public function show(Request $request, Account $account): View|StreamedResponse
+    {
+        [$from, $to] = $this->range($request);
+        $ids = $this->descendants($account);
+        $sign = $account->isDebitNature() ? 1 : -1;
+        $opening = $sign * (float) DB::table('v_ledger_lines')->whereIn('account_id', $ids)->where('entry_date', '<', $from)->sum('net');
+        $lines = DB::table('v_ledger_lines as l')
+            ->leftJoin('projects as p', 'p.id', '=', 'l.project_id')
+            ->whereIn('l.account_id', $ids)->whereBetween('l.entry_date', [$from, $to])
+            ->orderBy('l.entry_date')->orderBy('l.entry_no')->orderBy('l.line_id')
+            ->get(['l.*', 'p.project_no']);
+        $running = $opening;
+        foreach ($lines as $l) {
+            $running += $sign * (float) $l->net;
+            $l->balance = $running;
+        }
+
+        if ($request->query('export') === 'csv') {
+            return $this->csv($account, $from, $to, $opening, $lines);
+        }
+
+        return view('accounting.accounts.show', [
+            'a' => $account->load('parent'), 'from' => $from, 'to' => $to, 'opening' => $opening, 'lines' => $lines,
+            'closing' => $running, 'isGroup' => ! $account->is_postable,
+            'activity' => ActivityLog::for(['accounts' => [$account->id]]),
+        ]);
+    }
+
+    private function validated(Request $request, ?Account $a = null): array
+    {
+        $request->merge(['code' => trim((string) $request->input('code')), 'system_role' => $request->input('system_role') ?: null]);
+        $data = $request->validate([
+            'code' => ['required', 'regex:/^[0-9]{1,12}$/', Rule::unique('accounts', 'code')->ignore($a?->id)],
+            'name' => ['required', 'string', 'max:150'],
+            'name_en' => ['nullable', 'string', 'max:150'],
+            'account_type' => ['required', Rule::in(Account::TYPES)],
+            'parent_id' => ['nullable', 'integer', Rule::exists('accounts', 'id')->where('is_postable', 'false'), Rule::notIn(array_filter([$a?->id]))],
+            'system_role' => ['nullable', Rule::in(Account::ROLES), Rule::unique('accounts', 'system_role')->ignore($a?->id)],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ], ['code.regex' => __('رمز الحساب أرقام فقط (حتى 12 رقمًا).')]);
+
+        return $data + ['is_postable' => $request->boolean('is_postable')];
+    }
+
+    /** Depth-first rows with the balance of each account (groups roll up their children). */
+    private function tree(Collection $accounts, Collection $sums, bool $withInactive): array
+    {
+        $byParent = $accounts->groupBy(fn ($a) => $a->parent_id ?? 0);
+        $rows = [];
+        $walk = function ($parentId, $depth) use (&$walk, &$rows, $byParent, $sums) {
+            $dr = $cr = 0.0;
+            foreach ($byParent[$parentId] ?? [] as $a) {
+                $at = count($rows);
+                $rows[] = null;
+                [$cdr, $ccr] = $walk($a->id, $depth + 1);
+                $adr = $cdr + (float) ($sums[$a->id]->debit ?? 0);
+                $acr = $ccr + (float) ($sums[$a->id]->credit ?? 0);
+                $rows[$at] = ['a' => $a, 'depth' => $depth, 'debit' => $adr, 'credit' => $acr,
+                    'balance' => $a->isDebitNature() ? $adr - $acr : $acr - $adr, 'used' => isset($sums[$a->id])];
+                $dr += $adr;
+                $cr += $acr;
+            }
+
+            return [$dr, $cr];
+        };
+        $walk(0, 0);
+
+        return array_values(array_filter($rows, fn ($r) => $withInactive || $r['a']->is_active));
+    }
+
+    private function descendants(Account $account): array
+    {
+        return array_map(fn ($r) => (int) $r->id, DB::select(
+            'WITH RECURSIVE t AS (SELECT id FROM accounts WHERE id = ? UNION ALL SELECT a.id FROM accounts a JOIN t ON a.parent_id = t.id) SELECT id FROM t',
+            [$account->id]));
+    }
+
+    private function range(Request $request): array
+    {
+        $start = DB::table('accounting_settings')->value('books_start') ?? today()->startOfYear()->toDateString();
+        $from = $request->date('from')?->toDateString() ?? $start;
+        $to = $request->date('to')?->toDateString() ?? today()->toDateString();
+
+        return $from > $to ? [$to, $from] : [$from, $to];
+    }
+
+    private function csv(Account $account, string $from, string $to, float $opening, Collection $lines): StreamedResponse
+    {
+        return response()->streamDownload(function () use ($opening, $lines) {
+            $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF");
+            fputcsv($out, [__('التاريخ'), __('رقم القيد'), __('الحساب'), __('البيان'), __('المشروع'), __('مدين'), __('دائن'), __('الرصيد')]);
+            fputcsv($out, ['', '', '', __('رصيد أول المدة'), '', '', '', number_format($opening, 2, '.', '')]);
+            foreach ($lines as $l) {
+                fputcsv($out, [$l->entry_date, $l->entry_no, $l->account_code, $l->description ?: $l->entry_description, $l->project_no,
+                    number_format((float) $l->debit, 2, '.', ''), number_format((float) $l->credit, 2, '.', ''), number_format($l->balance, 2, '.', '')]);
+            }
+            fclose($out);
+        }, "ledger-{$account->code}-{$from}-{$to}.csv", ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+}

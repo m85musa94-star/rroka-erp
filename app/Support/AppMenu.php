@@ -22,6 +22,7 @@ class AppMenu
             ['key' => 'purchasing', 'label' => __('المشتريات'), 'route' => 'purchases.index', 'match' => 'purchases.*', 'permission' => ['purchases.view', 'purchases.manage'], 'group' => 'buy'],
             ['key' => 'suppliers', 'label' => __('الموردون'), 'route' => 'suppliers.index', 'match' => 'suppliers.*', 'permission' => ['purchases.view', 'purchases.manage'], 'group' => 'buy'],
             ['key' => 'treasury', 'label' => __('الخزينة والعهد'), 'route' => 'treasury.accounts.index', 'match' => 'treasury.*', 'permission' => ['treasury.view', 'treasury.manage'], 'group' => 'buy'],
+            ['key' => 'accounting', 'label' => __('المحاسبة'), 'route' => 'accounting.journal.index', 'match' => 'accounting.*', 'permission' => ['accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close'], 'group' => 'buy'],
             ['key' => 'expenses', 'label' => __('المصروفات'), 'route' => 'expenses.index', 'match' => ['expenses.*', 'expense-categories.*'], 'permission' => ['expenses.view', 'expenses.manage'], 'group' => 'buy'],
             ['key' => 'reports', 'label' => __('التقارير'), 'route' => 'reports.index', 'match' => 'reports.*', 'permission' => ['quotations.view', 'projects.view', 'costing.view', 'purchases.view', 'expenses.view', 'inventory.view'], 'group' => 'reports'],
             ['key' => 'production', 'label' => __('التصنيع'), 'route' => 'production.index', 'match' => ['production.*', 'designs.*', 'design-versions.*'], 'permission' => ['production.manage', 'production.log_time', 'quality.inspect', 'designs.manage', 'designs.release', 'bom.manage'], 'group' => 'mrp'],
@@ -157,6 +158,12 @@ class AppMenu
                     ['العهد', 'treasury.accounts.index', ['f' => ['custody']], ['treasury.view', 'treasury.manage']],
                     ['التحويلات وصرف العهد', 'treasury.transfers.index', [], ['treasury.view', 'treasury.manage']],
                     ['المصروفات', 'expenses.index', [], ['expenses.view', 'expenses.manage']],
+                ],
+                'accounting' => [
+                    ['القيود', 'accounting.journal.index', [], ['accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close']],
+                    ['دليل الحسابات', 'accounting.accounts.index', [], ['accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close']],
+                    ['ميزان المراجعة', 'accounting.trial-balance', [], ['accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close']],
+                    ['الفترات المالية', 'accounting.periods', [], ['accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close']],
                 ],
                 'expenses' => [
                     ['المصروفات', 'expenses.index', [], ['expenses.view', 'expenses.manage']],

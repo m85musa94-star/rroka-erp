@@ -93,6 +93,18 @@ return [
         'RROKA_ESTIMATE_NO_LINE' => 'لا يوجد هذا البند في عرض السعر.',
         'RROKA_QUOTATION_COSTING_INCOMPLETE' => 'لا يُعتمد العرض قبل اكتمال تقدير التكلفة لكل بنوده (انظر ورقة التكلفة لكل بند).',
         'RROKA_SNAPSHOT_IMMUTABLE' => 'التكلفة المعيارية المجمّدة عند الاعتماد لا تتغير.',
+        'RROKA_ACCOUNT_PARENT' => 'الحساب الأب يجب أن يكون حسابًا تجميعيًا من النوع نفسه، والحساب الذي تحته حسابات لا يقبل القيود، ولا يوضع حساب تحت أحد فروعه.',
+        'RROKA_ACCOUNT_ROLE' => 'الدور النظامي يُسند إلى حساب يقبل القيود فقط.',
+        'RROKA_ACCOUNT_USED' => 'على الحساب قيود؛ رمزه ونوعه وقبوله للقيود ثابتة. يمكن إيقافه.',
+        'RROKA_ACCOUNT_NOT_POSTABLE' => 'الحساب تجميعي أو موقوف؛ اختر حسابًا فرعيًا نشطًا.',
+        'RROKA_JOURNAL_LOCKED' => 'القيد المرحَّل نهائي؛ يُصحَّح بقيد عكسي فقط.',
+        'RROKA_JOURNAL_UNBALANCED' => 'القيد غير متوازن: يجب أن يتساوى المدين والدائن ويزيدا على الصفر، وفي سطرين على الأقل.',
+        'RROKA_JOURNAL_REVERSAL' => 'القيد العكسي يكون لقيد مرحَّل، مرة واحدة، بتاريخ لا يسبقه، ومطابقًا له تمامًا بالعكس.',
+        'RROKA_BOOKS_NOT_STARTED' => 'التاريخ قبل بداية الدفاتر.',
+        'RROKA_PERIOD_CLOSED' => 'الشهر مقفل (أو يسبق شهرًا مقفلًا)؛ لا يُرحَّل فيه شيء.',
+        'RROKA_PERIOD_DRAFTS' => 'في الشهر مسودات قيود؛ رحّلها أو احذفها قبل الإقفال.',
+        'RROKA_PERIOD_ORDER' => 'تُقفل الشهور بالترتيب وتُعاد بالترتيب العكسي.',
+        'RROKA_PERIOD_REOPEN' => 'إعادة فتح شهر مقفل تحتاج سببًا مكتوبًا.',
         'CHECK_VIOLATION' => 'البيانات المُدخلة تخالف أحد شروط الصحة.',
         'DUPLICATE' => 'هذا السجل موجود مسبقًا.',
         'INVALID_REFERENCE' => 'مرجع غير صالح.',
@@ -100,7 +112,7 @@ return [
     ],
 
     'status' => [
-        'EXPIRED' => 'منتهٍ', 'RUNNING' => 'ساري', 'SUBMITTED' => 'بانتظار الاعتماد', 'REFUSED' => 'مرفوض',
+        'POSTED' => 'مرحَّل', 'OPEN' => 'مفتوح', 'CLOSED' => 'مقفل', 'EXPIRED' => 'منتهٍ', 'RUNNING' => 'ساري', 'SUBMITTED' => 'بانتظار الاعتماد', 'REFUSED' => 'مرفوض',
         'CLIENT_REVIEW' => 'مراجعة العميل', 'CLIENT_APPROVED' => 'وافق العميل', 'RELEASED_FOR_PRODUCTION' => 'مُصدَر للإنتاج', 'SUPERSEDED' => 'مُستبدَل', 'PLANNED' => 'مخطط', 'IN_PROGRESS' => 'قيد التنفيذ',
         'DRAFT' => 'مسودة', 'SENT' => 'مُرسَل', 'APPROVED' => 'معتمد', 'REJECTED' => 'مرفوض',
         'EXPIRED' => 'منتهي', 'CANCELLED' => 'ملغى', 'ACTIVE' => 'نشط', 'IN_PRODUCTION' => 'قيد الإنتاج',
@@ -109,7 +121,7 @@ return [
     ],
 
     'permission_groups' => [
-        'cost_rates' => 'محرك التكلفة',
+        'accounting' => 'المحاسبة', 'cost_rates' => 'محرك التكلفة',
         'clients' => 'العملاء', 'surveys' => 'المعاينات', 'quotations' => 'عروض الأسعار',
         'projects' => 'المشاريع', 'designs' => 'التصاميم', 'bom' => 'قوائم المواد',
         'inventory' => 'المخزون', 'production' => 'الإنتاج', 'quality' => 'الجودة',
@@ -118,7 +130,7 @@ return [
     ],
 
     'entities' => [
-        'cost_estimates' => 'تقدير التكلفة', 'cost_estimate_materials' => 'مادة التقدير', 'cost_estimate_operations' => 'عملية التقدير', 'cost_estimate_direct_costs' => 'تكلفة مباشرة', 'cost_estimate_snapshots' => 'التكلفة المجمّدة', 'vat_rates' => 'نسبة الضريبة', 'pricing_policies' => 'سياسة التسعير',
+        'accounts' => 'الحساب', 'journal_entries' => 'القيد', 'journal_lines' => 'سطر القيد', 'fiscal_periods' => 'الفترة المالية', 'accounting_settings' => 'إعدادات الدفاتر', 'cost_estimates' => 'تقدير التكلفة', 'cost_estimate_materials' => 'مادة التقدير', 'cost_estimate_operations' => 'عملية التقدير', 'cost_estimate_direct_costs' => 'تكلفة مباشرة', 'cost_estimate_snapshots' => 'التكلفة المجمّدة', 'vat_rates' => 'نسبة الضريبة', 'pricing_policies' => 'سياسة التسعير',
         'cost_centers' => 'مركز التكلفة', 'energy_rates' => 'سعر الكهرباء', 'employee_cost_cards' => 'بطاقة تكلفة الموظف', 'employee_cost_card_shares' => 'حصة مركز التكلفة', 'machine_cost_cards' => 'بطاقة تكلفة الآلة', 'material_standard_prices' => 'السعر المعياري', 'waste_defaults' => 'نسبة الهالك', 'overhead_pools' => 'وعاء التكاليف غير المباشرة', 'overhead_pool_lines' => 'بند الوعاء',
         'payment_accounts' => 'الحساب', 'treasury_transfers' => 'التحويل', 'suppliers' => 'المورد', 'purchase_invoices' => 'فاتورة المورد', 'purchase_invoice_lines' => 'بند فاتورة المورد', 'expenses' => 'المصروف', 'expense_categories' => 'تصنيف المصروف',
         'employee_contracts' => 'العقد', 'leave_requests' => 'طلب الإجازة', 'leave_allocations' => 'رصيد الإجازة', 'attendances' => 'سجل الحضور', 'leave_types' => 'نوع الإجازة',
@@ -129,7 +141,7 @@ return [
     ],
 
     'fields' => [
-        'supplier_id' => 'المورد', 'supplier_invoice_no' => 'رقم فاتورة المورد', 'invoice_date' => 'تاريخ الفاتورة', 'due_date' => 'تاريخ الاستحقاق', 'vat_amount' => 'الضريبة', 'attachment_id' => 'صورة المستند', 'expense_date' => 'التاريخ', 'category_id' => 'التصنيف', 'payee' => 'الجهة', 'amount' => 'المبلغ', 'payment_method' => 'طريقة الدفع', 'paid_by_employee_id' => 'من عهدة', 'reference' => 'المرجع', 'is_overhead' => 'غير مباشر', 'daftra_account_ref' => 'حساب دفترة', 'line_no' => 'رقم البند',
+        'account_type' => 'النوع', 'parent_id' => 'تحت الحساب', 'is_postable' => 'يقبل القيود', 'system_role' => 'الدور النظامي', 'name_en' => 'الاسم بالإنجليزية', 'entry_date' => 'التاريخ', 'entry_no' => 'رقم القيد', 'debit' => 'مدين', 'credit' => 'دائن', 'account_id' => 'الحساب', 'posted_by' => 'رحّله', 'posted_at' => 'وقت الترحيل', 'reverses_id' => 'يعكس القيد', 'reopen_reason' => 'سبب إعادة الفتح', 'closed_by' => 'أقفله', 'closed_at' => 'وقت الإقفال', 'books_start' => 'بداية الدفاتر', 'source_type' => 'نوع القيد', 'fiscal_year' => 'السنة', 'seq_no' => 'التسلسل', 'period_start' => 'الشهر', 'supplier_id' => 'المورد', 'supplier_invoice_no' => 'رقم فاتورة المورد', 'invoice_date' => 'تاريخ الفاتورة', 'due_date' => 'تاريخ الاستحقاق', 'vat_amount' => 'الضريبة', 'attachment_id' => 'صورة المستند', 'expense_date' => 'التاريخ', 'category_id' => 'التصنيف', 'payee' => 'الجهة', 'amount' => 'المبلغ', 'payment_method' => 'طريقة الدفع', 'paid_by_employee_id' => 'من عهدة', 'reference' => 'المرجع', 'is_overhead' => 'غير مباشر', 'daftra_account_ref' => 'حساب دفترة', 'line_no' => 'رقم البند',
         'payment_account_id' => 'دُفع من', 'from_account_id' => 'من', 'to_account_id' => 'إلى', 'transfer_date' => 'التاريخ', 'kind' => 'النوع', 'bank_name' => 'البنك', 'employee_id' => 'الموظف', 'custody_limit' => 'الحد الأعلى للعهدة', 'daftra_treasury_ref' => 'خزينة دفترة',
         'version' => 'الإصدار', 'effective_from' => 'ساري من', 'source' => 'المصدر', 'estimated' => 'تقديري', 'driver' => 'المحرك', 'rate_per_kwh' => 'سعر الكيلوواط ساعة', 'price_basis' => 'أساس السعر', 'share_pct' => 'الحصة %', 'cost_center_id' => 'مركز التكلفة', 'housing' => 'السكن', 'transportation' => 'النقل', 'insurance' => 'التأمينات', 'government_fees' => 'الإقامة والرسوم الحكومية', 'allowances' => 'البدلات', 'other_costs' => 'تكاليف أخرى', 'theoretical_hours' => 'الساعات النظرية', 'practical_hours' => 'الساعات العملية', 'hourly_rate' => 'تكلفة الساعة', 'monthly_cost' => 'التكلفة الشهرية', 'acquisition_cost' => 'تكلفة الشراء', 'residual_value' => 'القيمة المتبقية', 'useful_life_years' => 'العمر الإنتاجي (سنوات)', 'theoretical_annual_hours' => 'الساعات السنوية النظرية', 'practical_annual_hours' => 'الساعات السنوية العملية', 'power_kw' => 'القدرة kW', 'load_factor' => 'معامل التحميل', 'annual_maintenance' => 'الصيانة السنوية', 'annual_spare_parts' => 'قطع الغيار السنوية', 'annual_other' => 'تكاليف تشغيل أخرى سنوية', 'period_to' => 'إلى', 'practical_capacity' => 'الطاقة العملية', 'theoretical_capacity' => 'الطاقة النظرية', 'budgeted_manufacturing_cost' => 'تكلفة التصنيع المتوقعة', 'rate' => 'المعدل', 'gross_cost' => 'الإجمالي', 'net_cost' => 'الصافي', 'machine_energy_deduction' => 'كهرباء الآلات المطروحة', 'machine_id' => 'الآلة', 'pool_id' => 'الوعاء', 'card_id' => 'البطاقة',
         'contract_type' => 'نوع العقد', 'end_date' => 'تاريخ النهاية', 'basic_salary' => 'الراتب الأساسي', 'housing_allowance' => 'بدل السكن', 'transport_allowance' => 'بدل النقل', 'other_allowance' => 'بدلات أخرى', 'weekly_hours' => 'الساعات الأسبوعية', 'check_in' => 'الحضور', 'check_out' => 'الانصراف', 'date_from' => 'من', 'date_to' => 'إلى', 'days' => 'الأيام', 'refusal_reason' => 'سبب الرفض',
@@ -192,6 +204,12 @@ return [
     'account_kind' => ['CASH' => 'صندوق نقدي', 'BANK' => 'حساب بنكي', 'CUSTODY' => 'عهدة موظف'],
 
     'transfer_purpose' => ['ISSUE' => 'صرف عهدة', 'RETURN' => 'إرجاع عهدة', 'MOVE' => 'تحويل بين الحسابات'],
+
+    'account_type' => ['ASSET' => 'أصول', 'LIABILITY' => 'خصوم', 'EQUITY' => 'حقوق ملكية', 'REVENUE' => 'إيرادات', 'EXPENSE' => 'تكاليف ومصروفات'],
+
+    'account_role' => ['CASH' => 'النقدية', 'BANK' => 'البنك', 'CUSTODY' => 'العهد', 'RECEIVABLE' => 'العملاء (الذمم المدينة)', 'INVENTORY' => 'مخزون الخامات', 'WIP' => 'أعمال تحت التنفيذ', 'INPUT_VAT' => 'ضريبة المدخلات', 'PAYABLE' => 'الموردون', 'OUTPUT_VAT' => 'ضريبة المخرجات', 'CUSTOMER_ADVANCES' => 'دفعات مقدمة من العملاء', 'CAPITAL' => 'رأس المال', 'OWNER_CURRENT' => 'جاري المالك', 'RETAINED_EARNINGS' => 'الأرباح المبقاة', 'SALES' => 'إيرادات المبيعات', 'SALES_DISCOUNT' => 'خصومات المبيعات', 'COST_OF_SALES' => 'تكلفة المبيعات', 'FIXED_ASSETS' => 'الأصول الثابتة', 'ACCUMULATED_DEPRECIATION' => 'مجمع الإهلاك', 'DEPRECIATION' => 'مصروف الإهلاك'],
+
+    'journal_source' => ['MANUAL' => 'يدوي', 'OPENING' => 'افتتاحي', 'REVERSAL' => 'عكسي'],
 
     'expense_kind' => ['PROJECT' => 'على مشروع', 'OVERHEAD' => 'غير مباشر للورشة', 'OTHER' => 'إداري وعمومي'],
 

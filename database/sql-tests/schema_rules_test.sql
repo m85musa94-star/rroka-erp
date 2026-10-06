@@ -823,6 +823,120 @@ SELECT pg_temp.expect_error('estimate: its figures cannot be edited after approv
 SELECT pg_temp.expect_eq('vat: chosen percentage frozen with the quotation', (SELECT vat_pct FROM quotations WHERE id = 100), 15.00::numeric);
 
 -- ---------------------------------------------------------------------
+-- Accounting, phase 1: chart, journal, periods
+-- ---------------------------------------------------------------------
+INSERT INTO accounts (id, code, name, account_type, is_postable) VALUES
+    (900, '1', 'TEST assets', 'ASSET', false), (901, '5', 'TEST expenses', 'EXPENSE', false), (902, '3', 'TEST equity', 'EQUITY', false);
+INSERT INTO accounts (id, code, name, account_type, parent_id, system_role) VALUES
+    (910, '1102', 'TEST bank', 'ASSET', 900, 'BANK'), (911, '5101', 'TEST rent', 'EXPENSE', 901, NULL),
+    (912, '3201', 'TEST owner current', 'EQUITY', 902, 'OWNER_CURRENT');
+SELECT setval('accounts_id_seq', 1000);
+
+SELECT pg_temp.expect_error('chart: a child must have the type of its parent',
+    'INSERT INTO accounts (code, name, account_type, parent_id) VALUES (''5999'', ''TEST'', ''ASSET'', 901)', 'RROKA_ACCOUNT_PARENT');
+SELECT pg_temp.expect_error('chart: a postable account cannot have children',
+    'INSERT INTO accounts (code, name, account_type, parent_id) VALUES (''51011'', ''TEST'', ''EXPENSE'', 911)', 'RROKA_ACCOUNT_PARENT');
+SELECT pg_temp.expect_error('chart: a group with children cannot become postable',
+    'UPDATE accounts SET is_postable = true WHERE id = 901', 'RROKA_ACCOUNT_PARENT');
+INSERT INTO accounts (id, code, name, account_type, parent_id, is_postable) VALUES (903, '51', 'TEST sub-group', 'EXPENSE', 901, false);
+SELECT pg_temp.expect_error('chart: no cycles', 'UPDATE accounts SET parent_id = 903 WHERE id = 901', 'RROKA_ACCOUNT_PARENT');
+SELECT pg_temp.expect_error('chart: a system role needs a postable account',
+    'UPDATE accounts SET system_role = ''WIP'' WHERE id = 903', 'RROKA_ACCOUNT_ROLE');
+SELECT pg_temp.expect_error('chart: one account per system role',
+    'INSERT INTO accounts (code, name, account_type, parent_id, system_role) VALUES (''1103'', ''TEST'', ''ASSET'', 900, ''BANK'')', 'accounts_system_role_key');
+SELECT pg_temp.expect_error('chart: account codes are digits',
+    'INSERT INTO accounts (code, name, account_type) VALUES (''A1'', ''TEST'', ''ASSET'')', 'accounts_code_check');
+
+-- Entry 1: rent 1,000 paid from the bank.
+INSERT INTO journal_entries (id, entry_date, description, created_by) VALUES (1, '2026-02-10', 'TEST rent February', 1);
+INSERT INTO journal_lines (entry_id, account_id, debit) VALUES (1, 911, 1000);
+SELECT pg_temp.expect_error('journal: a line on a group account is refused',
+    'INSERT INTO journal_lines (entry_id, account_id, credit) VALUES (1, 900, 1000)', 'RROKA_ACCOUNT_NOT_POSTABLE');
+SELECT pg_temp.expect_error('journal: a line is debit or credit, not both',
+    'INSERT INTO journal_lines (entry_id, account_id, debit, credit) VALUES (1, 910, 5, 5)', 'journal_lines_check');
+SELECT pg_temp.expect_error('journal: an unbalanced entry is not posted',
+    'UPDATE journal_entries SET status = ''POSTED'', posted_by = 2 WHERE id = 1', 'RROKA_JOURNAL_UNBALANCED');
+INSERT INTO journal_lines (entry_id, account_id, credit) VALUES (1, 910, 999);
+SELECT pg_temp.expect_error('journal: off by 1 riyal is still unbalanced',
+    'UPDATE journal_entries SET status = ''POSTED'', posted_by = 2 WHERE id = 1', 'RROKA_JOURNAL_UNBALANCED');
+UPDATE journal_lines SET credit = 1000 WHERE entry_id = 1 AND account_id = 910;
+SELECT pg_temp.expect_error('journal: an entry cannot be created posted',
+    'INSERT INTO journal_entries (entry_date, description, created_by, status, posted_by) VALUES (''2026-02-10'', ''TEST'', 1, ''POSTED'', 1)', 'RROKA_JOURNAL_UNBALANCED');
+SELECT pg_temp.expect_error('journal: nothing posts before the books start (2026-01-01)',
+    'UPDATE journal_entries SET entry_date = ''2025-12-31'', status = ''POSTED'', posted_by = 2 WHERE id = 1', 'RROKA_BOOKS_NOT_STARTED');
+SELECT pg_temp.expect_ok('journal: a balanced entry posts',
+    'UPDATE journal_entries SET status = ''POSTED'', posted_by = 2 WHERE id = 1');
+SELECT pg_temp.expect_eq('journal: number given at posting', (SELECT entry_no FROM journal_entries WHERE id = 1), 'JV-2026-00001');
+SELECT pg_temp.expect_eq('journal: posting opens the month', (SELECT status FROM fiscal_periods WHERE period_start = '2026-02-01'), 'OPEN');
+SELECT pg_temp.expect_error('journal: a posted entry never changes',
+    'UPDATE journal_entries SET description = ''x'' WHERE id = 1', 'RROKA_JOURNAL_LOCKED');
+SELECT pg_temp.expect_error('journal: a posted entry cannot be deleted', 'DELETE FROM journal_entries WHERE id = 1', 'RROKA_JOURNAL_LOCKED');
+SELECT pg_temp.expect_error('journal: lines of a posted entry cannot change',
+    'UPDATE journal_lines SET debit = 1 WHERE entry_id = 1 AND debit > 0', 'RROKA_JOURNAL_LOCKED');
+SELECT pg_temp.expect_error('journal: no line can be added to a posted entry',
+    'INSERT INTO journal_lines (entry_id, account_id, debit) VALUES (1, 911, 1)', 'RROKA_JOURNAL_LOCKED');
+SELECT pg_temp.expect_error('chart: an account with entries keeps its type',
+    'UPDATE accounts SET account_type = ''ASSET'' WHERE id = 911', 'RROKA_ACCOUNT');
+
+-- A rolled-back posting does not consume a number (gap-free).
+INSERT INTO journal_entries (id, entry_date, description, created_by) VALUES (2, '2026-02-12', 'TEST owner deposit', 1);
+INSERT INTO journal_lines (entry_id, account_id, debit) VALUES (2, 910, 5000);
+INSERT INTO journal_lines (entry_id, account_id, credit) VALUES (2, 912, 5000);
+SELECT pg_temp.expect_error('journal: a failed posting rolls back',
+    $q$DO $b$ BEGIN UPDATE journal_entries SET status = 'POSTED', posted_by = 2 WHERE id = 2; RAISE EXCEPTION 'TEST rollback'; END $b$$q$, 'TEST rollback');
+SELECT pg_temp.expect_ok('journal: draft deleted with its lines', 'DELETE FROM journal_entries WHERE id = 2');
+INSERT INTO journal_entries (id, entry_date, description, created_by) VALUES (3, '2026-02-12', 'TEST owner deposit', 1);
+INSERT INTO journal_lines (entry_id, account_id, debit) VALUES (3, 910, 5000);
+INSERT INTO journal_lines (entry_id, account_id, credit) VALUES (3, 912, 5000);
+UPDATE journal_entries SET status = 'POSTED', posted_by = 1 WHERE id = 3;
+SELECT pg_temp.expect_eq('journal: numbering stays gap-free', (SELECT entry_no FROM journal_entries WHERE id = 3), 'JV-2026-00002');
+
+-- Reversal must mirror the original.
+INSERT INTO journal_entries (id, entry_date, description, created_by, source_type, reverses_id) VALUES (4, '2026-02-20', 'TEST reverse rent', 1, 'REVERSAL', 1);
+INSERT INTO journal_lines (entry_id, account_id, credit) VALUES (4, 911, 900);
+INSERT INTO journal_lines (entry_id, account_id, debit) VALUES (4, 910, 900);
+SELECT pg_temp.expect_error('reversal: must mirror the original exactly',
+    'UPDATE journal_entries SET status = ''POSTED'', posted_by = 2 WHERE id = 4', 'RROKA_JOURNAL_REVERSAL');
+UPDATE journal_lines SET credit = 1000 WHERE entry_id = 4 AND account_id = 911;
+UPDATE journal_lines SET debit = 1000 WHERE entry_id = 4 AND account_id = 910;
+SELECT pg_temp.expect_ok('reversal: the mirror posts', 'UPDATE journal_entries SET status = ''POSTED'', posted_by = 2 WHERE id = 4');
+SELECT pg_temp.expect_error('reversal: an entry is reversed once',
+    'INSERT INTO journal_entries (entry_date, description, created_by, source_type, reverses_id) VALUES (''2026-02-21'', ''TEST'', 1, ''REVERSAL'', 1)', 'journal_entries_reverses_id_key');
+SELECT pg_temp.expect_error('reversal: a draft cannot be reversed',
+    $q$INSERT INTO journal_entries (id, entry_date, description, created_by) VALUES (5, '2026-02-21', 'TEST draft', 1);
+       INSERT INTO journal_entries (entry_date, description, created_by, source_type, reverses_id) VALUES ('2026-02-21', 'TEST', 1, 'REVERSAL', 5)$q$, 'RROKA_JOURNAL_REVERSAL');
+SELECT pg_temp.expect_eq('ledger: rent nets to zero after the reversal',
+    (SELECT sum(net) FROM v_ledger_lines WHERE account_id = 911), 0.00::numeric);
+SELECT pg_temp.expect_eq('ledger: bank = owner deposit 5,000', (SELECT sum(net) FROM v_ledger_lines WHERE account_id = 910), 5000.00::numeric);
+SELECT pg_temp.expect_eq('ledger: trial balance balances', (SELECT sum(debit) - sum(credit) FROM v_ledger_lines), 0.00::numeric);
+
+-- Periods.
+INSERT INTO journal_entries (id, entry_date, description, created_by) VALUES (6, '2026-03-05', 'TEST March draft', 1);
+INSERT INTO fiscal_periods (period_start) VALUES ('2026-03-01');
+SELECT pg_temp.expect_error('period: a draft dated in the month blocks closing',
+    'UPDATE fiscal_periods SET status = ''CLOSED'', closed_by = 2, closed_at = now() WHERE period_start = ''2026-03-01''', 'RROKA_PERIOD_DRAFTS');
+DELETE FROM journal_entries WHERE id = 6;
+SELECT pg_temp.expect_error('period: earlier months close first',
+    'UPDATE fiscal_periods SET status = ''CLOSED'', closed_by = 2, closed_at = now() WHERE period_start = ''2026-03-01''', 'RROKA_PERIOD_ORDER');
+DELETE FROM journal_entries WHERE id = 5;
+SELECT pg_temp.expect_ok('period: February closes',
+    'UPDATE fiscal_periods SET status = ''CLOSED'', closed_by = 2, closed_at = now() WHERE period_start = ''2026-02-01''');
+INSERT INTO journal_entries (id, entry_date, description, created_by) VALUES (7, '2026-02-25', 'TEST late February', 1);
+INSERT INTO journal_lines (entry_id, account_id, debit) VALUES (7, 911, 10);
+INSERT INTO journal_lines (entry_id, account_id, credit) VALUES (7, 910, 10);
+SELECT pg_temp.expect_error('period: nothing posts into a closed month',
+    'UPDATE journal_entries SET status = ''POSTED'', posted_by = 2 WHERE id = 7', 'RROKA_PERIOD_CLOSED');
+SELECT pg_temp.expect_error('period: nothing posts into a month before a closed one',
+    'UPDATE journal_entries SET entry_date = ''2026-01-15'', status = ''POSTED'', posted_by = 2 WHERE id = 7', 'RROKA_PERIOD_CLOSED');
+SELECT pg_temp.expect_error('period: reopening needs a written reason',
+    'UPDATE fiscal_periods SET status = ''OPEN'' WHERE period_start = ''2026-02-01''', 'RROKA_PERIOD_REOPEN');
+SELECT pg_temp.expect_ok('period: reopened with a reason',
+    'UPDATE fiscal_periods SET status = ''OPEN'', reopen_reason = ''TEST supplier invoice found'' WHERE period_start = ''2026-02-01''');
+SELECT pg_temp.expect_ok('period: posts again once reopened',
+    'UPDATE journal_entries SET status = ''POSTED'', posted_by = 2 WHERE id = 7');
+SELECT pg_temp.expect_error('period: cannot be deleted', 'DELETE FROM fiscal_periods WHERE period_start = ''2026-02-01''', 'RROKA_PERIOD_CLOSED');
+
+-- ---------------------------------------------------------------------
 -- Report
 -- ---------------------------------------------------------------------
 \pset footer off

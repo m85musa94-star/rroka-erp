@@ -118,6 +118,14 @@
         <circle cx="22" cy="42" r="3" fill="#F2BD5B"/><circle cx="32" cy="42" r="3" fill="#F2BD5B"/><rect x="39" y="39" width="6" height="12" rx="3" fill="#E8833A"/>
         <circle cx="22" cy="50" r="3" fill="#F2BD5B"/><circle cx="32" cy="50" r="3" fill="#F2BD5B"/>
         @break
+    @case('accounting')
+        <rect x="10" y="8" width="36" height="48" rx="5" fill="#8E5486"/>
+        <rect x="16" y="8" width="4" height="48" fill="#6E3F67"/>
+        <rect x="25" y="17" width="15" height="3" rx="1.5" fill="#fff" opacity=".85"/>
+        <rect x="25" y="24" width="11" height="3" rx="1.5" fill="#fff" opacity=".85"/>
+        <circle cx="45" cy="44" r="13" fill="#F2BD5B"/>
+        <path d="M38 41h14M38 47h14" stroke="#8E5486" stroke-width="3.5" stroke-linecap="round"/>
+        @break
     @case('treasury')
         <rect x="8" y="18" width="48" height="34" rx="6" fill="#2A5F7E"/>
         <rect x="8" y="26" width="48" height="6" fill="#1E4A63"/>

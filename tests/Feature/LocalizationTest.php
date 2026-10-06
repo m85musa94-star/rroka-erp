@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Account;
 use App\Models\Client;
 use App\Models\CostCenter;
 use App\Models\Department;
@@ -13,6 +14,7 @@ use App\Models\EnergyRate;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\JobPosition;
+use App\Models\JournalEntry;
 use App\Models\LeaveType;
 use App\Models\Machine;
 use App\Models\MachineCostCard;
@@ -156,6 +158,24 @@ class LocalizationTest extends ApiTestCase
         $this->actingAs($admin)->post("{$sheet}/operations", ['operation' => 'Build', 'cost_center_id' => $centerId, 'labor_hours' => 3, 'setup_hours' => 1]);
         $this->actingAs($admin)->post("{$sheet}/direct", ['cost_type' => 'INSTALLATION', 'description' => 'Crew', 'amount' => 100, 'basis' => 'ONE_TIME']);
 
+        $emptyChart = $this->arabicIn($this->actingAs($admin)->get('/accounting/accounts')->assertOk()->getContent());
+        $this->assertSame([], $emptyChart, 'Untranslated text on the empty chart of accounts');
+        $this->actingAs($admin)->post('/accounting/accounts/template');
+        $cashAcc = Account::where('code', '1101')->value('id');
+        $ownerAcc = Account::where('code', '3201')->value('id');
+        $this->actingAs($admin)->post('/accounting/accounts', ['code' => '110201', 'name' => 'Main bank', 'account_type' => 'ASSET',
+            'parent_id' => Account::where('code', '1102')->value('id'), 'is_postable' => 1]);
+        $bankAcc = Account::where('code', '110201')->value('id');
+        $this->actingAs($admin)->post('/accounting/journal', ['entry_date' => '2026-01-05', 'description' => 'Owner deposit', 'source_type' => 'MANUAL',
+            'lines' => [['account_id' => $cashAcc, 'debit' => 100], ['account_id' => $ownerAcc, 'credit' => 100]]]);
+        $postedId = JournalEntry::value('id');
+        $this->actingAs($admin)->post("/accounting/journal/{$postedId}/post");
+        $this->actingAs($admin)->post("/accounting/journal/{$postedId}/reverse", ['entry_date' => '2026-01-06', 'reason' => 'Wrong account']);
+        $draftEntryId = JournalEntry::where('source_type', 'REVERSAL')->value('id');
+        $this->actingAs($admin)->post('/accounting/journal', ['entry_date' => '2026-02-01', 'description' => 'Rent', 'source_type' => 'MANUAL',
+            'lines' => [['account_id' => $cashAcc, 'debit' => 10], ['account_id' => $ownerAcc, 'credit' => 5]]]);
+        $manualDraftId = JournalEntry::where('description', 'Rent')->value('id');
+
         $pages = [
             '/', '/clients', '/clients?v=kanban', '/clients?g=city', '/clients/create', "/clients/{$client->id}", "/clients/{$client->id}/edit",
             '/quotations', '/quotations?v=kanban', '/quotations/create', "/quotations/{$q['id']}", "/quotations/{$q['id']}/print", "/quotations/{$draft['id']}/print",
@@ -176,6 +196,9 @@ class LocalizationTest extends ApiTestCase
             '/expenses', '/expenses/create', '/expenses?g=category', "/expenses/{$expenseId}", "/expenses/{$expenseId}/edit", '/expense-categories',
             '/treasury/accounts', '/treasury/accounts?v=list', '/treasury/accounts?g=kind', '/treasury/accounts/create', "/treasury/accounts/{$custodyId}", "/treasury/accounts/{$cashId}", "/treasury/accounts/{$custodyId}/edit",
             '/treasury/transfers', '/treasury/transfers/create', "/treasury/transfers/{$transferId}",
+            '/accounting/accounts', "/accounting/accounts?edit={$bankAcc}", "/accounting/accounts/{$cashAcc}", '/accounting/accounts/'.Account::where('code', '1')->value('id'),
+            '/accounting/journal', '/accounting/journal?g=month', '/accounting/journal/create', "/accounting/journal/{$postedId}", "/accounting/journal/{$draftEntryId}",
+            "/accounting/journal/{$manualDraftId}", "/accounting/journal/{$manualDraftId}/edit", '/accounting/trial-balance', '/accounting/trial-balance?from=2026-01-01&to=2026-01-31', '/accounting/periods',
             '/designs', '/designs/create', "/design-versions/{$versionId}",
             '/production', '/production?v=kanban', '/production/create', "/production/{$orderId}",
             '/studio', '/studio?v=list', '/studio?g=category', '/studio/create', "/studio/{$assetId}", "/studio/{$assetId}/edit", "/quotations/{$draft['id']}/edit", "/quotations/{$draft['id']}",

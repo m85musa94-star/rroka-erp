@@ -93,6 +93,18 @@ return [
         'RROKA_ESTIMATE_NO_LINE' => 'The quotation has no such line.',
         'RROKA_QUOTATION_COSTING_INCOMPLETE' => 'The quotation cannot be approved until every line has a complete cost estimate (see each line\'s cost sheet).',
         'RROKA_SNAPSHOT_IMMUTABLE' => 'The standard cost frozen at approval cannot change.',
+        'RROKA_ACCOUNT_PARENT' => 'The parent must be a group account of the same type; an account with children takes no entries; an account cannot sit under its own descendant.',
+        'RROKA_ACCOUNT_ROLE' => 'A system role needs a postable account.',
+        'RROKA_ACCOUNT_USED' => 'The account has entries; its code, type and postability are fixed. It can be deactivated.',
+        'RROKA_ACCOUNT_NOT_POSTABLE' => 'The account is a group or inactive account; choose an active postable account.',
+        'RROKA_JOURNAL_LOCKED' => 'A posted entry is final; correct it with a reversal.',
+        'RROKA_JOURNAL_UNBALANCED' => 'The entry does not balance: debit must equal credit, above zero, over at least two lines.',
+        'RROKA_JOURNAL_REVERSAL' => 'A reversal is for a posted entry, once, not dated before it, and mirrors it exactly.',
+        'RROKA_BOOKS_NOT_STARTED' => 'The date is before the books start.',
+        'RROKA_PERIOD_CLOSED' => 'The month is closed (or precedes a closed month); nothing can be posted into it.',
+        'RROKA_PERIOD_DRAFTS' => 'The month has draft entries; post or delete them before closing.',
+        'RROKA_PERIOD_ORDER' => 'Months close in order and reopen in reverse order.',
+        'RROKA_PERIOD_REOPEN' => 'Reopening a closed month needs a written reason.',
         'CHECK_VIOLATION' => 'The entered data breaks one of the validity rules.',
         'DUPLICATE' => 'This record already exists.',
         'INVALID_REFERENCE' => 'Invalid reference.',
@@ -100,7 +112,7 @@ return [
     ],
 
     'status' => [
-        'EXPIRED' => 'Expired', 'RUNNING' => 'Running', 'SUBMITTED' => 'To approve', 'REFUSED' => 'Refused',
+        'POSTED' => 'Posted', 'OPEN' => 'Open', 'CLOSED' => 'Closed', 'EXPIRED' => 'Expired', 'RUNNING' => 'Running', 'SUBMITTED' => 'To approve', 'REFUSED' => 'Refused',
         'CLIENT_REVIEW' => 'Client review', 'CLIENT_APPROVED' => 'Client approved', 'RELEASED_FOR_PRODUCTION' => 'Released', 'SUPERSEDED' => 'Superseded', 'PLANNED' => 'Planned', 'IN_PROGRESS' => 'In progress',
         'DRAFT' => 'Draft', 'SENT' => 'Sent', 'APPROVED' => 'Approved', 'REJECTED' => 'Rejected',
         'EXPIRED' => 'Expired', 'CANCELLED' => 'Cancelled', 'ACTIVE' => 'Active', 'IN_PRODUCTION' => 'In production',
@@ -109,7 +121,7 @@ return [
     ],
 
     'permission_groups' => [
-        'cost_rates' => 'Costing engine',
+        'accounting' => 'Accounting', 'cost_rates' => 'Costing engine',
         'clients' => 'Customers', 'surveys' => 'Site surveys', 'quotations' => 'Quotations',
         'projects' => 'Projects', 'designs' => 'Designs', 'bom' => 'Bills of materials',
         'inventory' => 'Inventory', 'production' => 'Production', 'quality' => 'Quality',
@@ -118,7 +130,7 @@ return [
     ],
 
     'entities' => [
-        'cost_estimates' => 'cost estimate', 'cost_estimate_materials' => 'estimate material', 'cost_estimate_operations' => 'estimate operation', 'cost_estimate_direct_costs' => 'direct cost', 'cost_estimate_snapshots' => 'frozen cost', 'vat_rates' => 'VAT rate', 'pricing_policies' => 'pricing policy',
+        'accounts' => 'account', 'journal_entries' => 'journal entry', 'journal_lines' => 'journal line', 'fiscal_periods' => 'fiscal period', 'accounting_settings' => 'books settings', 'cost_estimates' => 'cost estimate', 'cost_estimate_materials' => 'estimate material', 'cost_estimate_operations' => 'estimate operation', 'cost_estimate_direct_costs' => 'direct cost', 'cost_estimate_snapshots' => 'frozen cost', 'vat_rates' => 'VAT rate', 'pricing_policies' => 'pricing policy',
         'cost_centers' => 'cost centre', 'energy_rates' => 'electricity price', 'employee_cost_cards' => 'employee cost card', 'employee_cost_card_shares' => 'cost centre share', 'machine_cost_cards' => 'machine cost card', 'material_standard_prices' => 'standard price', 'waste_defaults' => 'waste rate', 'overhead_pools' => 'overhead pool', 'overhead_pool_lines' => 'pool line',
         'payment_accounts' => 'account', 'treasury_transfers' => 'transfer', 'suppliers' => 'supplier', 'purchase_invoices' => 'supplier invoice', 'purchase_invoice_lines' => 'supplier invoice line', 'expenses' => 'expense', 'expense_categories' => 'expense category',
         'employee_contracts' => 'contract', 'leave_requests' => 'time-off request', 'leave_allocations' => 'allocation', 'attendances' => 'attendance', 'leave_types' => 'time-off type',
@@ -129,7 +141,7 @@ return [
     ],
 
     'fields' => [
-        'supplier_id' => 'Supplier', 'supplier_invoice_no' => 'Supplier invoice no.', 'invoice_date' => 'Invoice date', 'due_date' => 'Due date', 'vat_amount' => 'VAT', 'attachment_id' => 'Document image', 'expense_date' => 'Date', 'category_id' => 'Category', 'payee' => 'Payee', 'amount' => 'Amount', 'payment_method' => 'Payment method', 'paid_by_employee_id' => 'Paid from custody of', 'reference' => 'Reference', 'is_overhead' => 'Overhead', 'daftra_account_ref' => 'Daftra account', 'line_no' => 'Line no.',
+        'account_type' => 'Type', 'parent_id' => 'Parent account', 'is_postable' => 'Takes entries', 'system_role' => 'System role', 'name_en' => 'English name', 'entry_date' => 'Date', 'entry_no' => 'Entry no.', 'debit' => 'Debit', 'credit' => 'Credit', 'account_id' => 'Account', 'posted_by' => 'Posted by', 'posted_at' => 'Posted at', 'reverses_id' => 'Reverses entry', 'reopen_reason' => 'Reopen reason', 'closed_by' => 'Closed by', 'closed_at' => 'Closed at', 'books_start' => 'Books start', 'source_type' => 'Entry type', 'fiscal_year' => 'Year', 'seq_no' => 'Sequence', 'period_start' => 'Month', 'supplier_id' => 'Supplier', 'supplier_invoice_no' => 'Supplier invoice no.', 'invoice_date' => 'Invoice date', 'due_date' => 'Due date', 'vat_amount' => 'VAT', 'attachment_id' => 'Document image', 'expense_date' => 'Date', 'category_id' => 'Category', 'payee' => 'Payee', 'amount' => 'Amount', 'payment_method' => 'Payment method', 'paid_by_employee_id' => 'Paid from custody of', 'reference' => 'Reference', 'is_overhead' => 'Overhead', 'daftra_account_ref' => 'Daftra account', 'line_no' => 'Line no.',
         'payment_account_id' => 'Paid from', 'from_account_id' => 'From', 'to_account_id' => 'To', 'transfer_date' => 'Date', 'kind' => 'Kind', 'bank_name' => 'Bank', 'employee_id' => 'Employee', 'custody_limit' => 'Custody limit', 'daftra_treasury_ref' => 'Daftra treasury',
         'version' => 'Version', 'effective_from' => 'Effective from', 'source' => 'Source', 'estimated' => 'Estimated', 'driver' => 'Driver', 'rate_per_kwh' => 'Price per kWh', 'price_basis' => 'Price basis', 'share_pct' => 'Share %', 'cost_center_id' => 'Cost centre', 'housing' => 'Housing', 'transportation' => 'Transportation', 'insurance' => 'Insurance', 'government_fees' => 'Residency & government fees', 'allowances' => 'Allowances', 'other_costs' => 'Other costs', 'theoretical_hours' => 'Theoretical hours', 'practical_hours' => 'Practical hours', 'hourly_rate' => 'Hourly cost', 'monthly_cost' => 'Monthly cost', 'acquisition_cost' => 'Acquisition cost', 'residual_value' => 'Residual value', 'useful_life_years' => 'Useful life (years)', 'theoretical_annual_hours' => 'Theoretical annual hours', 'practical_annual_hours' => 'Practical annual hours', 'power_kw' => 'Power kW', 'load_factor' => 'Load factor', 'annual_maintenance' => 'Annual maintenance', 'annual_spare_parts' => 'Annual spare parts', 'annual_other' => 'Other annual running cost', 'period_to' => 'To', 'practical_capacity' => 'Practical capacity', 'theoretical_capacity' => 'Theoretical capacity', 'budgeted_manufacturing_cost' => 'Expected manufacturing cost', 'rate' => 'Rate', 'gross_cost' => 'Gross', 'net_cost' => 'Net', 'machine_energy_deduction' => 'Machine electricity deducted', 'machine_id' => 'Machine', 'pool_id' => 'Pool', 'card_id' => 'Card',
         'contract_type' => 'Contract type', 'end_date' => 'End date', 'basic_salary' => 'Basic salary', 'housing_allowance' => 'Housing allowance', 'transport_allowance' => 'Transport allowance', 'other_allowance' => 'Other allowances', 'weekly_hours' => 'Weekly hours', 'check_in' => 'Check in', 'check_out' => 'Check out', 'date_from' => 'From', 'date_to' => 'To', 'days' => 'Days', 'refusal_reason' => 'Refusal reason',
@@ -192,6 +204,12 @@ return [
     'account_kind' => ['CASH' => 'Cash box', 'BANK' => 'Bank account', 'CUSTODY' => 'Employee custody'],
 
     'transfer_purpose' => ['ISSUE' => 'Custody issue', 'RETURN' => 'Custody return', 'MOVE' => 'Transfer between accounts'],
+
+    'account_type' => ['ASSET' => 'Assets', 'LIABILITY' => 'Liabilities', 'EQUITY' => 'Equity', 'REVENUE' => 'Revenue', 'EXPENSE' => 'Costs & expenses'],
+
+    'account_role' => ['CASH' => 'Cash', 'BANK' => 'Bank', 'CUSTODY' => 'Custody', 'RECEIVABLE' => 'Accounts receivable', 'INVENTORY' => 'Materials inventory', 'WIP' => 'Work in progress', 'INPUT_VAT' => 'Input VAT', 'PAYABLE' => 'Accounts payable', 'OUTPUT_VAT' => 'Output VAT', 'CUSTOMER_ADVANCES' => 'Customer advances', 'CAPITAL' => 'Capital', 'OWNER_CURRENT' => 'Owner current account', 'RETAINED_EARNINGS' => 'Retained earnings', 'SALES' => 'Sales revenue', 'SALES_DISCOUNT' => 'Sales discounts', 'COST_OF_SALES' => 'Cost of sales', 'FIXED_ASSETS' => 'Fixed assets', 'ACCUMULATED_DEPRECIATION' => 'Accumulated depreciation', 'DEPRECIATION' => 'Depreciation expense'],
+
+    'journal_source' => ['MANUAL' => 'Manual', 'OPENING' => 'Opening', 'REVERSAL' => 'Reversal'],
 
     'expense_kind' => ['PROJECT' => 'On a project', 'OVERHEAD' => 'Workshop overhead', 'OTHER' => 'General & admin'],
 
