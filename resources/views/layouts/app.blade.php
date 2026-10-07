@@ -66,7 +66,7 @@
         @endif
 
         @yield('content')
-        <p class="hint app-version" dir="ltr">{{ __('الإصدار') }} {{ config('release.version') }}</p>
+        <p class="hint app-version">{{ __('الإصدار') }} <bdi dir="ltr">{{ config('release.version') }}</bdi></p>
     </main>
 </div>
 <script>
