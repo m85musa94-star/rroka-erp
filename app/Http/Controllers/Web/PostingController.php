@@ -8,12 +8,14 @@ use App\Models\ExpenseCategory;
 use App\Models\JournalEntry;
 use App\Models\PaymentAccount;
 use App\Models\PostingBacklog;
+use App\Support\ChartTemplate;
 use App\Support\ListView;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 /**
@@ -74,6 +76,29 @@ class PostingController extends Controller
         });
 
         return back()->with('ok', __('حُفظ الربط المحاسبي.'));
+    }
+
+    /**
+     * A required role nobody holds (typically «فروقات جرد المخزون» in a chart created before it
+     * was added) gets its account from the proposed chart, under the same group, if the code is free.
+     */
+    public function createRoleAccounts(): RedirectResponse
+    {
+        $made = [];
+        foreach (ChartTemplate::rows() as [$code, $name, $nameEn, $type, $parent, $postable, $role, $detail]) {
+            if (! in_array($role, self::REQUIRED_ROLES, true) || Account::where('system_role', $role)->exists()) {
+                continue;
+            }
+            $group = $parent ? Account::where('code', $parent)->where('is_postable', false)->first() : null;
+            if (Account::where('code', $code)->exists() || ($parent && ! $group)) {
+                throw ValidationException::withMessages(['rule' => __('تعذّر إنشاء حساب «:n» تلقائيًا (الرمز :c مستخدم أو مجموعته غير موجودة)؛ أنشئه من دليل الحسابات ثم اختره هنا.', ['n' => $name, 'c' => $code])]);
+            }
+            Account::create(['code' => $code, 'name' => $name, 'name_en' => $nameEn, 'account_type' => $type, 'detail_type' => $detail,
+                'parent_id' => $group?->id, 'is_postable' => $postable, 'system_role' => $role]);
+            $made[] = "$code $name";
+        }
+
+        return back()->with('ok', $made ? __('أُنشئ: :list', ['list' => implode('، ', $made)]) : __('كل الأدوار لها حسابات.'));
     }
 
     public function toggle(Request $request): RedirectResponse

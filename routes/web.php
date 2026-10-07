@@ -349,6 +349,7 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::put('/journal/{entry}', [JournalEntryController::class, 'update'])->name('journal.update')->whereNumber('entry');
         Route::delete('/journal/{entry}', [JournalEntryController::class, 'destroy'])->name('journal.destroy')->whereNumber('entry');
         Route::put('/posting/links', [PostingController::class, 'saveLinks'])->name('posting.links');
+        Route::post('/posting/role-accounts', [PostingController::class, 'createRoleAccounts'])->name('posting.role-accounts');
     });
     Route::middleware('permission:accounting.post')->prefix('accounting')->name('accounting.')->group(function () {
         Route::post('/journal/{entry}/post', [JournalEntryController::class, 'post'])->name('journal.post')->whereNumber('entry');

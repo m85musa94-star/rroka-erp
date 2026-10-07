@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\Employee;
 use App\Models\User;
+use App\Services\DemoData;
 
 /**
  * The app launcher (home grid) and top bar read from this single list.
@@ -44,7 +45,9 @@ class AppMenu
     /** Built apps the user may open first, then planned ones (never clickable). */
     public static function forUser(User $user): array
     {
-        $built = array_filter(self::all(), fn ($a) => $a['route'] !== null && self::can($user, $a['permission']));
+        // The demo tool shows on the home grid only while demo data is loaded (still reachable from the Settings menu).
+        $built = array_filter(self::all(), fn ($a) => $a['route'] !== null && self::can($user, $a['permission'])
+            && ($a['key'] !== 'demo' || DemoData::loaded()));
         $planned = array_filter(self::all(), fn ($a) => $a['route'] === null);
 
         return array_values([...$built, ...$planned]);

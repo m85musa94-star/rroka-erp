@@ -147,6 +147,19 @@ class PostingTest extends ApiTestCase
         $this->assertSame(0, DB::table('demo_records')->count());
     }
 
+    public function test_missing_role_account_is_created_from_the_proposed_chart(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin)->post('/accounting/accounts/template')->assertSessionHasNoErrors();
+        // A chart created before the role existed: no account holds it.
+        Account::where('code', '5207')->update(['code' => '5299', 'system_role' => null]);
+        $this->actingAs($admin)->get('/accounting/posting')->assertOk()->assertSee('إنشاء الحسابات الناقصة من الدليل المقترح')->assertSee('يتفعّل الزر بعد إكمال');
+        $this->actingAs($admin)->post('/accounting/posting/role-accounts')->assertSessionHasNoErrors();
+        $this->assertSame('INVENTORY_ADJUSTMENT', Account::where('code', '5207')->value('system_role'));
+        $this->assertSame(Account::where('code', '52')->value('id'), Account::where('code', '5207')->value('parent_id'));
+        $this->assertSame([], array_filter(DB::select('SELECT * FROM fn_posting_gaps()'), fn ($g) => $g->gap_type === 'ROLE'));
+    }
+
     public function test_permissions(): void
     {
         $viewer = $this->userWith(['accounting.view']);

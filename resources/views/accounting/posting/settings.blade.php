@@ -26,6 +26,7 @@
             <form method="post" action="{{ route('accounting.posting.toggle') }}" data-confirm="{{ $settings->auto_posting ? __('إيقاف الترحيل الآلي؟ المستندات المعتمدة بعدها لن تدخل الدفاتر حتى تُرحَّل يدويًا.') : __('تفعيل الترحيل الآلي؟ كل اعتماد بعد الآن يُنشئ قيدًا مرحَّلًا نهائيًا.') }}">@csrf
                 <input type="hidden" name="auto_posting" value="{{ $settings->auto_posting ? 0 : 1 }}">
                 <button class="btn {{ $settings->auto_posting ? 'ghost' : 'ok' }}" @disabled(! $settings->auto_posting && count($gaps))>{{ $settings->auto_posting ? __('إيقاف') : __('تفعيل الترحيل الآلي') }}</button>
+                @if(! $settings->auto_posting && count($gaps))<div class="hint warn-text">{{ __('يتفعّل الزر بعد إكمال :n من النواقص المذكورة أدناه وحفظ الربط.', ['n' => count($gaps)]) }}</div>@endif
             </form>
         @endif
     </div>
@@ -46,6 +47,16 @@
             @endswitch</li>
         @endforeach
     </ul>
+    @php($missingRoles = collect($gaps)->where('gap_type', 'ROLE')->pluck('label')->all())
+    @if($missingRoles && $canEdit)
+        <form method="post" action="{{ route('accounting.posting.role-accounts') }}" style="margin-top:10px">@csrf
+            <button class="btn sm">{{ __('إنشاء الحسابات الناقصة من الدليل المقترح') }}</button>
+            <span class="hint">{{ __('مثل 5207 «فروقات جرد المخزون» تحت التكاليف الصناعية غير المباشرة، ويُربط بدوره تلقائيًا.') }}</span>
+        </form>
+    @endif
+    @if($canEdit)
+    <p class="hint" style="margin:8px 0 0">{{ __('الخزائن وبنود المصروفات: اختر حساب كل منها في الجداول أدناه ثم اضغط «حفظ الربط» أسفل الصفحة.') }}</p>
+    @endif
 </div>
 @endif
 

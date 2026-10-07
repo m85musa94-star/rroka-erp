@@ -1837,5 +1837,12 @@
     "حذف البيانات التجريبية مع السجلات المرتبطة بها المذكورة أعلاه؟ لا يمكن التراجع.": "Remove the demo data together with the linked records listed above? This cannot be undone.",
     "حذف البيانات التجريبية مع السجلات المرتبطة": "Remove demo data with the linked records",
     "لا يمكن حذف البيانات التجريبية: عليها قيود محاسبية مرحَّلة، والقيد المرحَّل لا يُحذف.": "The demo data cannot be removed: posted journal entries refer to it, and a posted entry is never deleted.",
-    "لا يمكن حذف البيانات التجريبية: حركة مخزون لخامة حقيقية مرتبطة بها؛ تُعكس الحركة أولًا.": "The demo data cannot be removed: a stock movement of a real material is linked to it; reverse that movement first."
+    "لا يمكن حذف البيانات التجريبية: حركة مخزون لخامة حقيقية مرتبطة بها؛ تُعكس الحركة أولًا.": "The demo data cannot be removed: a stock movement of a real material is linked to it; reverse that movement first.",
+    "تعذّر إنشاء حساب «:n» تلقائيًا (الرمز :c مستخدم أو مجموعته غير موجودة)؛ أنشئه من دليل الحسابات ثم اختره هنا.": "Could not create “:n” automatically (code :c is taken or its group is missing); create it in the chart of accounts, then pick it here.",
+    "أُنشئ: :list": "Created: :list",
+    "كل الأدوار لها حسابات.": "Every role has an account.",
+    "يتفعّل الزر بعد إكمال :n من النواقص المذكورة أدناه وحفظ الربط.": "The button turns on once the :n gaps listed below are completed and the links saved.",
+    "إنشاء الحسابات الناقصة من الدليل المقترح": "Create the missing accounts from the proposed chart",
+    "مثل 5207 «فروقات جرد المخزون» تحت التكاليف الصناعية غير المباشرة، ويُربط بدوره تلقائيًا.": "Such as 5207 “Inventory count differences” under manufacturing overhead, linked to its role automatically.",
+    "الخزائن وبنود المصروفات: اختر حساب كل منها في الجداول أدناه ثم اضغط «حفظ الربط» أسفل الصفحة.": "Payment accounts and expense categories: pick the account of each in the tables below, then press “Save links” at the bottom of the page."
 }

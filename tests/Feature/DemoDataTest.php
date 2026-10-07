@@ -19,6 +19,7 @@ class DemoDataTest extends ApiTestCase
     {
         Storage::fake('studio');
         $admin = $this->admin();
+        $this->actingAs($admin)->get('/')->assertOk()->assertDontSee(route('demo.index'), false);   // no icon on the home grid while nothing is loaded
         $this->actingAs($admin)->get('/settings/demo')->assertOk()->assertSee('تحميل البيانات التجريبية');
         $this->actingAs($admin)->post('/settings/demo')->assertSessionHasNoErrors()->assertSessionHas('ok');
 
