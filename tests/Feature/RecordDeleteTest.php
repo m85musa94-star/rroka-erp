@@ -49,6 +49,7 @@ class RecordDeleteTest extends ApiTestCase
 
         // The release number is on every page.
         $this->actingAs($admin)->get('/')->assertSee(Release::VERSION);
+        $this->get('/version')->assertOk()->assertSee(Release::VERSION);
     }
 
     public function test_delete_needs_the_module_permission(): void
