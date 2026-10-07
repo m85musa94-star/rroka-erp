@@ -6,15 +6,13 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title')</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         @page { size: A4; margin: 0; }
         :root { color-scheme: light; --ink: #1d1f24; --muted: #5d6068; --line: #d9d4cc; --accent: #9b7a62; --soft: #f6f2ee; }
         * { box-sizing: border-box; }
         html, body { margin: 0; color: var(--ink); }
         html { background: #fff; }
-        body { font-family: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif; font-size: 11pt; line-height: 1.55;
+        body { font-family: system-ui, -apple-system, "Segoe UI", Tahoma, "Geeza Pro", Arial, sans-serif; font-size: 11pt; line-height: 1.55;
                -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         /* The letterhead: fixed at the page origin (page margin 0), so the browser repeats it on every
            printed page. The header/footer spacers of .frame (thead/tfoot repeat per page) keep the
