@@ -1831,5 +1831,11 @@
     "فواتير المشتريات المعتمدة؛ سداد الموردين يُسجَّل في المرحلة (ب)": "Approved purchase invoices; supplier payments come in phase B",
     "الحساب عليه حركات؛ لا يُحذف بل يُغلق (إلغاء «نشط»).": "The account has movements; it is not deleted but closed (untick “Active”).",
     "حُذف الحساب.": "Account deleted.",
-    "حذف الحساب؟ لا حركات عليه، والحذف نهائي.": "Delete the account? It has no movements; deletion is final."
+    "حذف الحساب؟ لا حركات عليه، والحذف نهائي.": "Delete the account? It has no movements; deletion is final.",
+    "سجلات غير تجريبية مرتبطة بالبيانات التجريبية": "Non-demo records linked to the demo data",
+    "هي سبب رفض الحذف. راجعها؛ إن كانت أُنشئت أثناء التجربة فاحذفها مع البيانات التجريبية.": "They are why the removal is refused. Review them; if they were created while trying the system, remove them with the demo data.",
+    "حذف البيانات التجريبية مع السجلات المرتبطة بها المذكورة أعلاه؟ لا يمكن التراجع.": "Remove the demo data together with the linked records listed above? This cannot be undone.",
+    "حذف البيانات التجريبية مع السجلات المرتبطة": "Remove demo data with the linked records",
+    "لا يمكن حذف البيانات التجريبية: عليها قيود محاسبية مرحَّلة، والقيد المرحَّل لا يُحذف.": "The demo data cannot be removed: posted journal entries refer to it, and a posted entry is never deleted.",
+    "لا يمكن حذف البيانات التجريبية: حركة مخزون لخامة حقيقية مرتبطة بها؛ تُعكس الحركة أولًا.": "The demo data cannot be removed: a stock movement of a real material is linked to it; reverse that movement first."
 }

@@ -27,7 +27,7 @@ class DemoDataController extends Controller
 
     public function index(): View
     {
-        return view('settings.demo', ['summary' => DemoData::summary()]);
+        return view('settings.demo', ['summary' => DemoData::summary(), 'blockers' => DemoData::blockers()]);
     }
 
     public function store(Request $request, DemoData $demo): RedirectResponse
@@ -44,7 +44,7 @@ class DemoDataController extends Controller
     public function destroy(Request $request, DemoData $demo): RedirectResponse
     {
         try {
-            $n = $demo->purge($request->user()->id);
+            $n = $demo->purge($request->user()->id, $request->boolean('with_linked'));
         } catch (RuntimeException $e) {
             return back()->withErrors(['rule' => $e->getMessage()]);
         }

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Client;
 use App\Models\ProductionOrder;
+use App\Services\DemoData;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -66,6 +67,28 @@ class DemoDataTest extends ApiTestCase
         $this->assertTrue(Client::whereKey($client->id)->exists());
         $this->assertSame(0, $this->disabledTriggers());
         $this->artisan('rroka:demo', ['--purge' => true, '--user' => $admin->id])->assertFailed();
+
+        // The page names what blocks the removal; after review the owner can remove it with the demo data.
+        $this->actingAs($admin)->get('/settings/demo')->assertOk()->assertSee('سجلات غير تجريبية مرتبطة بالبيانات التجريبية')->assertSee('عروض الأسعار');
+        $this->assertArrayHasKey('quotations', DemoData::blockers());
+        $this->actingAs($admin)->delete('/settings/demo', ['with_linked' => 1])->assertSessionHasNoErrors();
+        $this->assertSame(0, DB::table('demo_records')->count());
+        $this->assertFalse(Client::whereKey($client->id)->exists());
+        $this->assertSame(0, $this->disabledTriggers());
+    }
+
+    public function test_a_real_record_on_a_demo_production_order_is_named_and_removable(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin)->post('/settings/demo')->assertSessionHasNoErrors();
+        $order = DB::table('demo_records')->where('table_name', 'production_orders')->value('row_id');
+        $worker = DB::table('demo_records')->where('table_name', 'workers')->value('row_id');
+        $log = DB::table('labor_logs')->insertGetId(['production_order_id' => $order, 'worker_id' => $worker, 'work_date' => now()->toDateString(), 'hours' => 1, 'created_by' => $admin->id]);
+        $this->actingAs($admin)->delete('/settings/demo')->assertSessionHasErrors(['rule' => __('لا يمكن حذف البيانات التجريبية: توجد سجلات حقيقية مرتبطة بها (:table). احذف الربط أولًا.', ['table' => 'labor_logs'])]);
+        $this->assertSame(['labor_logs' => [$log]], DemoData::blockers());
+        $this->actingAs($admin)->delete('/settings/demo', ['with_linked' => 1])->assertSessionHasNoErrors();
+        $this->assertSame(0, DB::table('production_orders')->count());
+        $this->assertSame(0, DB::table('labor_logs')->count());
     }
 
     public function test_only_user_managers_can_load_or_remove(): void

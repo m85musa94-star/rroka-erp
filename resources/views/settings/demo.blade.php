@@ -28,9 +28,25 @@
                 @endisset
             @endforeach
         </table></div>
+        @if($blockers)
+            <div class="alert warn">
+                <strong>{{ __('سجلات غير تجريبية مرتبطة بالبيانات التجريبية') }}</strong> — {{ __('هي سبب رفض الحذف. راجعها؛ إن كانت أُنشئت أثناء التجربة فاحذفها مع البيانات التجريبية.') }}
+                <ul style="margin:6px 0 0">
+                    @foreach($blockers as $table => $ids)
+                        <li>{{ isset(\App\Http\Controllers\Web\DemoDataController::LABELS[$table]) ? __(\App\Http\Controllers\Web\DemoDataController::LABELS[$table]) : $table }}:
+                            {{ count($ids) }} — <bdi dir="ltr">#{{ implode(', #', array_slice($ids, 0, 20)) }}{{ count($ids) > 20 ? ' …' : '' }}</bdi></li>
+                    @endforeach
+                </ul>
+            </div>
+            <form method="post" action="{{ route('demo.destroy') }}" data-confirm="{{ __('حذف البيانات التجريبية مع السجلات المرتبطة بها المذكورة أعلاه؟ لا يمكن التراجع.') }}">@csrf @method('DELETE')
+                <input type="hidden" name="with_linked" value="1">
+                <button class="btn bad">{{ __('حذف البيانات التجريبية مع السجلات المرتبطة') }}</button>
+            </form>
+        @else
         <form method="post" action="{{ route('demo.destroy') }}" data-confirm="{{ __('حذف كل البيانات التجريبية؟ لا يمكن التراجع.') }}">@csrf @method('DELETE')
             <button class="btn bad">{{ __('حذف البيانات التجريبية') }}</button>
         </form>
+        @endif
     @else
         <p><span class="badge b-CANCELLED">{{ __('غير محمّلة') }}</span></p>
         <form method="post" action="{{ route('demo.store') }}" data-confirm="{{ __('تحميل البيانات التجريبية؟') }}">@csrf

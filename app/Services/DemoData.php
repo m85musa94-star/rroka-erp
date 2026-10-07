@@ -8,6 +8,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 
 /**
@@ -67,12 +68,64 @@ class DemoData
         return DB::table('demo_records')->count();
     }
 
-    /** Removes every demo row; refuses (and changes nothing) if real records point at one of them. */
-    public function purge(int $userId): int
+    /**
+     * Records that are not demo but point at a demo record (they block the removal):
+     * [table => [id, …]], found from the database foreign keys.
+     *
+     * @return array<string, list<int>>
+     */
+    public static function blockers(): array
+    {
+        $tables = DB::table('demo_records')->distinct()->pluck('table_name')->all();
+        if (! $tables) {
+            return [];
+        }
+        $fks = DB::select("SELECT c.conrelid::regclass::text AS tbl, a.attname AS col, c.confrelid::regclass::text AS ref
+              FROM pg_constraint c JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = c.conkey[1]
+             WHERE c.contype = 'f' AND array_length(c.conkey, 1) = 1 AND c.confrelid::regclass::text = ANY(?::text[])
+               AND c.conrelid::regclass::text NOT IN ('demo_records', 'stock_balances')",
+            ['{'.implode(',', $tables).'}']);
+        $out = [];
+        foreach ($fks as $fk) {
+            if (! Schema::hasColumn($fk->tbl, 'id')) {
+                continue;
+            }
+            $ids = DB::table($fk->tbl)
+                ->whereIn($fk->col, DB::table('demo_records')->where('table_name', $fk->ref)->select('row_id'))
+                ->whereNotIn('id', DB::table('demo_records')->where('table_name', $fk->tbl)->select('row_id'))
+                ->pluck('id')->all();
+            if ($ids) {
+                $out[$fk->tbl] = array_values(array_unique(array_merge($out[$fk->tbl] ?? [], $ids)));
+            }
+        }
+        ksort($out);
+
+        return $out;
+    }
+
+    /**
+     * Removes every demo row; refuses (and changes nothing) if real records point at one of them.
+     * With $withLinked the owner confirmed, after seeing the list, that those linked records go too —
+     * only operational records hanging on demo ones; never ledger entries, and never a stock
+     * movement of a real material (its derived balance would break).
+     */
+    public function purge(int $userId, bool $withLinked = false): int
     {
         $rows = DB::table('demo_records')->orderByDesc('id')->get(['table_name', 'row_id']);
         if ($rows->isEmpty()) {
             return 0;
+        }
+        if ($withLinked) {
+            $linked = self::blockers();
+            if (array_intersect(array_keys($linked), ['journal_entries', 'journal_lines', 'posting_exclusions'])) {
+                throw new RuntimeException(__('لا يمكن حذف البيانات التجريبية: عليها قيود محاسبية مرحَّلة، والقيد المرحَّل لا يُحذف.'));
+            }
+            if (isset($linked['stock_movements']) && DB::table('stock_movements')->whereIn('id', $linked['stock_movements'])
+                ->whereNotIn('material_id', DB::table('demo_records')->where('table_name', 'raw_materials')->select('row_id'))->exists()) {
+                throw new RuntimeException(__('لا يمكن حذف البيانات التجريبية: حركة مخزون لخامة حقيقية مرتبطة بها؛ تُعكس الحركة أولًا.'));
+            }
+            $extra = collect($linked)->flatMap(fn ($ids, $t) => array_map(fn ($id) => (object) ['table_name' => $t, 'row_id' => $id], $ids));
+            $rows = $extra->concat($rows)->values();   // linked records first: they point at demo ones
         }
         $assets = StudioAsset::whereIn('id', $rows->where('table_name', 'studio_assets')->pluck('row_id'))->get();
 
@@ -104,8 +157,9 @@ class DemoData
             });
         } catch (QueryException $e) {
             if ($e->getCode() === '23503') {
-                preg_match('/on table "(\w+)"/', $e->getMessage(), $m);
-                throw new RuntimeException(__('لا يمكن حذف البيانات التجريبية: توجد سجلات حقيقية مرتبطة بها (:table). احذف الربط أولًا.', ['table' => $m[1] ?? '?']));
+                // "… on table "<deleted>" violates foreign key constraint "…" on table "<referencing>"": the last one is the culprit.
+                preg_match_all('/on table "(\w+)"/', $e->getMessage(), $m);
+                throw new RuntimeException(__('لا يمكن حذف البيانات التجريبية: توجد سجلات حقيقية مرتبطة بها (:table). احذف الربط أولًا.', ['table' => end($m[1]) ?: '?']));
             }
             throw $e;
         }
