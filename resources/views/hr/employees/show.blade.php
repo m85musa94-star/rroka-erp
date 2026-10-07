@@ -7,6 +7,7 @@
 @php($u = auth()->user())
 <div class="rec-bar">
     <div class="actions">
+        @include('partials.delete-button', ['type' => 'employees', 'model' => $e])
         @if($full)
             <a class="btn sm" href="{{ route('employees.edit', $e) }}">{{ __('تعديل') }}</a>
             <details class="inline-details"><summary class="btn ghost sm">{{ $e->is_active ? __('إنهاء الخدمة') : __('إعادة للعمل') }}</summary>

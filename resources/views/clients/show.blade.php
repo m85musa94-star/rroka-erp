@@ -7,6 +7,7 @@
 @php($u = auth()->user())
 <div class="rec-bar">
     <div class="actions">
+        @include('partials.delete-button', ['type' => 'clients', 'model' => $client])
         @if($u->hasPermission('clients.manage'))
             <a class="btn sm" href="{{ route('clients.edit', $client) }}">{{ __('تعديل') }}</a>
         @endif

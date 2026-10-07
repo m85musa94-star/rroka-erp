@@ -31,6 +31,7 @@ use App\Http\Controllers\Web\ProductionController;
 use App\Http\Controllers\Web\ProjectController;
 use App\Http\Controllers\Web\PurchaseController;
 use App\Http\Controllers\Web\QuotationController;
+use App\Http\Controllers\Web\RecordDeleteController;
 use App\Http\Controllers\Web\ReportController;
 use App\Http\Controllers\Web\RoleController;
 use App\Http\Controllers\Web\StudioController;
@@ -319,6 +320,10 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
     });
     Route::post('/treasury/transfers/{transfer}/approve', [TreasuryTransferController::class, 'approve'])->name('treasury.transfers.approve')
         ->whereNumber('transfer')->middleware('permission:treasury.approve');
+
+    // Delete on every screen: drafts and unused master data only (RecordDeleteController checks the permission).
+    Route::delete('/records/{type}/{id}', [RecordDeleteController::class, 'destroy'])->name('records.destroy')
+        ->whereIn('type', array_keys(RecordDeleteController::TYPES))->whereNumber('id');
 
     // Accounting (governing rule 1 changed 2026-10-06): chart, journal, ledger, trial balance, periods.
     Route::middleware('permission:accounting.view|accounting.manage|accounting.post|accounting.close')->prefix('accounting')->name('accounting.')->group(function () {

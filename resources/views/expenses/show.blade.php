@@ -8,6 +8,7 @@
 @php($path = $x->status === 'CANCELLED' ? ['DRAFT', 'CANCELLED'] : ['DRAFT', 'APPROVED'])
 <div class="rec-bar">
     <div class="actions">
+        @include('partials.delete-button', ['type' => 'expenses', 'model' => $x])
         @if($x->status === 'DRAFT')
             @if($u->hasPermission('expenses.manage'))<a class="btn ghost sm" href="{{ route('expenses.edit', $x) }}">{{ __('تعديل') }}</a>@endif
             @if($u->hasPermission('expenses.approve'))<form method="post" action="{{ route('expenses.approve', $x) }}" class="inline" data-confirm="{{ __('اعتماد المصروف؟ لا يمكن تعديله بعدها.') }}">@csrf<button class="btn ok sm">{{ __('اعتماد') }}</button></form>@endif

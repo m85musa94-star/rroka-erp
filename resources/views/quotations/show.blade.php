@@ -14,6 +14,7 @@
 @endphp
 <div class="rec-bar">
     <div class="actions">
+        @include('partials.delete-button', ['type' => 'quotations', 'model' => $q])
         @if($q->status === 'DRAFT' && $u->hasPermission('quotations.manage'))
             <a class="btn ghost sm" href="{{ route('quotations.edit', $q) }}">{{ __('تعديل') }}</a>
             <form method="post" action="{{ route('quotations.transition', [$q, 'send']) }}" class="inline" data-confirm="{{ __('بعد الإرسال يُجمَّد العرض ولا يُعدَّل إلا بإعادته إلى مسودة. متابعة؟') }}">@csrf<button class="btn sm">{{ __('تسجيل الإرسال للعميل') }}</button></form>

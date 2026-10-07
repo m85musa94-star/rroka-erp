@@ -108,6 +108,7 @@ return [
         'RROKA_POSTING_NO_COST' => 'The stock movement has no cost; no entry is made with an assumed value.',
         'RROKA_POSTING_MANUAL_ONLY' => 'A stock receipt outside a purchase invoice is not auto-posted; book it with a manual entry (e.g. the opening balance).',
         'RROKA_POSTING_DEMO' => 'Demo data is never posted to the books; remove it under Settings → Demo data.',
+        'RROKA_DELETE_NOT_DRAFT' => 'Only a draft document is deleted; an approved one is final and corrected its own way (cancellation or a correcting entry).',
         'RROKA_JOURNAL_AUTO' => 'A document entry is created by approving the document and is never edited or reversed by hand; correct it with a separate manual entry.',
         'RROKA_JOURNAL_LOCKED' => 'A posted entry is final; correct it with a reversal.',
         'RROKA_JOURNAL_UNBALANCED' => 'The entry does not balance: debit must equal credit, above zero, over at least two lines.',

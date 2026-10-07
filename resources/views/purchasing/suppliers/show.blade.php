@@ -7,6 +7,7 @@
 @php($u = auth()->user())
 <div class="rec-bar">
     <div class="actions">
+        @include('partials.delete-button', ['type' => 'suppliers', 'model' => $s])
         @if($u->hasPermission('purchases.manage'))
             <a class="btn sm" href="{{ route('suppliers.edit', $s) }}">{{ __('تعديل') }}</a>
             <a class="btn ghost sm" href="{{ route('purchases.create', ['supplier_id' => $s->id]) }}">{{ __('فاتورة مورد جديدة') }}</a>

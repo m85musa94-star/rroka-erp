@@ -11,6 +11,7 @@
 @endphp
 <div class="rec-bar">
     <div class="actions">
+        @include('partials.delete-button', ['type' => 'materials', 'model' => $material])
         @if($canMove)<a class="btn sm" href="{{ route('materials.edit', $material) }}">{{ __('تعديل') }}</a>@endif
     </div>
     @unless($material->is_active)<span class="badge b-CANCELLED">{{ __('موقوفة') }}</span>@endunless

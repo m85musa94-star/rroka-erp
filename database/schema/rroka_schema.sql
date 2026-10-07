@@ -3994,7 +3994,8 @@ BEGIN
         v_inv := fn_role_account('INVENTORY');
         v_other := fn_role_account(CASE WHEN m.movement_type IN ('ISSUE', 'RETURN') THEN 'WIP' ELSE 'INVENTORY_ADJUSTMENT' END);
         RETURN fn_journal_auto_insert('STOCK', m.id, (m.moved_at AT TIME ZONE 'Asia/Riyadh')::date,
-            'SM-' || m.id || ' ' || m.movement_type || ' — ' || v_name || ' × ' || trim_scale(m.quantity), 'SM-' || m.id,
+            'SM-' || m.id || ' ' || CASE m.movement_type WHEN 'ISSUE' THEN 'صرف للإنتاج' WHEN 'RETURN' THEN 'إرجاع للمخزن'
+                WHEN 'ADJUST_IN' THEN 'تسوية بالزيادة' ELSE 'تسوية بالنقص' END || ' — ' || v_name || ' × ' || trim_scale(m.quantity), 'SM-' || m.id,
             COALESCE(p_user, m.created_by, NULLIF(current_setting('rroka.user_id', true), '')::bigint), jsonb_build_array(
                 jsonb_build_object('account_id', CASE WHEN m.movement_type IN ('ISSUE', 'ADJUST_OUT') THEN v_other ELSE v_inv END,
                                    'debit', v_val, 'description', v_name,
@@ -4081,6 +4082,34 @@ BEGIN
     DROP TRIGGER IF EXISTS trg_audit_posting_exclusions ON posting_exclusions;
     CREATE TRIGGER trg_audit_posting_exclusions AFTER INSERT OR UPDATE OR DELETE ON posting_exclusions
         FOR EACH ROW EXECUTE FUNCTION fn_audit();
+END $$;
+
+-- ---------------------------------------------------------------------
+-- Deleting (2026-10-08, owner request: delete and edit on every screen).
+-- A document is deleted only while it is a draft (a quotation also only
+-- before it reached Daftra); once approved it is final and corrected by
+-- its own path (cancellation, reversal, a correcting entry). Master data
+-- (clients, suppliers, materials, categories, accounts, employees) is
+-- deleted only if nothing refers to it — the foreign keys refuse it
+-- otherwise, and it is archived instead. Every deletion is in audit_log.
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION fn_delete_draft_only() RETURNS trigger AS $$
+BEGIN
+    IF OLD.status <> 'DRAFT' THEN
+        RAISE EXCEPTION 'RROKA_DELETE_NOT_DRAFT: % % is %', TG_TABLE_NAME, OLD.id, OLD.status USING ERRCODE = 'P0001';
+    END IF;
+    IF TG_TABLE_NAME = 'quotations' AND (to_jsonb(OLD)->>'daftra_estimate_id') IS NOT NULL THEN
+        RAISE EXCEPTION 'RROKA_DELETE_NOT_DRAFT: quotation % is already in Daftra', OLD.id USING ERRCODE = 'P0001';
+    END IF;
+    RETURN OLD;
+END $$ LANGUAGE plpgsql;
+DO $$
+DECLARE t text;
+BEGIN
+    FOREACH t IN ARRAY ARRAY['quotations', 'expenses', 'purchase_invoices', 'treasury_transfers'] LOOP
+        EXECUTE format('DROP TRIGGER IF EXISTS trg_delete_draft_only ON %I', t);
+        EXECUTE format('CREATE TRIGGER trg_delete_draft_only BEFORE DELETE ON %I FOR EACH ROW EXECUTE FUNCTION fn_delete_draft_only()', t);
+    END LOOP;
 END $$;
 
 COMMIT;

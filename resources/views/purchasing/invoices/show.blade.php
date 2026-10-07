@@ -11,6 +11,7 @@
 @endphp
 <div class="rec-bar">
     <div class="actions">
+        @include('partials.delete-button', ['type' => 'purchases', 'model' => $p])
         @if($p->status === 'DRAFT')
             @if($u->hasPermission('purchases.manage'))<a class="btn ghost sm" href="{{ route('purchases.edit', $p) }}">{{ __('تعديل') }}</a>@endif
             @if($u->hasPermission('purchases.approve'))

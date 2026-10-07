@@ -13,7 +13,7 @@
                 <td><input type="hidden" name="is_overhead" value="0" form="{{ $f }}"><input type="checkbox" name="is_overhead" value="1" style="width:auto" form="{{ $f }}" @checked($c->is_overhead)></td>
                 <td><input name="daftra_account_ref" value="{{ $c->daftra_account_ref }}" form="{{ $f }}" placeholder="{{ __('يُحدَّد بعد التحقق من ربط دفترة') }}"></td>
                 <td><input type="hidden" name="is_active" value="0" form="{{ $f }}"><label class="perm-item"><input type="checkbox" name="is_active" value="1" style="width:auto" form="{{ $f }}" @checked($c->is_active)> {{ __('نشط') }}</label></td>
-                <td><form method="post" action="{{ route('expense-categories.update', $c) }}" id="{{ $f }}">@csrf @method('put')<button class="btn ghost sm">{{ __('حفظ') }}</button></form></td>
+                <td><form method="post" action="{{ route('expense-categories.update', $c) }}" id="{{ $f }}">@csrf @method('put')<button class="btn ghost sm">{{ __('حفظ') }}</button></form> @include('partials.delete-button', ['type' => 'expense-categories', 'model' => $c])</td>
             </tr>
         @empty
             <tr><td colspan="5" class="muted">{{ __('لا تصنيفات بعد.') }}</td></tr>

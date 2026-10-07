@@ -8,6 +8,7 @@
 @php($path = $t->status === 'CANCELLED' ? ['DRAFT', 'CANCELLED'] : ['DRAFT', 'APPROVED'])
 <div class="rec-bar">
     <div class="actions">
+        @include('partials.delete-button', ['type' => 'transfers', 'model' => $t])
         @if($t->status === 'DRAFT')
             @if($u->hasPermission('treasury.manage'))<a class="btn ghost sm" href="{{ route('treasury.transfers.edit', $t) }}">{{ __('تعديل') }}</a>@endif
             @if($u->hasPermission('treasury.approve'))<form method="post" action="{{ route('treasury.transfers.approve', $t) }}" class="inline" data-confirm="{{ __('اعتماد التحويل؟ لا يمكن تعديله بعدها.') }}">@csrf<button class="btn ok sm">{{ __('اعتماد') }}</button></form>@endif

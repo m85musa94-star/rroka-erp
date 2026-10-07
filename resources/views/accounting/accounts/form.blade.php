@@ -60,6 +60,7 @@
     @if($canEdit)<div class="actions"><button class="btn">{{ __('حفظ') }}</button><a class="btn ghost" href="{{ route('accounting.accounts.index') }}">{{ __('إلغاء') }}</a></div>@endif
     @if($a->exists)<p class="hint">{{ __('الحساب الذي عليه قيود يحتفظ برمزه ونوعه ويبقى قابلًا للقيد؛ يمكن أرشفته بدل حذفه.') }}</p>@endif
 </form>
+    @if($a->exists)<div style="margin:8px 0">@include('partials.delete-button', ['type' => 'accounts', 'model' => $a])</div>@endif
 @if($a->exists)@include('partials.chatter', ['activity' => $activity])@endif
 @endsection
 @push('scripts')

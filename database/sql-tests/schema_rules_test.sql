@@ -1146,6 +1146,19 @@ SELECT pg_temp.expect_eq('demo: … no stock entry', (SELECT count(*) FROM journ
 UPDATE accounting_settings SET auto_posting = false;
 
 -- ---------------------------------------------------------------------
+-- Deleting: drafts only
+-- ---------------------------------------------------------------------
+SELECT pg_temp.expect_error('delete: an approved expense is never deleted', 'DELETE FROM expenses WHERE id = 6', 'RROKA_DELETE_NOT_DRAFT');
+SELECT pg_temp.expect_error('delete: an approved purchase invoice is never deleted', 'DELETE FROM purchase_invoices WHERE id = 21', 'RROKA_DELETE_NOT_DRAFT');
+SELECT pg_temp.expect_error('delete: an approved transfer is never deleted', 'DELETE FROM treasury_transfers WHERE id = 5', 'RROKA_DELETE_NOT_DRAFT');
+SELECT pg_temp.expect_error('delete: a cancelled expense stays on record', 'DELETE FROM expenses WHERE id = 2', 'RROKA_DELETE_NOT_DRAFT');
+INSERT INTO expenses (id, expense_date, category_id, payee, description, amount, vat_amount, payment_method)
+    VALUES (12, '2026-03-12', 2, 'x', 'TEST draft to delete', 10, 0, 'CASH');
+SELECT pg_temp.expect_ok('delete: a draft expense is deleted', 'DELETE FROM expenses WHERE id = 12');
+SELECT pg_temp.expect_ok('delete: a draft purchase invoice is deleted with its lines', 'DELETE FROM purchase_invoices WHERE id = 20');
+SELECT pg_temp.expect_error('delete: a supplier with invoices is not deleted', 'DELETE FROM suppliers WHERE id = 1', 'foreign key');
+
+-- ---------------------------------------------------------------------
 -- Report
 -- ---------------------------------------------------------------------
 \pset footer off

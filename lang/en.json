@@ -1844,5 +1844,8 @@
     "يتفعّل الزر بعد إكمال :n من النواقص المذكورة أدناه وحفظ الربط.": "The button turns on once the :n gaps listed below are completed and the links saved.",
     "إنشاء الحسابات الناقصة من الدليل المقترح": "Create the missing accounts from the proposed chart",
     "مثل 5207 «فروقات جرد المخزون» تحت التكاليف الصناعية غير المباشرة، ويُربط بدوره تلقائيًا.": "Such as 5207 “Inventory count differences” under manufacturing overhead, linked to its role automatically.",
-    "الخزائن وبنود المصروفات: اختر حساب كل منها في الجداول أدناه ثم اضغط «حفظ الربط» أسفل الصفحة.": "Payment accounts and expense categories: pick the account of each in the tables below, then press “Save links” at the bottom of the page."
+    "الخزائن وبنود المصروفات: اختر حساب كل منها في الجداول أدناه ثم اضغط «حفظ الربط» أسفل الصفحة.": "Payment accounts and expense categories: pick the account of each in the tables below, then press “Save links” at the bottom of the page.",
+    "حذف السجل نهائيًا؟": "Delete this record permanently?",
+    "حُذف السجل.": "Record deleted.",
+    "السجل مستخدم في سجلات أخرى فلا يُحذف؛ أوقفه (ألغِ «نشط») بدل الحذف.": "The record is used by other records, so it is not deleted; deactivate it (untick “Active”) instead."
 }
