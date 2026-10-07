@@ -330,6 +330,7 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
 
     // Accounting (governing rule 1 changed 2026-10-06): chart, journal, ledger, trial balance, periods.
     Route::middleware('permission:accounting.view|accounting.manage|accounting.post|accounting.close')->prefix('accounting')->name('accounting.')->group(function () {
+        Route::get('/', [AccountingController::class, 'dashboard'])->name('dashboard');
         Route::get('/accounts', [AccountController::class, 'index'])->name('accounts.index');
         Route::get('/accounts/{account}', [AccountController::class, 'show'])->name('accounts.show')->whereNumber('account');
         Route::get('/account-groups', [AccountController::class, 'groups'])->name('accounts.groups');

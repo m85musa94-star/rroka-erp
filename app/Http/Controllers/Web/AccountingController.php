@@ -11,9 +11,53 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
-/** The monthly periods (closing rules are enforced by the database). The reports live in FinancialReportController. */
+/** The accounting dashboard and the monthly periods (closing rules are enforced by the database). The reports live in FinancialReportController. */
 class AccountingController extends Controller
 {
+    /**
+     * Odoo-style accounting dashboard: a card per cash box, bank and custody with its ledger
+     * balance and what is waiting on it, then purchases, expenses and the books.
+     */
+    public function dashboard(): View
+    {
+        $balance = fn (?int $acc, ?array $partner = null) => $acc === null ? null
+            : (float) DB::table('v_ledger_lines')->where('account_id', $acc)
+                ->when($partner, fn ($q) => $q->where('partner_type', $partner[0])->where('partner_id', $partner[1]))->sum('net');
+        $monthStart = today()->startOfMonth()->toDateString();
+        $pay = DB::table('payment_accounts as p')->leftJoin('accounts as a', 'a.id', '=', 'p.account_id')->where('p.is_active', true)
+            ->orderByRaw("CASE p.kind WHEN 'CASH' THEN 1 WHEN 'BANK' THEN 2 ELSE 3 END")->orderBy('p.name')
+            ->get(['p.*', 'a.code as acc_code'])
+            ->map(function ($p) use ($balance) {
+                $p->balance = $balance($p->account_id, $p->kind === 'CUSTODY' ? ['EMPLOYEE', $p->employee_id] : null);
+                $p->drafts = DB::table('expenses')->where('payment_account_id', $p->id)->where('status', 'DRAFT')->count()
+                    + DB::table('treasury_transfers')->where('status', 'DRAFT')->where(fn ($q) => $q->where('from_account_id', $p->id)->orWhere('to_account_id', $p->id))->count();
+
+                return $p;
+            });
+        $payable = DB::table('accounts')->where('system_role', 'PAYABLE')->value('id');
+
+        return view('accounting.dashboard', [
+            'pay' => $pay,
+            'purchases' => [
+                'drafts' => DB::table('purchase_invoices')->where('status', 'DRAFT')->count(),
+                'month' => (float) DB::table('v_purchase_totals as t')->join('purchase_invoices as p', 'p.id', '=', 't.purchase_invoice_id')
+                    ->where('p.status', 'APPROVED')->where('p.invoice_date', '>=', $monthStart)->sum('t.total'),
+                'payable' => $payable ? -$balance($payable) : null,
+            ],
+            'expenses' => [
+                'drafts' => DB::table('expenses')->where('status', 'DRAFT')->count(),
+                'month' => (float) DB::table('expenses')->where('status', 'APPROVED')->where('expense_date', '>=', $monthStart)->sum(DB::raw('amount + vat_amount')),
+            ],
+            'books' => [
+                'backlog' => DB::table('v_posting_backlog')->count(),
+                'drafts' => DB::table('journal_entries')->where('status', 'DRAFT')->count(),
+                'posted_month' => DB::table('journal_entries')->where('status', 'POSTED')->where('entry_date', '>=', $monthStart)->count(),
+                'auto' => (bool) DB::table('accounting_settings')->value('auto_posting'),
+                'period' => DB::table('fiscal_periods')->where('period_start', $monthStart)->value('status') ?? 'OPEN',
+            ],
+        ]);
+    }
+
     /** Every month from the books start to now, with its status and entries. */
     public function periods(): View
     {

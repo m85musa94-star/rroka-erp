@@ -200,7 +200,7 @@ class LocalizationTest extends ApiTestCase
             '/accounting/account-groups', "/accounting/accounts/{$cashAcc}", '/accounting/accounts/'.Account::where('code', '1')->value('id'),
             '/accounting/journal', '/accounting/journal?g=month', '/accounting/journal/create', "/accounting/journal/{$postedId}", "/accounting/journal/{$draftEntryId}",
             "/accounting/journal/{$manualDraftId}", "/accounting/journal/{$manualDraftId}/edit", '/accounting/reports', '/accounting/reports/trial-balance', '/accounting/reports/trial-balance?from=2026-01-01&to=2026-01-31', '/accounting/reports/profit-loss', '/accounting/reports/profit-loss?cmp=previous&date=this_month', '/accounting/reports/balance-sheet', '/accounting/reports/balance-sheet?cmp=last_year', '/accounting/reports/general-ledger?unfold=all&date=custom&from=2026-01-01&to=2026-12-31', '/accounting/reports/balance-sheet?print=1', '/accounting/periods',
-            '/accounting/posting', '/accounting/posting/backlog', '/accounting/posting/backlog?g=type', '/accounting/reconciliation',
+            '/accounting', '/accounting/posting', '/accounting/posting/backlog', '/accounting/posting/backlog?g=type', '/accounting/reconciliation',
             '/designs', '/designs/create', "/design-versions/{$versionId}",
             '/production', '/production?v=kanban', '/production/create', "/production/{$orderId}",
             '/studio', '/studio?v=list', '/studio?g=category', '/studio/create', "/studio/{$assetId}", "/studio/{$assetId}/edit", "/quotations/{$draft['id']}/edit", "/quotations/{$draft['id']}",

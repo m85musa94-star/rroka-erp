@@ -485,3 +485,35 @@ td.center, th.center { text-align: center; }
 .report-group ~ .report-group { margin-top: 22px; }
 .app-version { text-align: center; margin: 24px 0 8px; }
 .btn.bad-text { color: var(--bad); }
+
+/* Home: getting started + waiting for action (Odoo-style: only what needs doing, each a link) */
+.home-board { max-width: 1000px; margin: 0 auto; }
+.setup-card { margin-bottom: 22px; }
+.setup-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.setup-head h2 { margin: 0; }
+.progress { height: 6px; background: var(--surface-2); border-radius: 99px; overflow: hidden; margin: 10px 0 14px; }
+.progress > span { display: block; height: 100%; background: var(--brand); }
+.setup-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px 18px; }
+.setup-steps li { display: grid; grid-template-columns: 26px 1fr; column-gap: 8px; align-items: start; }
+.setup-steps .hint { grid-column: 2; margin: 0; }
+.step-mark { width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); }
+.setup-steps li.done .step-mark { background: var(--ok-soft); color: var(--ok); border-color: var(--ok); }
+.setup-steps li.done a { color: var(--muted); text-decoration: line-through; }
+.action-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+.action-card { display: grid; gap: 4px; text-decoration: none; color: var(--ink); border-inline-start: 4px solid var(--info); margin: 0; }
+.action-card:hover { border-color: var(--card-hover-border); box-shadow: var(--shadow-md); }
+.action-card.tone-warn { border-inline-start-color: var(--warn); }
+.action-card.tone-bad { border-inline-start-color: var(--bad); }
+.action-count { font-size: 26px; font-weight: 700; }
+.action-label { color: var(--ink); }
+.action-amount { color: var(--muted); font-size: 13px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* Accounting dashboard: a card per journal (Odoo) */
+.journal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-bottom: 22px; }
+.journal-card { display: grid; gap: 8px; align-content: start; margin: 0; }
+.jc-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.jc-balance { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.jc-amount { font-size: 22px; font-weight: 700; }
+.jc-todo { font-size: 13px; color: var(--warn); }
+.jc-todo.bad, .jc-todo.bad a { color: var(--bad); }
+.jc-links { display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; border-top: 1px solid var(--line); padding-top: 8px; }
