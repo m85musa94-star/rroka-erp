@@ -9,5 +9,5 @@ namespace App\Support;
  */
 class Release
 {
-    public const VERSION = '2026-10-08.9';
+    public const VERSION = '2026-10-08.10';
 }
