@@ -132,6 +132,21 @@ class PostingTest extends ApiTestCase
         $this->actingAs($admin)->get('/accounting/reconciliation')->assertOk()->assertSee('لا مستندات تنتظر الترحيل');
     }
 
+    public function test_demo_data_never_reaches_the_books_and_stays_removable(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin)->post('/accounting/accounts/template')->assertSessionHasNoErrors();
+        $this->actingAs($admin)->post('/settings/demo')->assertSessionHasNoErrors();
+        $this->assertSame(0, DB::table('v_posting_backlog')->count(), 'demo documents are not waiting to be posted');
+        $this->assertSame([], array_filter(DB::select('SELECT * FROM fn_posting_gaps()'), fn ($g) => $g->gap_type !== 'ROLE'));
+        $this->actingAs($admin)->post('/accounting/posting/auto', ['auto_posting' => 1])->assertSessionHasNoErrors();
+        $x = DB::table('demo_records')->where('table_name', 'expenses')->value('row_id');
+        $this->actingAs($admin)->post("/accounting/posting/EXPENSE/{$x}")->assertSessionHasErrors('rule');
+        $this->assertSame(0, DB::table('journal_entries')->count());
+        $this->actingAs($admin)->delete('/settings/demo')->assertSessionHasNoErrors();
+        $this->assertSame(0, DB::table('demo_records')->count());
+    }
+
     public function test_permissions(): void
     {
         $viewer = $this->userWith(['accounting.view']);

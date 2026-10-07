@@ -53,6 +53,7 @@ class DemoData
         try {
             DB::transaction(function () use (&$files) {
                 AuditContext::apply($this->user);
+                DB::statement("SELECT set_config('rroka.demo', 'on', true)");   // demo rows never post to the books
                 $this->seedAll($files);
             });
         } catch (\Throwable $e) {
@@ -90,6 +91,9 @@ class DemoData
                 DB::table('stock_balances')->whereIn('material_id', $ids('raw_materials'))->delete();
                 foreach ($rows as $r) {
                     DB::table($r->table_name)->where('id', $r->row_id)->delete();
+                }
+                foreach (['EXPENSE' => 'expenses', 'PURCHASE' => 'purchase_invoices', 'TRANSFER' => 'treasury_transfers', 'STOCK' => 'stock_movements'] as $type => $table) {
+                    DB::table('posting_exclusions')->where('source_type', $type)->whereIn('source_id', $ids($table))->delete();
                 }
                 DB::table('demo_records')->delete();
                 foreach ($tables as $t) {

@@ -3761,8 +3761,10 @@ CREATE OR REPLACE FUNCTION fn_posting_gaps() RETURNS TABLE (gap_type text, ref_i
      WHERE NOT EXISTS (SELECT 1 FROM accounts a WHERE a.system_role = r AND a.is_active AND a.is_postable)
     UNION ALL
     SELECT 'PAYMENT_ACCOUNT', id, name FROM payment_accounts WHERE is_active AND account_id IS NULL
+       AND id NOT IN (SELECT row_id FROM demo_records WHERE table_name = 'payment_accounts')
     UNION ALL
     SELECT 'EXPENSE_CATEGORY', id, name FROM expense_categories WHERE is_active AND account_id IS NULL
+       AND id NOT IN (SELECT row_id FROM demo_records WHERE table_name = 'expense_categories')
 $$ LANGUAGE sql STABLE;
 
 -- A payment account maps to an asset (cash, bank, custody) or liability (credit card)
@@ -3819,6 +3821,14 @@ DROP TRIGGER IF EXISTS trg_accounting_settings_guard ON accounting_settings;
 CREATE TRIGGER trg_accounting_settings_guard BEFORE UPDATE ON accounting_settings
     FOR EACH ROW EXECUTE FUNCTION fn_accounting_settings_guard();
 
+-- Demo records (labelled sample data) never reach the books: the demo tool
+-- must stay able to remove them, and posted entries are permanent.
+CREATE OR REPLACE FUNCTION fn_is_demo_document(p_type text, p_id bigint) RETURNS boolean AS $$
+    SELECT EXISTS (SELECT 1 FROM demo_records WHERE row_id = p_id AND table_name = CASE p_type
+        WHEN 'EXPENSE' THEN 'expenses' WHEN 'PURCHASE' THEN 'purchase_invoices'
+        WHEN 'TRANSFER' THEN 'treasury_transfers' WHEN 'STOCK' THEN 'stock_movements' END)
+$$ LANGUAGE sql STABLE;
+
 -- Automatic entries are written only by fn_journal_auto_insert (which raises a
 -- transaction-local flag) and are never reversed by hand: the document is the source.
 CREATE OR REPLACE FUNCTION fn_journal_entry_auto() RETURNS trigger AS $$
@@ -3827,6 +3837,9 @@ BEGIN
         OR (TG_OP <> 'DELETE' AND NEW.source_type IN ('EXPENSE', 'PURCHASE', 'TRANSFER', 'STOCK')))
        AND COALESCE(current_setting('rroka.auto_posting', true), '') <> 'on' THEN
         RAISE EXCEPTION 'RROKA_JOURNAL_AUTO: entries of documents are created by approving the document' USING ERRCODE = 'P0001';
+    END IF;
+    IF TG_OP = 'INSERT' AND NEW.source_type IN ('EXPENSE', 'PURCHASE', 'TRANSFER', 'STOCK') AND fn_is_demo_document(NEW.source_type, NEW.source_id) THEN
+        RAISE EXCEPTION 'RROKA_POSTING_DEMO: demo data is never posted to the books' USING ERRCODE = 'P0001';
     END IF;
     IF TG_OP <> 'DELETE' AND NEW.reverses_id IS NOT NULL AND EXISTS (
         SELECT 1 FROM journal_entries WHERE id = NEW.reverses_id AND source_type IN ('EXPENSE', 'PURCHASE', 'TRANSFER', 'STOCK')) THEN
@@ -4002,8 +4015,9 @@ DECLARE
     v_date date;
 BEGIN
     SELECT * INTO s FROM accounting_settings WHERE id = 1;
-    IF NOT COALESCE(s.auto_posting, false) THEN
-        RETURN NULL;
+    IF NOT COALESCE(s.auto_posting, false) OR COALESCE(current_setting('rroka.demo', true), '') = 'on'
+       OR fn_is_demo_document(TG_ARGV[0], NEW.id) THEN
+        RETURN NULL;   -- off, or demo data being loaded / approved
     END IF;
     IF TG_ARGV[0] = 'STOCK' THEN
         v_date := (NEW.moved_at AT TIME ZONE 'Asia/Riyadh')::date;
@@ -4059,7 +4073,8 @@ SELECT d.*
   FROM docs d CROSS JOIN accounting_settings s
  WHERE s.id = 1 AND d.doc_date >= s.books_start AND (d.amount IS NULL OR d.amount > 0)
    AND NOT EXISTS (SELECT 1 FROM journal_entries j WHERE j.source_type = d.source_type AND j.source_id = d.source_id)
-   AND NOT EXISTS (SELECT 1 FROM posting_exclusions x WHERE x.source_type = d.source_type AND x.source_id = d.source_id);
+   AND NOT EXISTS (SELECT 1 FROM posting_exclusions x WHERE x.source_type = d.source_type AND x.source_id = d.source_id)
+   AND NOT fn_is_demo_document(d.source_type, d.source_id);
 
 DO $$
 BEGIN

@@ -1120,6 +1120,31 @@ SELECT pg_temp.expect_eq('ledger: still balances with automatic entries', (SELEC
 UPDATE accounting_settings SET auto_posting = false;
 SELECT pg_temp.expect_eq('auto-posting: switched off clears the time', (SELECT auto_posting_since FROM accounting_settings), NULL::timestamptz);
 
+-- Demo data never reaches the books (it must stay removable).
+INSERT INTO expenses (id, expense_date, category_id, payee, description, amount, vat_amount, payment_method, payment_account_id)
+    VALUES (10, '2026-03-12', 2, 'x', 'TEST demo expense', 10, 0, 'CASH', 1);
+INSERT INTO demo_records (table_name, row_id) VALUES ('expenses', 10);
+UPDATE expenses SET status = 'APPROVED', approved_by = 2, approved_at = now() WHERE id = 10;
+SELECT pg_temp.expect_eq('demo: an approved demo document is not in the backlog',
+    (SELECT count(*) FROM v_posting_backlog WHERE source_type = 'EXPENSE' AND source_id = 10), 0::bigint);
+SELECT pg_temp.expect_error('demo: a demo document is never posted',
+    'SELECT fn_post_document(''EXPENSE'', 10, 1)', 'RROKA_POSTING_DEMO');
+INSERT INTO expense_categories (id, name, is_overhead) VALUES (4, 'TEST demo category', false);
+INSERT INTO demo_records (table_name, row_id) VALUES ('expense_categories', 4);
+UPDATE expense_categories SET account_id = 927 WHERE id = 3;
+SELECT pg_temp.expect_ok('demo: unmapped demo categories do not block auto-posting', 'UPDATE accounting_settings SET auto_posting = true');
+INSERT INTO expenses (id, expense_date, category_id, payee, description, amount, vat_amount, payment_method, payment_account_id)
+    VALUES (11, '2026-03-12', 4, 'x', 'TEST demo expense 2', 10, 0, 'CASH', 1);
+INSERT INTO demo_records (table_name, row_id) VALUES ('expenses', 11);
+SELECT pg_temp.expect_ok('demo: approving a demo document with auto-posting on posts nothing',
+    'UPDATE expenses SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 11');
+SELECT pg_temp.expect_eq('demo: … no entry', (SELECT count(*) FROM journal_entries WHERE source_type = 'EXPENSE' AND source_id = 11), 0::bigint);
+SELECT pg_temp.expect_ok('demo: stock moved while demo data loads posts nothing',
+    $q$DO $b$ BEGIN PERFORM set_config('rroka.demo', 'on', true);
+       INSERT INTO stock_movements (id, material_id, movement_type, quantity, reason, created_by) VALUES (9005, 6, 'ADJUST_OUT', 1, 'TEST demo', 1); END $b$$q$);
+SELECT pg_temp.expect_eq('demo: … no stock entry', (SELECT count(*) FROM journal_entries WHERE source_type = 'STOCK' AND source_id = 9005), 0::bigint);
+UPDATE accounting_settings SET auto_posting = false;
+
 -- ---------------------------------------------------------------------
 -- Report
 -- ---------------------------------------------------------------------
