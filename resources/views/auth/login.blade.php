@@ -4,6 +4,7 @@
     <meta charset="utf-8"><meta name="color-scheme" content="light dark">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ __('تسجيل الدخول — إر روكا') }}</title>
+    <link rel="stylesheet" href="{{ \App\Support\Asset::url('css/fonts.css') }}">
     <link rel="stylesheet" href="{{ \App\Support\Asset::url('css/app.css') }}">
 </head>
 <body>
