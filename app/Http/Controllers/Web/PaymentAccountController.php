@@ -12,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -122,6 +123,22 @@ class PaymentAccountController extends Controller
         $account->update($this->validated($request, $account));
 
         return redirect()->route('treasury.accounts.show', $account)->with('ok', __('تم تحديث الحساب.'));
+    }
+
+    /**
+     * Only an account that was never used is deleted (an entry made by mistake); one with
+     * expenses or transfers is closed instead — the database foreign keys refuse it too.
+     */
+    public function destroy(PaymentAccount $account): RedirectResponse
+    {
+        $used = DB::table('expenses')->where('payment_account_id', $account->id)->exists()
+            || DB::table('treasury_transfers')->where('from_account_id', $account->id)->orWhere('to_account_id', $account->id)->exists();
+        if ($used) {
+            throw ValidationException::withMessages(['rule' => __('الحساب عليه حركات؛ لا يُحذف بل يُغلق (إلغاء «نشط»).')]);
+        }
+        $account->delete();
+
+        return redirect()->route('treasury.accounts.index')->with('ok', __('حُذف الحساب.'));
     }
 
     /** Kind and custodian are set once (the database refuses a change); the rest stays editable. */

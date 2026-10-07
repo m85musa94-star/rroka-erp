@@ -124,4 +124,17 @@ class TreasuryTest extends ApiTestCase
         $this->actingAs($other)->get('/treasury/accounts')->assertForbidden();
         $this->actingAs($other)->get('/')->assertDontSee(route('treasury.accounts.index'), false);
     }
+
+    public function test_unused_account_can_be_deleted_used_one_is_closed_instead(): void
+    {
+        $admin = $this->admin();
+        [$cash, $bank] = $this->accounts($admin);
+        $this->actingAs($admin)->get("/treasury/accounts/{$bank->id}")->assertOk()->assertSee('حذف الحساب؟');
+        $this->actingAs($this->userWith(['treasury.view']))->delete("/treasury/accounts/{$bank->id}")->assertForbidden();
+        $this->expense($admin, $cash);
+        $this->actingAs($admin)->delete("/treasury/accounts/{$cash->id}")->assertSessionHasErrors('rule');
+        $this->actingAs($admin)->delete("/treasury/accounts/{$bank->id}")->assertSessionHasNoErrors();
+        $this->assertNull(PaymentAccount::find($bank->id));
+        $this->assertNotNull(PaymentAccount::find($cash->id));
+    }
 }

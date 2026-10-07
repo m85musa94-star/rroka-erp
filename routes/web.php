@@ -311,6 +311,7 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::post('/accounts', [PaymentAccountController::class, 'store'])->name('accounts.store');
         Route::get('/accounts/{account}/edit', [PaymentAccountController::class, 'edit'])->name('accounts.edit')->whereNumber('account');
         Route::put('/accounts/{account}', [PaymentAccountController::class, 'update'])->name('accounts.update')->whereNumber('account');
+        Route::delete('/accounts/{account}', [PaymentAccountController::class, 'destroy'])->name('accounts.destroy')->whereNumber('account');
         Route::post('/transfers', [TreasuryTransferController::class, 'store'])->name('transfers.store');
         Route::get('/transfers/{transfer}/edit', [TreasuryTransferController::class, 'edit'])->name('transfers.edit')->whereNumber('transfer');
         Route::put('/transfers/{transfer}', [TreasuryTransferController::class, 'update'])->name('transfers.update')->whereNumber('transfer');

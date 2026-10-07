@@ -8,7 +8,11 @@
 @php($canSeeExpenses = $u->hasPermission('expenses.view') || $u->hasPermission('expenses.manage'))
 <div class="rec-bar">
     <div class="actions">
-        @if($u->hasPermission('treasury.manage'))<a class="btn ghost sm" href="{{ route('treasury.accounts.edit', $a) }}">{{ __('تعديل') }}</a>@endif
+        @if($u->hasPermission('treasury.manage'))<a class="btn ghost sm" href="{{ route('treasury.accounts.edit', $a) }}">{{ __('تعديل') }}</a>
+            @if($lines->isEmpty() && ! \Illuminate\Support\Facades\DB::table('v_payment_account_lines')->where('account_id', $a->id)->exists())
+                <form method="post" action="{{ route('treasury.accounts.destroy', $a) }}" class="inline" data-confirm="{{ __('حذف الحساب؟ لا حركات عليه، والحذف نهائي.') }}">@csrf @method('delete')<button class="btn ghost sm">{{ __('حذف') }}</button></form>
+            @endif
+        @endif
         @if($a->is_active && $u->hasPermission('expenses.manage'))<a class="btn sm" href="{{ route('expenses.create', ['payment_account_id' => $a->id]) }}">{{ __('مصروف جديد') }}</a>@endif
         @if($a->is_active && $u->hasPermission('treasury.manage'))
             @if($a->isCustody())

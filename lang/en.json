@@ -1828,5 +1828,8 @@
     "خامات مصروفة صافية + مصروفات معتمدة على المشاريع": "Net materials issued + approved project expenses",
     "ضريبة المدخلات": "Input VAT",
     "ضريبة المصروفات والمشتريات المعتمدة (قبل تسوية الإقرار)": "VAT on approved expenses and purchases (before the return settlement)",
-    "فواتير المشتريات المعتمدة؛ سداد الموردين يُسجَّل في المرحلة (ب)": "Approved purchase invoices; supplier payments come in phase B"
+    "فواتير المشتريات المعتمدة؛ سداد الموردين يُسجَّل في المرحلة (ب)": "Approved purchase invoices; supplier payments come in phase B",
+    "الحساب عليه حركات؛ لا يُحذف بل يُغلق (إلغاء «نشط»).": "The account has movements; it is not deleted but closed (untick “Active”).",
+    "حُذف الحساب.": "Account deleted.",
+    "حذف الحساب؟ لا حركات عليه، والحذف نهائي.": "Delete the account? It has no movements; deletion is final."
 }
