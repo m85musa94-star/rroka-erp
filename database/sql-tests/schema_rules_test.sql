@@ -949,6 +949,178 @@ SELECT pg_temp.expect_ok('period: posts again once reopened',
 SELECT pg_temp.expect_error('period: cannot be deleted', 'DELETE FROM fiscal_periods WHERE period_start = ''2026-02-01''', 'RROKA_PERIOD_CLOSED');
 
 -- ---------------------------------------------------------------------
+-- Accounting: automatic posting from documents (step أ)
+-- ---------------------------------------------------------------------
+SELECT setval('journal_entries_id_seq', 100);
+SELECT pg_temp.expect_eq('backlog: approved documents without entries are listed',
+    (SELECT count(*) FROM v_posting_backlog WHERE source_type IN ('EXPENSE', 'PURCHASE', 'TRANSFER')
+        AND (source_type, source_id) IN (('EXPENSE', 1), ('EXPENSE', 4), ('PURCHASE', 1), ('TRANSFER', 1), ('TRANSFER', 4))), 5::bigint);
+SELECT pg_temp.expect_eq('backlog: drafts and cancelled documents are not listed',
+    (SELECT count(*) FROM v_posting_backlog WHERE (source_type, source_id) IN (('EXPENSE', 2), ('EXPENSE', 5), ('TRANSFER', 2))), 0::bigint);
+SELECT pg_temp.expect_error('auto-posting: not switched on while mappings are missing',
+    'UPDATE accounting_settings SET auto_posting = true', 'RROKA_POSTING_NOT_READY');
+SELECT pg_temp.expect_error('posting: a missing role refuses the posting',
+    'SELECT fn_post_document(''PURCHASE'', 1, 1)', 'RROKA_POSTING_MAPPING');
+
+INSERT INTO accounts (id, code, name, account_type, is_postable) VALUES (904, '2', 'TEST liabilities', 'LIABILITY', false);
+INSERT INTO accounts (id, code, name, account_type, parent_id, system_role, detail_type) VALUES
+    (920, '1120', 'TEST inventory', 'ASSET', 900, 'INVENTORY', 'CURRENT_ASSETS'),
+    (921, '1130', 'TEST WIP', 'ASSET', 900, 'WIP', 'CURRENT_ASSETS'),
+    (922, '1140', 'TEST input VAT', 'ASSET', 900, 'INPUT_VAT', 'CURRENT_ASSETS'),
+    (923, '2101', 'TEST payables', 'LIABILITY', 904, 'PAYABLE', 'PAYABLE'),
+    (924, '1101', 'TEST cash', 'ASSET', 900, NULL, 'BANK_CASH'),
+    (925, '1103', 'TEST custody', 'ASSET', 900, NULL, 'CURRENT_ASSETS'),
+    (927, '5309', 'TEST transport', 'EXPENSE', 901, NULL, 'EXPENSES');
+SELECT pg_temp.expect_error('mapping: a payment account maps to a postable account only',
+    'UPDATE payment_accounts SET account_id = 900 WHERE id = 1', 'RROKA_ACCOUNT_NOT_POSTABLE');
+SELECT pg_temp.expect_error('mapping: a payment account does not map to an expense account',
+    'UPDATE payment_accounts SET account_id = 911 WHERE id = 1', 'RROKA_POSTING_MAP_TYPE');
+SELECT pg_temp.expect_error('mapping: an expense category does not map to equity',
+    'UPDATE expense_categories SET account_id = 912 WHERE id = 1', 'RROKA_POSTING_MAP_TYPE');
+UPDATE payment_accounts SET account_id = 924 WHERE id = 1;
+UPDATE payment_accounts SET account_id = 910 WHERE id = 2;
+UPDATE payment_accounts SET account_id = 925 WHERE id = 3;
+UPDATE expense_categories SET account_id = 927 WHERE id = 1;
+UPDATE expense_categories SET account_id = 911 WHERE id = 2;
+SELECT pg_temp.expect_eq('gaps: only the stock-adjustment role is missing',
+    (SELECT string_agg(gap_type || ':' || label, ',') FROM fn_posting_gaps()), 'ROLE:INVENTORY_ADJUSTMENT');
+
+SELECT pg_temp.expect_error('journal: an entry of a document is not written by hand',
+    'INSERT INTO journal_entries (entry_date, description, created_by, source_type, source_id) VALUES (''2026-03-02'', ''TEST'', 1, ''EXPENSE'', 1)', 'RROKA_JOURNAL_AUTO');
+SELECT pg_temp.expect_error('journal: a document entry names its document',
+    $q$DO $b$ BEGIN PERFORM set_config('rroka.auto_posting', 'on', true);
+       INSERT INTO journal_entries (entry_date, description, created_by, source_type) VALUES ('2026-03-02', 'TEST', 1, 'EXPENSE'); END $b$$q$,
+    'journal_entries_document_source');
+
+-- Backlog posting (auto-posting still off): the project expense goes to WIP.
+SELECT pg_temp.expect_ok('backlog: post the project expense', 'SELECT fn_post_document(''EXPENSE'', 1, 1)');
+SELECT pg_temp.expect_eq('expense entry: WIP 250 for project 1',
+    (SELECT sum(l.debit) FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id
+      WHERE j.source_type = 'EXPENSE' AND j.source_id = 1 AND l.account_id = 921 AND l.project_id = 1), 250.00::numeric);
+SELECT pg_temp.expect_eq('expense entry: input VAT 37.50',
+    (SELECT sum(l.debit) FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id
+      WHERE j.source_type = 'EXPENSE' AND j.source_id = 1 AND l.account_id = 922), 37.50::numeric);
+SELECT pg_temp.expect_eq('expense entry: cash box credited 287.50',
+    (SELECT sum(l.credit) FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id
+      WHERE j.source_type = 'EXPENSE' AND j.source_id = 1 AND l.account_id = 924), 287.50::numeric);
+SELECT pg_temp.expect_eq('expense entry: posted with a number',
+    (SELECT status || ':' || (entry_no IS NOT NULL) FROM journal_entries WHERE source_type = 'EXPENSE' AND source_id = 1), 'POSTED:true');
+SELECT pg_temp.expect_error('posting: a document posts once',
+    'SELECT fn_post_document(''EXPENSE'', 1, 1)', 'RROKA_POSTING_DUPLICATE');
+SELECT pg_temp.expect_error('posting: a draft document does not post',
+    'SELECT fn_post_document(''TRANSFER'', 2, 1)', 'RROKA_POSTING_NOT_APPROVED');
+SELECT pg_temp.expect_ok('backlog: post the custody expense', 'SELECT fn_post_document(''EXPENSE'', 4, 1)');
+SELECT pg_temp.expect_eq('custody expense: credited to the custodian (employee 11)',
+    (SELECT l.partner_type || ':' || l.partner_id FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id
+      WHERE j.source_type = 'EXPENSE' AND j.source_id = 4 AND l.account_id = 925), 'EMPLOYEE:11');
+SELECT pg_temp.expect_eq('custody expense: not a project → its category account 300',
+    (SELECT sum(l.debit) FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id
+      WHERE j.source_type = 'EXPENSE' AND j.source_id = 4 AND l.account_id = 927), 300.00::numeric);
+SELECT pg_temp.expect_ok('backlog: post the purchase invoice', 'SELECT fn_post_document(''PURCHASE'', 1, 1)');
+SELECT pg_temp.expect_eq('purchase entry: inventory 970 = stock received',
+    (SELECT sum(l.debit) FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id
+      WHERE j.source_type = 'PURCHASE' AND j.source_id = 1 AND l.account_id = 920), 970.00::numeric);
+SELECT pg_temp.expect_eq('purchase entry: supplier 1 owed 1,120',
+    (SELECT l.credit || ':' || l.partner_type || ':' || l.partner_id FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id
+      WHERE j.source_type = 'PURCHASE' AND j.source_id = 1 AND l.account_id = 923), '1120.00:SUPPLIER:1');
+SELECT pg_temp.expect_ok('backlog: post the custody issue', 'SELECT fn_post_document(''TRANSFER'', 1, 1)');
+SELECT pg_temp.expect_eq('transfer entry: custody debited, cash credited 800',
+    (SELECT string_agg(account_id || ':' || debit || ':' || credit, ',' ORDER BY account_id) FROM journal_lines
+      WHERE entry_id = (SELECT id FROM journal_entries WHERE source_type = 'TRANSFER' AND source_id = 1)), '924:0.00:800.00,925:800.00:0.00');
+SELECT pg_temp.expect_ok('exclusion: a document left out of the books with a reason',
+    'INSERT INTO posting_exclusions (source_type, source_id, reason, created_by) VALUES (''TRANSFER'', 4, ''TEST in the opening entry'', 1)');
+SELECT pg_temp.expect_error('exclusion: needs a reason',
+    'INSERT INTO posting_exclusions (source_type, source_id, reason, created_by) VALUES (''EXPENSE'', 99, '' '', 1)', 'check constraint');
+SELECT pg_temp.expect_error('exclusion: a posted document cannot be excluded',
+    'INSERT INTO posting_exclusions (source_type, source_id, reason, created_by) VALUES (''EXPENSE'', 1, ''TEST'', 1)', 'RROKA_POSTING_DUPLICATE');
+SELECT pg_temp.expect_error('exclusion: an excluded document does not post',
+    'SELECT fn_post_document(''TRANSFER'', 4, 1)', 'RROKA_POSTING_EXCLUDED');
+SELECT pg_temp.expect_eq('backlog: posted and excluded documents leave it',
+    (SELECT count(*) FROM v_posting_backlog WHERE source_type IN ('EXPENSE', 'PURCHASE', 'TRANSFER')), 0::bigint);
+SELECT pg_temp.expect_error('journal: the entry of a document is not reversed by hand',
+    format('INSERT INTO journal_entries (entry_date, description, created_by, source_type, reverses_id) VALUES (''2026-03-20'', ''TEST'', 1, ''REVERSAL'', %s)',
+           (SELECT id FROM journal_entries WHERE source_type = 'EXPENSE' AND source_id = 1)), 'RROKA_JOURNAL_AUTO');
+SELECT pg_temp.expect_error('journal: the entry of a document cannot be deleted',
+    'DELETE FROM journal_entries WHERE source_type = ''EXPENSE''', 'RROKA_JOURNAL_AUTO');
+
+-- Switch on auto-posting.
+INSERT INTO accounts (id, code, name, account_type, parent_id, system_role, detail_type) VALUES
+    (926, '5207', 'TEST stock count differences', 'EXPENSE', 901, 'INVENTORY_ADJUSTMENT', 'EXPENSES');
+SELECT pg_temp.expect_ok('auto-posting: switched on once everything is mapped', 'UPDATE accounting_settings SET auto_posting = true');
+SELECT pg_temp.expect_eq('auto-posting: the switch time is recorded', (SELECT auto_posting_since IS NOT NULL FROM accounting_settings), true);
+SELECT pg_temp.expect_error('mapping: not removed while auto-posting is on',
+    'UPDATE expense_categories SET account_id = NULL WHERE id = 1', 'RROKA_POSTING_MAPPING');
+
+INSERT INTO expenses (id, expense_date, category_id, payee, description, amount, vat_amount, payment_method, payment_account_id)
+    VALUES (6, '2026-03-10', 2, 'TEST landlord', 'TEST March rent', 100, 15, 'CASH', 1);
+SELECT pg_temp.expect_ok('auto-posting: approving an expense posts it',
+    'UPDATE expenses SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 6');
+SELECT pg_temp.expect_eq('auto-posting: rent expense 100 to its category account, posted by the approver',
+    (SELECT l.debit || ':' || j.posted_by FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id
+      WHERE j.source_type = 'EXPENSE' AND j.source_id = 6 AND l.account_id = 911), '100.00:2');
+
+INSERT INTO expense_categories (id, name, is_overhead) VALUES (3, 'TEST unmapped', false);
+INSERT INTO expenses (id, expense_date, category_id, payee, description, amount, vat_amount, payment_method, payment_account_id)
+    VALUES (7, '2026-03-10', 3, 'x', 'TEST unmapped', 10, 0, 'CASH', 1);
+SELECT pg_temp.expect_error('auto-posting: an unmapped category refuses the approval',
+    'UPDATE expenses SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 7', 'RROKA_POSTING_MAPPING');
+SELECT pg_temp.expect_eq('auto-posting: the refused expense stays a draft', (SELECT status FROM expenses WHERE id = 7), 'DRAFT');
+SELECT pg_temp.expect_ok('auto-posting: a project expense needs no category account (it goes to WIP)',
+    'UPDATE expenses SET project_id = 1, status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 7');
+
+INSERT INTO expenses (id, expense_date, category_id, payee, description, amount, vat_amount, payment_method, payment_account_id)
+    VALUES (8, '2025-12-20', 2, 'x', 'TEST before the books', 10, 0, 'CASH', 1);
+SELECT pg_temp.expect_ok('auto-posting: a document before the books start approves',
+    'UPDATE expenses SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 8');
+SELECT pg_temp.expect_eq('auto-posting: … and belongs to the opening balances (no entry, not in the backlog)',
+    (SELECT count(*) FROM journal_entries WHERE source_type = 'EXPENSE' AND source_id = 8)
+  + (SELECT count(*) FROM v_posting_backlog WHERE source_type = 'EXPENSE' AND source_id = 8), 0::bigint);
+
+UPDATE fiscal_periods SET status = 'CLOSED', closed_by = 2, closed_at = now() WHERE period_start = '2026-02-01';
+INSERT INTO expenses (id, expense_date, category_id, payee, description, amount, vat_amount, payment_method, payment_account_id)
+    VALUES (9, '2026-02-15', 2, 'x', 'TEST February receipt', 10, 0, 'CASH', 1);
+SELECT pg_temp.expect_error('auto-posting: no approval into a closed month',
+    'UPDATE expenses SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 9', 'RROKA_PERIOD_CLOSED');
+
+INSERT INTO treasury_transfers (id, transfer_date, from_account_id, to_account_id, amount) VALUES (5, '2026-03-11', 1, 2, 50);
+SELECT pg_temp.expect_ok('auto-posting: approving a transfer posts it',
+    'UPDATE treasury_transfers SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 5');
+SELECT pg_temp.expect_eq('auto-posting: bank debited 50',
+    (SELECT sum(l.debit) FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id
+      WHERE j.source_type = 'TRANSFER' AND j.source_id = 5 AND l.account_id = 910), 50.00::numeric);
+
+-- Stock: issue to a project, return, count difference; reservations post nothing.
+INSERT INTO stock_movements (id, material_id, movement_type, quantity, project_id, created_by) VALUES (9001, 5, 'RESERVE', 1, 1, 1);
+SELECT pg_temp.expect_eq('stock: a reservation posts nothing', (SELECT count(*) FROM journal_entries WHERE source_type = 'STOCK' AND source_id = 9001), 0::bigint);
+INSERT INTO stock_movements (id, material_id, movement_type, quantity, project_id, created_by) VALUES (9002, 5, 'ISSUE', 2, 1, 1);
+SELECT pg_temp.expect_eq('stock: issue 2 × 87.30 → WIP of project 1',
+    (SELECT l.debit || ':' || l.project_id FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id
+      WHERE j.source_type = 'STOCK' AND j.source_id = 9002 AND l.account_id = 921), '174.60:1');
+INSERT INTO stock_movements (id, material_id, movement_type, quantity, project_id, created_by) VALUES (9003, 5, 'RETURN', 1, 1, 1);
+SELECT pg_temp.expect_eq('stock: return credits WIP of project 1',
+    (SELECT l.credit || ':' || l.project_id FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id
+      WHERE j.source_type = 'STOCK' AND j.source_id = 9003 AND l.account_id = 921), '87.30:1');
+INSERT INTO stock_movements (id, material_id, movement_type, quantity, reason, created_by) VALUES (9004, 6, 'ADJUST_OUT', 1, 'TEST count', 1);
+SELECT pg_temp.expect_eq('stock: a count shortage goes to the adjustment account',
+    (SELECT sum(l.debit) FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id
+      WHERE j.source_type = 'STOCK' AND j.source_id = 9004 AND l.account_id = 926), 19.40::numeric);
+SELECT pg_temp.expect_error('stock: a receipt outside a purchase invoice is not auto-posted',
+    'INSERT INTO stock_movements (material_id, movement_type, quantity, unit_cost, created_by) VALUES (5, ''RECEIPT'', 1, 10, 1)', 'RROKA_POSTING_MANUAL_ONLY');
+
+INSERT INTO purchase_invoices (id, supplier_id, supplier_invoice_no, invoice_date, discount_amount, vat_amount) VALUES (21, 1, 'INV-79', '2026-03-15', 0, 15);
+INSERT INTO purchase_invoice_lines (purchase_invoice_id, line_no, material_id, quantity, unit_price) VALUES (21, 1, 6, 5, 20);
+SELECT pg_temp.expect_ok('auto-posting: approving a purchase invoice posts it',
+    'UPDATE purchase_invoices SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 21');
+SELECT pg_temp.expect_eq('auto-posting: one entry for the invoice, none for its receipts',
+    (SELECT count(*) FROM journal_entries WHERE (source_type = 'PURCHASE' AND source_id = 21)
+        OR (source_type = 'STOCK' AND source_id IN (SELECT m.id FROM stock_movements m JOIN purchase_invoice_lines l ON l.id = m.purchase_invoice_line_id WHERE l.purchase_invoice_id = 21))), 1::bigint);
+SELECT pg_temp.expect_eq('ledger: inventory = 970 + 100 − 174.60 + 87.30 − 19.40',
+    (SELECT sum(net) FROM v_ledger_lines WHERE account_id = 920), 963.30::numeric);
+SELECT pg_temp.expect_eq('ledger: still balances with automatic entries', (SELECT sum(debit) - sum(credit) FROM v_ledger_lines), 0.00::numeric);
+UPDATE accounting_settings SET auto_posting = false;
+SELECT pg_temp.expect_eq('auto-posting: switched off clears the time', (SELECT auto_posting_since FROM accounting_settings), NULL::timestamptz);
+
+-- ---------------------------------------------------------------------
 -- Report
 -- ---------------------------------------------------------------------
 \pset footer off

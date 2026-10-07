@@ -59,6 +59,7 @@ class ChartTemplate
             ['5204', 'صيانة المكائن والمعدات', 'Machine maintenance', 'EXPENSE', '52', true, null, 'EXPENSES'],
             ['5205', 'أدوات ومستهلكات الورشة', 'Workshop tools and consumables', 'EXPENSE', '52', true, null, 'EXPENSES'],
             ['5206', 'إهلاك المكائن والمعدات', 'Depreciation of machinery', 'EXPENSE', '52', true, 'DEPRECIATION', 'DEPRECIATION'],
+            ['5207', 'فروقات جرد المخزون', 'Inventory count differences', 'EXPENSE', '52', true, 'INVENTORY_ADJUSTMENT', 'EXPENSES'],
             ['53', 'المصروفات العمومية والإدارية', 'General and administrative expenses', 'EXPENSE', '5', false, null, null],
             ['5301', 'رواتب إدارية', 'Administrative salaries', 'EXPENSE', '53', true, null, 'EXPENSES'],
             ['5302', 'رسوم حكومية وتأشيرات وإقامات', 'Government fees, visas and residency', 'EXPENSE', '53', true, null, 'EXPENSES'],

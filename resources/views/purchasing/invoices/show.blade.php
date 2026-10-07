@@ -30,6 +30,7 @@
     <dl class="kv">
         <dt>{{ __('تاريخ الفاتورة') }}</dt><dd>{{ $p->invoice_date->format('Y-m-d') }}</dd>
         <dt>{{ __('تاريخ الاستحقاق') }}</dt><dd>{{ $p->due_date?->format('Y-m-d') ?? '—' }}</dd>
+        @include('partials.journal-link', ['type' => 'PURCHASE', 'id' => $p->id, 'approved' => $p->status === 'APPROVED'])
         <dt>{{ __('أدخلها') }}</dt><dd>{{ $names[$p->created_by] ?? '—' }}</dd>
         @if($p->approved_at)<dt>{{ __('اعتمدها') }}</dt><dd>{{ $names[$p->approved_by] ?? '—' }} — {{ $p->approved_at->format('Y-m-d H:i') }} @if($p->selfApproved())<span class="badge b-ON_HOLD">{{ __('اعتماد ذاتي') }}</span>@endif</dd>@endif
         <dt>{{ __('دفترة') }}</dt><dd>{{ $p->daftra_purchase_id ? __('مرتبط (رقم :no)', ['no' => $p->daftra_purchase_id]) : __('لم تُرسل — الإرسال موقوف حتى التحقق من ربط دفترة') }}</dd>

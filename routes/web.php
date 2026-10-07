@@ -26,6 +26,7 @@ use App\Http\Controllers\Web\MaterialController;
 use App\Http\Controllers\Web\MaterialCostController;
 use App\Http\Controllers\Web\OverheadPoolController;
 use App\Http\Controllers\Web\PaymentAccountController;
+use App\Http\Controllers\Web\PostingController;
 use App\Http\Controllers\Web\ProductionController;
 use App\Http\Controllers\Web\ProjectController;
 use App\Http\Controllers\Web\PurchaseController;
@@ -330,6 +331,9 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::get('/reports', [FinancialReportController::class, 'index'])->name('reports.index');
         Route::get('/reports/{key}', [FinancialReportController::class, 'show'])->name('reports.show')->whereIn('key', ['profit-loss', 'balance-sheet', 'general-ledger', 'trial-balance']);
         Route::get('/periods', [AccountingController::class, 'periods'])->name('periods');
+        Route::get('/posting', [PostingController::class, 'settings'])->name('posting.settings');
+        Route::get('/posting/backlog', [PostingController::class, 'backlog'])->name('posting.backlog');
+        Route::get('/reconciliation', [PostingController::class, 'reconciliation'])->name('posting.reconciliation');
     });
     Route::middleware('permission:accounting.manage')->prefix('accounting')->name('accounting.')->group(function () {
         Route::get('/accounts/create', [AccountController::class, 'create'])->name('accounts.create');
@@ -343,14 +347,20 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::get('/journal/{entry}/edit', [JournalEntryController::class, 'edit'])->name('journal.edit')->whereNumber('entry');
         Route::put('/journal/{entry}', [JournalEntryController::class, 'update'])->name('journal.update')->whereNumber('entry');
         Route::delete('/journal/{entry}', [JournalEntryController::class, 'destroy'])->name('journal.destroy')->whereNumber('entry');
+        Route::put('/posting/links', [PostingController::class, 'saveLinks'])->name('posting.links');
     });
     Route::middleware('permission:accounting.post')->prefix('accounting')->name('accounting.')->group(function () {
         Route::post('/journal/{entry}/post', [JournalEntryController::class, 'post'])->name('journal.post')->whereNumber('entry');
         Route::post('/journal/{entry}/reverse', [JournalEntryController::class, 'reverse'])->name('journal.reverse')->whereNumber('entry');
+        Route::post('/posting/post-all', [PostingController::class, 'postAll'])->name('posting.post-all');
+        Route::post('/posting/{type}/{id}', [PostingController::class, 'post'])->name('posting.post')->whereIn('type', ['EXPENSE', 'PURCHASE', 'TRANSFER', 'STOCK'])->whereNumber('id');
+        Route::post('/posting/{type}/{id}/exclude', [PostingController::class, 'exclude'])->name('posting.exclude')->whereIn('type', ['EXPENSE', 'PURCHASE', 'TRANSFER', 'STOCK'])->whereNumber('id');
+        Route::delete('/posting/exclusions/{exclusion}', [PostingController::class, 'unexclude'])->name('posting.unexclude')->whereNumber('exclusion');
     });
     Route::middleware('permission:accounting.close')->prefix('accounting')->name('accounting.')->group(function () {
         Route::post('/periods/{month}/close', [AccountingController::class, 'closePeriod'])->name('periods.close');
         Route::post('/periods/{month}/reopen', [AccountingController::class, 'reopenPeriod'])->name('periods.reopen');
+        Route::post('/posting/auto', [PostingController::class, 'toggle'])->name('posting.toggle');
     });
 
     Route::middleware('permission:studio.view|quotations.view|purchases.view|expenses.view')->group(function () {

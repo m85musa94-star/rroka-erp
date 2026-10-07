@@ -98,6 +98,16 @@ return [
         'RROKA_ACCOUNT_ROLE' => 'A system role needs a postable account.',
         'RROKA_ACCOUNT_USED' => 'The account has entries; its code, type and postability are fixed. It can be deactivated.',
         'RROKA_ACCOUNT_NOT_POSTABLE' => 'The account is a group or inactive account; choose an active postable account.',
+        'RROKA_POSTING_MAPPING' => 'The accounting link is incomplete: the account this document needs is not set (payment account, expense category or system role). Complete it under Accounting → Accounting links.',
+        'RROKA_POSTING_MAP_TYPE' => 'The account type does not fit: cash, bank and custody map to an asset (or a liability for a credit card); an expense category maps to an expense (or an asset for prepayments).',
+        'RROKA_POSTING_NOT_READY' => 'Auto-posting cannot be switched on until every link is set: a system role, payment account or expense category has no account.',
+        'RROKA_POSTING_DUPLICATE' => 'This document already has its journal entry; it is never posted twice.',
+        'RROKA_POSTING_EXCLUDED' => 'This document is excluded from the books with a recorded reason; remove the exclusion first to post it.',
+        'RROKA_POSTING_NOT_APPROVED' => 'Only an approved document is posted.',
+        'RROKA_POSTING_NO_USER' => 'The posting user for this document could not be determined.',
+        'RROKA_POSTING_NO_COST' => 'The stock movement has no cost; no entry is made with an assumed value.',
+        'RROKA_POSTING_MANUAL_ONLY' => 'A stock receipt outside a purchase invoice is not auto-posted; book it with a manual entry (e.g. the opening balance).',
+        'RROKA_JOURNAL_AUTO' => 'A document entry is created by approving the document and is never edited or reversed by hand; correct it with a separate manual entry.',
         'RROKA_JOURNAL_LOCKED' => 'A posted entry is final; correct it with a reversal.',
         'RROKA_JOURNAL_UNBALANCED' => 'The entry does not balance: debit must equal credit, above zero, over at least two lines.',
         'RROKA_JOURNAL_REVERSAL' => 'A reversal is for a posted entry, once, not dated before it, and mirrors it exactly.',
@@ -210,9 +220,9 @@ return [
 
     'detail_type' => ['RECEIVABLE' => 'Receivable', 'BANK_CASH' => 'Bank and Cash', 'CURRENT_ASSETS' => 'Current Assets', 'NON_CURRENT_ASSETS' => 'Non-current Assets', 'PREPAYMENTS' => 'Prepayments', 'FIXED_ASSETS' => 'Fixed Assets', 'PAYABLE' => 'Payable', 'CREDIT_CARD' => 'Credit Card', 'CURRENT_LIABILITIES' => 'Current Liabilities', 'NON_CURRENT_LIABILITIES' => 'Non-current Liabilities', 'EQUITY' => 'Equity', 'CURRENT_YEAR_EARNINGS' => 'Current Year Earnings', 'INCOME' => 'Income', 'OTHER_INCOME' => 'Other Income', 'EXPENSES' => 'Expenses', 'DEPRECIATION' => 'Depreciation', 'COST_OF_REVENUE' => 'Cost of Revenue'],
 
-    'account_role' => ['CASH' => 'Cash', 'BANK' => 'Bank', 'CUSTODY' => 'Custody', 'RECEIVABLE' => 'Accounts receivable', 'INVENTORY' => 'Materials inventory', 'WIP' => 'Work in progress', 'INPUT_VAT' => 'Input VAT', 'PAYABLE' => 'Accounts payable', 'OUTPUT_VAT' => 'Output VAT', 'CUSTOMER_ADVANCES' => 'Customer advances', 'CAPITAL' => 'Capital', 'OWNER_CURRENT' => 'Owner current account', 'RETAINED_EARNINGS' => 'Retained earnings', 'SALES' => 'Sales revenue', 'SALES_DISCOUNT' => 'Sales discounts', 'COST_OF_SALES' => 'Cost of sales', 'FIXED_ASSETS' => 'Fixed assets', 'ACCUMULATED_DEPRECIATION' => 'Accumulated depreciation', 'DEPRECIATION' => 'Depreciation expense'],
+    'account_role' => ['CASH' => 'Cash', 'BANK' => 'Bank', 'CUSTODY' => 'Custody', 'RECEIVABLE' => 'Accounts receivable', 'INVENTORY' => 'Materials inventory', 'WIP' => 'Work in progress', 'INPUT_VAT' => 'Input VAT', 'PAYABLE' => 'Accounts payable', 'OUTPUT_VAT' => 'Output VAT', 'CUSTOMER_ADVANCES' => 'Customer advances', 'CAPITAL' => 'Capital', 'OWNER_CURRENT' => 'Owner current account', 'RETAINED_EARNINGS' => 'Retained earnings', 'SALES' => 'Sales revenue', 'SALES_DISCOUNT' => 'Sales discounts', 'COST_OF_SALES' => 'Cost of sales', 'FIXED_ASSETS' => 'Fixed assets', 'ACCUMULATED_DEPRECIATION' => 'Accumulated depreciation', 'DEPRECIATION' => 'Depreciation expense', 'INVENTORY_ADJUSTMENT' => 'Inventory count differences'],
 
-    'journal_source' => ['MANUAL' => 'Manual', 'OPENING' => 'Opening', 'REVERSAL' => 'Reversal'],
+    'journal_source' => ['MANUAL' => 'Manual', 'OPENING' => 'Opening', 'REVERSAL' => 'Reversal', 'EXPENSE' => 'Expense', 'PURCHASE' => 'Purchase invoice', 'TRANSFER' => 'Treasury transfer', 'STOCK' => 'Stock movement'],
 
     'expense_kind' => ['PROJECT' => 'On a project', 'OVERHEAD' => 'Workshop overhead', 'OTHER' => 'General & admin'],
 

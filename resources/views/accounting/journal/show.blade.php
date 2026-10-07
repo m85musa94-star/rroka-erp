@@ -26,7 +26,7 @@
     <dl class="kv">
         <dt>{{ __('التاريخ') }}</dt><dd>{{ $e->entry_date->format('Y-m-d') }}</dd>
         <dt>{{ __('النوع') }}</dt><dd>{{ __("rroka.journal_source.$e->source_type") }}</dd>
-        <dt>{{ __('المرجع') }}</dt><dd>{{ $e->reference ?: '—' }}</dd>
+        <dt>{{ __('المرجع') }}</dt><dd>@if($e->isDocument() && ($src = $e->sourceUrl()))<a href="{{ $src }}" dir="ltr">{{ $e->reference }}</a>@else{{ $e->reference ?: '—' }}@endif</dd>
         <dt>{{ __('أعدّه') }}</dt><dd>{{ $names[$e->created_by] ?? '—' }}</dd>
         @if($e->posted_at)<dt>{{ __('رحّله') }}</dt><dd>{{ $names[$e->posted_by] ?? '—' }} — {{ $e->posted_at->format('Y-m-d H:i') }} @if($e->selfPosted())<span class="badge b-ON_HOLD">{{ __('ترحيل ذاتي') }}</span>@endif</dd>@endif
         @if($e->reverses)<dt>{{ __('يعكس القيد') }}</dt><dd><a href="{{ route('accounting.journal.show', $e->reverses) }}" dir="ltr">{{ $e->reverses->entry_no }}</a></dd>@endif
@@ -48,7 +48,9 @@
         <p class="hint warn-text">{{ __('القيد غير متوازن (الفرق :d)؛ لا يُرحَّل حتى يتساوى المدين والدائن.', ['d' => number_format(abs($diff), 2)]) }}</p>
     @endif
 </div>
-@if($e->isPosted() && ! $e->reversedBy && $u->hasPermission('accounting.post'))
+@if($e->isDocument())
+<p class="hint">{{ __('قيد آلي أُنشئ عند اعتماد المستند؛ لا يُعدَّل ولا يُعكس يدويًا. أي تصحيح يكون بقيد يدوي مستقل يُشار فيه إلى هذا القيد.') }}</p>
+@elseif($e->isPosted() && ! $e->reversedBy && $u->hasPermission('accounting.post'))
 <form method="post" action="{{ route('accounting.journal.reverse', $e) }}" class="card">@csrf
     <h2>{{ __('تصحيح القيد بقيد عكسي') }}</h2>
     <p class="hint">{{ __('القيد المرحَّل لا يُعدَّل ولا يُحذف. يُنشأ قيد معاكس له تمامًا كمسودة، وبعد ترحيله يُسجَّل القيد الصحيح من جديد.') }}</p>

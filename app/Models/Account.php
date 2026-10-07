@@ -16,7 +16,7 @@ class Account extends Model
 
     public const ROLES = ['CASH', 'BANK', 'CUSTODY', 'RECEIVABLE', 'INVENTORY', 'WIP', 'INPUT_VAT', 'PAYABLE', 'OUTPUT_VAT',
         'CUSTOMER_ADVANCES', 'CAPITAL', 'OWNER_CURRENT', 'RETAINED_EARNINGS', 'SALES', 'SALES_DISCOUNT', 'COST_OF_SALES',
-        'FIXED_ASSETS', 'ACCUMULATED_DEPRECIATION', 'DEPRECIATION'];
+        'FIXED_ASSETS', 'ACCUMULATED_DEPRECIATION', 'DEPRECIATION', 'INVENTORY_ADJUSTMENT'];
 
     /** Odoo-style detailed type => class. The database derives the class from it (fn_account_class). */
     public const DETAIL_TYPES = [

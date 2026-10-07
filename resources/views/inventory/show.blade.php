@@ -47,13 +47,14 @@
         <div class="actions"><button class="btn">{{ __('تسجيل') }}</button></div>
     </form>
     <p class="hint">{{ __('الحجز والصرف والإرجاع للمشاريع تتم من أمر التصنيع. الحركات لا تُعدَّل ولا تُحذف؛ الخطأ يُصحَّح بحركة عكسية.') }}</p>
+    <p class="hint">{{ __('محاسبيًا: الرصيد الافتتاحي يُسجَّل بتاريخ قبل بداية الدفاتر (مثل 2025-12-31) فيدخل ضمن القيد الافتتاحي لا الأرباح؛ وفروق الجرد بعد ذلك تُقيَّد على حساب «فروقات جرد المخزون».') }}</p>
 </div>
 @endif
 
 <div class="card" style="padding:0">
     <h2 style="padding:16px 16px 0">{{ __('الحركات') }}</h2>
     <div class="table-wrap"><table>
-        <tr><th>{{ __('التاريخ') }}</th><th>{{ __('النوع') }}</th><th class="num">{{ __('الكمية') }}</th><th class="num">{{ __('تكلفة الوحدة') }}</th><th>{{ __('المشروع') }}</th><th>{{ __('أمر التصنيع') }}</th><th>{{ __('المرجع / السبب') }}</th></tr>
+        <tr><th>{{ __('التاريخ') }}</th><th>{{ __('النوع') }}</th><th class="num">{{ __('الكمية') }}</th><th class="num">{{ __('تكلفة الوحدة') }}</th><th>{{ __('المشروع') }}</th><th>{{ __('أمر التصنيع') }}</th><th>{{ __('المرجع / السبب') }}</th>@if($entries !== null)<th>{{ __('القيد') }}</th>@endif</tr>
         @forelse($movements as $mv)
             <tr>
                 <td class="num">{{ $mv->moved_at->format('Y-m-d H:i') }}</td>
@@ -63,9 +64,10 @@
                 <td>@if($mv->project)<a href="{{ route('projects.show', $mv->project) }}">{{ $mv->project->project_no }}</a>@else — @endif</td>
                 <td>@if($mv->productionOrder)<a href="{{ route('production.show', $mv->productionOrder) }}">{{ $mv->productionOrder->order_no }}</a>@else — @endif</td>
                 <td>{{ collect([$mv->reference, $mv->reason])->filter()->join(' — ') ?: '—' }}</td>
+                @if($entries !== null)<td>@if($je = $entries[$mv->id] ?? null)<a href="{{ route('accounting.journal.show', $je->id) }}" dir="ltr">{{ $je->entry_no }}</a>@endif</td>@endif
             </tr>
         @empty
-            <tr><td colspan="7" class="muted">{{ __('لا توجد حركات بعد.') }}</td></tr>
+            <tr><td colspan="8" class="muted">{{ __('لا توجد حركات بعد.') }}</td></tr>
         @endforelse
     </table></div>
 </div>

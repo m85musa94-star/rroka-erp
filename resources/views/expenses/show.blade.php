@@ -28,6 +28,7 @@
             <dt>{{ __('دُفع من') }}</dt><dd>@if($x->paymentAccount)@if($u->hasPermission('treasury.view') || $u->hasPermission('treasury.manage'))<a href="{{ route('treasury.accounts.show', $x->paymentAccount) }}">{{ $x->paymentAccount->name }}</a>@else{{ $x->paymentAccount->name }}@endif @else<span class="warn-text">{{ __('غير محدد') }}</span>@endif</dd>
             <dt>{{ __('طريقة الدفع') }}</dt><dd>{{ __("rroka.payment_method.$x->payment_method") }}{{ $x->paidBy ? ' — '.$x->paidBy->name : '' }}</dd>
             <dt>{{ __('المرجع') }}</dt><dd>{{ $x->reference ?? '—' }}</dd>
+            @include('partials.journal-link', ['type' => 'EXPENSE', 'id' => $x->id, 'approved' => $x->status === 'APPROVED'])
         </dl>
         <div class="table-wrap"><table>
             <tr><td>{{ __('المبلغ قبل الضريبة') }}</td><td class="num">{{ number_format($x->amount, 2) }}</td></tr>

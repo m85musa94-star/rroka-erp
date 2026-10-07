@@ -26,6 +26,7 @@
             <dt>{{ __('إلى') }}</dt><dd><a href="{{ route('treasury.accounts.show', $t->to) }}">{{ $t->to->name }}</a></dd>
             <dt>{{ __('المرجع') }}</dt><dd>{{ $t->reference ?? '—' }}</dd>
             @if($t->notes)<dt>{{ __('ملاحظات') }}</dt><dd>{{ $t->notes }}</dd>@endif
+            @include('partials.journal-link', ['type' => 'TRANSFER', 'id' => $t->id, 'approved' => $t->status === 'APPROVED'])
         </dl>
         <div class="acct-figure">
             <span class="label">{{ __('المبلغ') }}</span>

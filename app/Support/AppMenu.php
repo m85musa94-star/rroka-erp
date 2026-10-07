@@ -165,6 +165,9 @@ class AppMenu
                     ['مجموعات الحسابات', 'accounting.accounts.groups', [], ['accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close']],
                     ['التقارير المالية', 'accounting.reports.index', [], ['accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close']],
                     ['الفترات المالية', 'accounting.periods', [], ['accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close']],
+                    ['الربط المحاسبي', 'accounting.posting.settings', [], ['accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close']],
+                    ['مستندات لم تُرحَّل', 'accounting.posting.backlog', [], ['accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close']],
+                    ['مطابقة الدفاتر', 'accounting.posting.reconciliation', [], ['accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close']],
                 ],
                 'expenses' => [
                     ['المصروفات', 'expenses.index', [], ['expenses.view', 'expenses.manage']],

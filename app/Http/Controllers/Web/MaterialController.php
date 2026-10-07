@@ -9,6 +9,7 @@ use App\Support\ActivityLog;
 use App\Support\ListView;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -59,9 +60,14 @@ class MaterialController extends Controller
 
     public function show(RawMaterial $material): View
     {
+        $movements = $material->movements()->with('project:id,project_no', 'productionOrder:id,order_no')->limit(200)->get();
+        $u = request()->user();
+        $accounting = collect(['accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close'])->contains(fn ($p) => $u->hasPermission($p));
+
         return view('inventory.show', [
             'material' => $material->load('balance'),
-            'movements' => $material->movements()->with('project:id,project_no', 'productionOrder:id,order_no')->limit(200)->get(),
+            'movements' => $movements,
+            'entries' => $accounting ? DB::table('journal_entries')->where('source_type', 'STOCK')->whereIn('source_id', $movements->pluck('id'))->get(['id', 'entry_no', 'source_id'])->keyBy('source_id') : null,
             'activity' => ActivityLog::for(['raw_materials' => [$material->id]]),
         ]);
     }
