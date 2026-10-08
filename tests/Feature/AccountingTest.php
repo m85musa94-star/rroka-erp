@@ -196,4 +196,24 @@ class AccountingTest extends ApiTestCase
 
         $this->actingAs($this->userWith(['expenses.view']))->get('/accounting/journal')->assertForbidden();
     }
+
+    public function test_drill_down_from_a_report_keeps_the_way_back_with_its_dates(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin)->post('/accounting/accounts/template')->assertSessionHasNoErrors();
+        $e = $this->entry($admin, '2026-02-05', [['account_id' => $this->acc('5202'), 'debit' => 500], ['account_id' => $this->acc('3201'), 'credit' => 500]], 'TEST rent');
+        $this->actingAs($admin)->post("/accounting/journal/{$e->id}/post")->assertSessionHasNoErrors();
+
+        $report = '/accounting/reports/profit-loss?date=custom&from=2026-02-01&to=2026-02-28';
+        $page = $this->actingAs($admin)->get($report)->assertOk()->getContent();
+        preg_match('#href="([^"]*accounting/accounts/'.$this->acc('5202').'[^"]*)"#', $page, $m);
+        $ledger = html_entity_decode($m[1]);
+        $this->assertStringContainsString('back=', $ledger);
+        $res = $this->actingAs($admin)->get($ledger)->assertOk()->assertSee('رجوع إلى التقرير')->assertSee(e($report), false);
+        // …and one level deeper, the entry still leads back to the same report.
+        preg_match('#href="([^"]*accounting/journal/'.$e->id.'\?[^"]*)"#', $res->getContent(), $m2);
+        $this->actingAs($admin)->get(html_entity_decode($m2[1]))->assertOk()->assertSee(e($report), false);
+        // Only a local path is accepted.
+        $this->actingAs($admin)->get('/accounting/journal/'.$e->id.'?back='.urlencode('https://evil.example'))->assertOk()->assertDontSee('رجوع إلى التقرير');
+    }
 }

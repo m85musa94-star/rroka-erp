@@ -4,6 +4,7 @@
     @include('partials.control-panel', ['crumbs' => [[__('القيود'), route('accounting.journal.index')], [$e->title(), null]]])
 @endsection
 @section('content')
+@include('partials.back-link')
 @php($u = auth()->user())
 @php($diff = round($debit - $credit, 2))
 <div class="rec-bar">

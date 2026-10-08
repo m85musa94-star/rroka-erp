@@ -23,9 +23,9 @@
                 @endif
                 @if(! empty($l['code']))<bdi class="code" dir="ltr">{{ $l['code'] }}</bdi>@endif
                 @if($l['kind'] === 'account' && $links && empty($l['foldable']))
-                    <a href="{{ route('accounting.accounts.show', [$l['account_id'], 'from' => $r['columns'][0]['from'] ?? $o->from, 'to' => $r['columns'][0]['to'] ?? $o->to]) }}">{{ $l['label'] }}</a>
+                    <a href="{{ route('accounting.accounts.show', [$l['account_id'], 'from' => $r['columns'][0]['from'] ?? $o->from, 'to' => $r['columns'][0]['to'] ?? $o->to] + \App\Support\BackLink::carry(request()->getRequestUri())) }}">{{ $l['label'] }}</a>
                 @elseif($l['kind'] === 'detail' && $links && ! empty($l['entry_id']))
-                    <a href="{{ route('accounting.journal.show', $l['entry_id']) }}">{{ $l['label'] }}</a>
+                    <a href="{{ route('accounting.journal.show', [$l['entry_id']] + \App\Support\BackLink::carry(request()->getRequestUri())) }}">{{ $l['label'] }}</a>
                 @else
                     {{ $l['label'] }}
                 @endif

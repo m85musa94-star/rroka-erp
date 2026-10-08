@@ -4,6 +4,7 @@
     @include('partials.control-panel', ['crumbs' => [[__('دليل الحسابات'), route('accounting.accounts.index')], [$a->code.' — '.$a->label(), null]]])
 @endsection
 @section('content')
+@include('partials.back-link')
 <div class="card">
     <h1 class="rec-title">{{ $a->code }} — {{ $a->label() }}</h1>
     @if($a->is_postable && auth()->user()->hasPermission('accounting.manage'))<div class="actions" style="float:inline-end"><a class="btn ghost sm" href="{{ route('accounting.accounts.edit', $a) }}">{{ __('إعدادات الحساب') }}</a></div>@endif
@@ -12,6 +13,7 @@
         @if($isGroup) · {{ __('حساب تجميعي: يعرض حركة كل الحسابات تحته') }}@endif
         @if($a->system_role) · {{ __("rroka.account_role.$a->system_role") }}@endif</p>
     <form method="get" class="grid g4" style="align-items:end">
+        @if($back = \App\Support\BackLink::current())<input type="hidden" name="back" value="{{ $back }}">@endif
         <div class="field"><label>{{ __('من') }}</label><input type="date" name="from" value="{{ $from }}"></div>
         <div class="field"><label>{{ __('إلى') }}</label><input type="date" name="to" value="{{ $to }}"></div>
         <div class="actions"><button class="btn ghost">{{ __('عرض') }}</button>
@@ -24,7 +26,7 @@
     @forelse($lines as $l)
         <tr>
             <td class="num">{{ $l->entry_date }}</td>
-            <td><a href="{{ route('accounting.journal.show', $l->entry_id) }}" dir="ltr">{{ $l->entry_no }}</a></td>
+            <td><a href="{{ route('accounting.journal.show', [$l->entry_id] + \App\Support\BackLink::carry()) }}" dir="ltr">{{ $l->entry_no }}</a></td>
             @if($isGroup)<td class="num" dir="ltr">{{ $l->account_code }}</td>@endif
             <td>{{ $l->description ?: $l->entry_description }}</td>
             <td>{{ $l->project_no ?? '' }}</td>
