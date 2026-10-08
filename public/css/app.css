@@ -570,3 +570,8 @@ table.pivot tbody tr:nth-child(even) td { background: var(--surface-2); }
 .report-section .report-icon { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--sec) 45%, transparent), var(--tile-shadow); }
 .report-jump a[class^="sec-"] { border-inline-start: 4px solid var(--sec); }
 .back-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: -4px 0 12px; }
+/* Reports: a very light line between data rows (totals keep their own rules) */
+.fin-report tbody td, table.pivot tbody td { border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent); }
+.fin-report tr.fr-heading td { border-bottom: none; }
+.fin-report tr.fr-total td { border-top: 1px solid var(--ink); }
+.fin-report tr.fr-grand td { border-top: 1.5px solid var(--ink); border-bottom: 3px double var(--ink); }
