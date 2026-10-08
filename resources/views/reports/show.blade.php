@@ -81,6 +81,19 @@
     </div>
 </form>
 
+@php
+    $grandV = $pivot['grand'];
+    $canShare = $m['additive'] && $grandV !== null && (float) $grandV > 0;
+    $top = collect($pivot['rows'])->sortByDesc(fn ($r) => (float) ($pivot['rowTotals'][$r['key']] ?? 0))->first();
+    $topV = $top ? ($pivot['rowTotals'][$top['key']] ?? null) : null;
+    $kpis = $pivot['rows'] ? [
+        [$m['label'], $fmt($grandV), $rangeHtml ? strip_tags($rangeHtml) : __('كل الفترات'), null],
+        [__('عدد :d', ['d' => $dims[$row]['label']]), (string) count($pivot['rows']), null, null],
+        [__('الأعلى'), $top['label'] ?? '—', $topV !== null ? $fmt($topV).($canShare ? ' · '.number_format($topV / $grandV * 100, 1).'%' : '') : null, null],
+    ] : [];
+@endphp
+@include('partials.kpi-strip', ['kpis' => $kpis])
+
 @if(! $pivot['rows'])
     <div class="card empty-state"><strong>{{ __('لا توجد بيانات') }}</strong>{{ __('لا توجد سجلات تطابق الفلاتر المختارة.') }}</div>
 @elseif($lv->view === 'graph')
@@ -145,6 +158,7 @@
                     <th>{{ $dims[$row]['label'] }} @if($col)<span class="muted">/ {{ $dims[$col]['label'] }}</span>@endif</th>
                     @foreach($pivot['cols'] as $c)<th class="num">{{ $c['label'] }}</th>@endforeach
                     <th class="num">{{ __('الإجمالي') }}</th>
+                    @if($canShare)<th class="num share-col">{{ __('النسبة') }}</th>@endif
                 </tr>
             </thead>
             <tbody>
@@ -153,6 +167,10 @@
                         <td>{{ $r['label'] }}</td>
                         @foreach($pivot['cols'] as $c)<td class="num">{{ $fmt($pivot['cells'][$r['key']][$c['key']] ?? null) }}</td>@endforeach
                         <td class="num strong">{{ $fmt($pivot['rowTotals'][$r['key']] ?? null) }}</td>
+                        @if($canShare)
+                            @php($sh = max(0, (float) ($pivot['rowTotals'][$r['key']] ?? 0)) / $grandV * 100)
+                            <td class="num share-col"><span class="share-bar"><i style="width: {{ min(100, $sh) }}%"></i></span>{{ number_format($sh, 1) }}%</td>
+                        @endif
                     </tr>
                 @endforeach
             </tbody>
@@ -161,6 +179,7 @@
                     <th>{{ __('الإجمالي') }}</th>
                     @foreach($pivot['cols'] as $c)<th class="num">{{ $fmt($pivot['colTotals'][$c['key']] ?? null) }}</th>@endforeach
                     <th class="num">{{ $fmt($pivot['grand']) }}</th>
+                    @if($canShare)<th class="num share-col">100%</th>@endif
                 </tr>
             </tfoot>
         </table></div>

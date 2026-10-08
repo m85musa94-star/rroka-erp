@@ -46,6 +46,28 @@
     </div>
 </div>
 
+@php
+    $mcol = collect($r['columns'])->firstWhere('type', 'money')['key'] ?? null;
+    $lineVal = fn ($id) => $mcol ? (collect($r['lines'])->firstWhere('id', $id)['values'][$mcol] ?? null) : null;
+    $m2 = fn ($v) => $v === null ? '—' : ((float) $v < 0 ? '('.number_format(abs($v), 2).')' : number_format($v, 2));
+    $kpis = [];
+    if ($key === 'profit-loss') {
+        $inc = $lineVal('income'); $gross = $lineVal('gross'); $net = $lineVal('net');
+        $kpis = [
+            [__('الإيرادات'), $m2($inc), null, null],
+            [__('مجمل الربح'), $m2($gross), $inc ? __('هامش :p', ['p' => "\u{200E}".number_format($gross / $inc * 100, 1).'%']) : null, null],
+            [__('صافي الربح (الخسارة)'), $m2($net), $inc ? __('هامش :p', ['p' => "\u{200E}".number_format($net / $inc * 100, 1).'%']) : null, $net === null ? null : ($net < 0 ? 'bad' : 'ok')],
+        ];
+    } elseif ($key === 'balance-sheet') {
+        $kpis = [
+            [__('إجمالي الأصول'), $m2($lineVal('total_assets')), null, null],
+            [__('إجمالي الخصوم'), $m2($lineVal('total_liab')), null, null],
+            [__('إجمالي حقوق الملكية'), $m2($lineVal('total_equity')), null, ($lineVal('total_equity') ?? 0) < 0 ? 'bad' : null],
+        ];
+    }
+@endphp
+@include('partials.kpi-strip', ['kpis' => $kpis])
+
 <div class="card fin-sheet">
     <div class="fin-head">
         <div>

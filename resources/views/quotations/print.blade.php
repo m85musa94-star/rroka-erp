@@ -13,12 +13,12 @@
         @if($q->valid_until)<tr><td>{{ __('صالح حتى') }}</td><td class="num">{{ $q->valid_until->format('Y-m-d') }}</td></tr>@endif
     </table>
 </div>
-<table class="meta">
+<div class="party"><table class="meta">
     <tr><td>{{ __('العميل') }}</td><td><strong>{{ $q->client->business_name }}</strong></td></tr>
     @if($q->client->vat_number)<tr><td>{{ __('الرقم الضريبي للعميل') }}</td><td class="num">{{ $q->client->vat_number }}</td></tr>@endif
     @if($q->client->phone)<tr><td>{{ __('الجوال') }}</td><td class="num">{{ $q->client->phone }}</td></tr>@endif
     @if($q->client->city || $q->client->address)<tr><td>{{ __('العنوان') }}</td><td>{{ collect([$q->client->city, $q->client->address])->filter()->join(__('، ')) }}</td></tr>@endif
-</table>
+</table></div>
 
 <table class="lines">
     <thead><tr><th>#</th>@if($hasImg)<th></th>@endif<th>{{ __('الوصف') }}</th><th class="num">{{ __('الكمية') }}</th><th>{{ __('الوحدة') }}</th><th class="num">{{ __('سعر الوحدة') }}</th><th class="num">{{ __('الإجمالي') }}</th></tr></thead>

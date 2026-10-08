@@ -81,16 +81,19 @@
                     </a></td>
                 @endif</tr>
         @endforeach
-        <tr><td colspan="{{ $hasImg ? 6 : 5 }}">{{ __('المجموع') }}</td><td class="num">{{ number_format($totals['subtotal'], 2) }}</td></tr>
-        <tr><td colspan="{{ $hasImg ? 6 : 5 }}">{{ __('الخصم') }}</td><td class="num">{{ number_format($totals['discount_amount'], 2) }}</td></tr>
-        <tr><th colspan="{{ $hasImg ? 6 : 5 }}">{{ __('الصافي قبل ضريبة القيمة المضافة') }}</th><th class="num">{{ number_format($totals['net_before_vat'], 2) }}</th></tr>
-        @if($totals['vat_pct'] !== null)
-            <tr><td colspan="{{ $hasImg ? 6 : 5 }}">{{ __('ضريبة القيمة المضافة :p%', ['p' => rtrim(rtrim(number_format($totals['vat_pct'], 2), '0'), '.')]) }}</td><td class="num">{{ number_format($totals['vat_amount'], 2) }}</td></tr>
-            <tr><th colspan="{{ $hasImg ? 6 : 5 }}">{{ __('الإجمالي شامل الضريبة') }}</th><th class="num">{{ number_format($totals['total_incl_vat'], 2) }}</th></tr>
-        @else
-            <tr><td colspan="{{ $hasImg ? 6 : 5 }}">{{ __('بلا ضريبة قيمة مضافة') }}</td><td class="num">—</td></tr>
-        @endif
     </table></div>
+    <div class="q-totals">
+        <div><span>{{ __('المجموع') }}</span><span class="num">{{ number_format($totals['subtotal'], 2) }}</span></div>
+        @if((float) $totals['discount_amount'] > 0)<div><span>{{ __('الخصم') }}</span><span class="num">− {{ number_format($totals['discount_amount'], 2) }}</span></div>@endif
+        <div class="sub"><span>{{ __('الصافي قبل ضريبة القيمة المضافة') }}</span><span class="num">{{ number_format($totals['net_before_vat'], 2) }}</span></div>
+        @if($totals['vat_pct'] !== null)
+            <div><span>{{ __('ضريبة القيمة المضافة :p%', ['p' => rtrim(rtrim(number_format($totals['vat_pct'], 2), '0'), '.')]) }}</span><span class="num">{{ number_format($totals['vat_amount'], 2) }}</span></div>
+            <div class="grand"><span>{{ __('الإجمالي شامل الضريبة') }}</span><span class="num">{{ number_format($totals['total_incl_vat'], 2) }} <small>{{ __('ريال') }}</small></span></div>
+        @else
+            <div><span>{{ __('بلا ضريبة قيمة مضافة') }}</span><span class="num">—</span></div>
+            <div class="grand"><span>{{ __('الإجمالي') }}</span><span class="num">{{ number_format($totals['net_before_vat'], 2) }} <small>{{ __('ريال') }}</small></span></div>
+        @endif
+    </div>
     <p class="hint">{{ __('الضريبة محسوبة هنا للعرض فقط؛ الفاتورة الرسمية والإقرار الضريبي من دفترة.') }}</p>
     @if($q->requires_costing && in_array($q->status, ['DRAFT', 'SENT'], true))<p class="hint">{{ __('لا يُعتمد هذا العرض قبل اكتمال تقدير التكلفة لكل بنوده.') }}</p>@endif
 </div>

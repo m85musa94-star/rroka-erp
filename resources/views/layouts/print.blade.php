@@ -27,6 +27,8 @@
         .doc { width: 100%; position: relative; z-index: 1; }
         .doc-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12mm; margin-bottom: 6mm; }
         .doc-title { font-size: 20pt; font-weight: 700; margin: 0; letter-spacing: .5px; }
+        .doc-title::after { content: ''; display: block; width: 16mm; height: 1mm; background: var(--accent); border-radius: 1mm; margin-top: 1.5mm; }
+        .party { background: var(--soft); border-radius: 2mm; padding: 3mm 4mm; margin-bottom: 2mm; break-inside: avoid; }
         .doc-no { font-size: 11pt; color: var(--muted); direction: ltr; text-align: start; }
         .meta { border-collapse: collapse; }
         .meta td { padding: 1mm 0; vertical-align: top; }
@@ -35,11 +37,14 @@
         table.lines th { background: var(--soft); color: var(--ink); font-weight: 600; font-size: 10pt; text-align: start; padding: 2.2mm 2mm; border-bottom: 1.5px solid var(--accent); }
         table.lines td { padding: 2.2mm 2mm; border-bottom: 1px solid var(--line); vertical-align: top; }
         table.lines tr { break-inside: avoid; }
+        table.lines tbody tr:nth-child(even) td { background: #fbf9f6; }
+        table.lines td:first-child { color: var(--muted); }
         .num { text-align: end; direction: ltr; font-variant-numeric: tabular-nums; white-space: nowrap; }
         th.num { text-align: end; }
         .totals { width: 100mm; margin-inline-start: auto; margin-top: 4mm; border-collapse: collapse; break-inside: avoid; }
         .totals td { padding: 1.6mm 2mm; }
-        .totals tr.grand td { border-top: 1.5px solid var(--accent); font-weight: 700; font-size: 12pt; }
+        .totals tr.grand td { border-top: 1.5px solid var(--accent); font-weight: 700; font-size: 12.5pt; background: var(--soft); padding: 2.6mm 3mm; }
+        .totals tr.grand td:last-child { color: #6b4a33; }
         .notes { margin-top: 6mm; break-inside: avoid; }
         .notes h3 { font-size: 11pt; margin: 0 0 1mm; color: var(--accent); }
         .line-img { width: 22mm; height: 16mm; object-fit: cover; border-radius: 1.5mm; display: block; }

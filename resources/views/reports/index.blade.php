@@ -9,6 +9,7 @@
     <div class="report-list">
         @foreach($financial as $k => $r)
             <a class="card report-card" href="{{ route('accounting.reports.show', $k) }}">
+                <span class="report-icon">@include('partials.app-icon', ['key' => 'accounting', 'size' => 24])</span>
                 <strong>{{ $r['title'] }}</strong>
                 <span class="muted">{{ $r['description'] }}</span>
             </a>
@@ -20,6 +21,7 @@
     <div class="report-list">
         @foreach($reports as $r)
             <a class="card report-card" href="{{ route('reports.show', $r->key()) }}">
+                <span class="report-icon">@include('partials.app-icon', ['key' => ['quotations' => 'quotations', 'projects' => 'projects', 'profitability' => 'costing', 'purchases' => 'purchasing', 'expenses' => 'expenses', 'consumption' => 'inventory'][$r->key()] ?? 'reports', 'size' => 24])</span>
                 <strong>{{ $r->title() }}</strong>
                 <span class="muted">{{ $r->description() }}</span>
             </a>

@@ -519,3 +519,32 @@ td.center, th.center { text-align: center; }
 .jc-links { display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; border-top: 1px solid var(--line); padding-top: 8px; }
 .theme-menu > summary { display: inline-flex; align-items: center; gap: 6px; }
 @media (max-width: 860px) { .theme-label { display: none; } }
+
+/* Reports and quotations: headline figures, share bars, totals box */
+.kpi-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.kpi-tile { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 2px; border-top: 3px solid var(--brand); box-shadow: var(--shadow-sm); }
+.kpi-tile.tone-ok { border-top-color: var(--ok); } .kpi-tile.tone-ok .kpi-value { color: var(--ok); }
+.kpi-tile.tone-bad { border-top-color: var(--bad); } .kpi-tile.tone-bad .kpi-value { color: var(--bad); }
+.kpi-label { color: var(--muted); font-size: 13px; }
+.kpi-value { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kpi-sub { color: var(--muted); font-size: 12.5px; }
+.share-col { white-space: nowrap; color: var(--muted); }
+.share-bar { display: inline-block; width: 90px; height: 7px; background: var(--surface-2); border-radius: 99px; overflow: hidden; vertical-align: middle; margin-inline-end: 8px; }
+.share-bar > i { display: block; height: 100%; background: var(--brand); border-radius: 99px; }
+table.pivot th { position: sticky; top: 0; }
+table.pivot td.num, table.pivot th.num { font-variant-numeric: tabular-nums; }
+table.pivot tbody tr:nth-child(even) td { background: var(--surface-2); }
+.report-icon { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; background: var(--tile); box-shadow: var(--tile-shadow); margin-bottom: 4px; }
+.report-card { border-top: 3px solid transparent; transition: border-color .15s, box-shadow .15s; }
+.report-card:hover { border-top-color: var(--brand); }
+.fin-report tr.fr-section td:first-child { box-shadow: inset -3px 0 0 var(--brand); }
+[dir=ltr] .fin-report tr.fr-section td:first-child { box-shadow: inset 3px 0 0 var(--brand); }
+.fin-report tr.fr-grand td { background: var(--brand-soft); }
+.q-totals { width: min(380px, 100%); margin-inline-start: auto; margin-top: 12px; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.q-totals > div { display: flex; justify-content: space-between; gap: 12px; padding: 8px 14px; border-bottom: 1px solid var(--line); font-size: 14px; }
+.q-totals > div:last-child { border-bottom: none; }
+.q-totals .num { font-variant-numeric: tabular-nums; direction: ltr; }
+.q-totals .sub { font-weight: 600; background: var(--surface-2); }
+.q-totals .grand { font-weight: 700; font-size: 16px; background: var(--brand-soft); color: var(--brand); }
+.q-totals .grand small { font-size: 12px; font-weight: 600; }
+.report-card { align-content: start; }

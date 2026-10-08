@@ -1901,5 +1901,8 @@
     "تطبيق هذا المظهر على كل المستخدمين؟ يستطيع كل مستخدم تغييره لنفسه بعدها.": "Apply this appearance to every user? Each can still change their own afterwards.",
     "مظهر الألوان لكل المستخدمين": "Colour appearance for all users",
     "تطبيق على الجميع": "Apply to everyone",
-    "كل مستخدم يستطيع تغييره لنفسه من زر «المظهر» أعلى الصفحة.": "Each user can change it from the “Appearance” button at the top of the page."
+    "كل مستخدم يستطيع تغييره لنفسه من زر «المظهر» أعلى الصفحة.": "Each user can change it from the “Appearance” button at the top of the page.",
+    "عدد :d": "Number of :d",
+    "الأعلى": "Highest",
+    "هامش :p": "Margin :p"
 }
