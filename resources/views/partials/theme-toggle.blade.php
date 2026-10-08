@@ -7,7 +7,7 @@
 ])
 @php($labels = ['system' => __('تلقائي (حسب الجهاز)'), 'light' => __('فاتح'), 'dark' => __('داكن')])
 <details class="theme-menu">
-    <summary class="btn ghost sm" title="{{ __('مظهر الألوان') }}" aria-label="{{ __('مظهر الألوان') }}">{!! $icons[$mode] !!}</summary>
+    <summary class="btn ghost sm" title="{{ __('مظهر الألوان') }}" aria-label="{{ __('مظهر الألوان') }}">{!! $icons[$mode] !!} <span class="theme-label">{{ __('المظهر') }}</span></summary>
     <form method="post" action="{{ route('theme') }}" class="theme-list">@csrf
         @foreach(\App\Support\Theme::MODES as $m)
             <button type="submit" name="mode" value="{{ $m }}" aria-pressed="{{ $m === $mode ? 'true' : 'false' }}">{!! $icons[$m] !!} {{ $labels[$m] }}</button>

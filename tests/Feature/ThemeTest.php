@@ -55,4 +55,18 @@ class ThemeTest extends ApiTestCase
             $this->assertStringNotContainsString($raw, $css);
         }
     }
+
+    public function test_admin_sets_one_user_or_everyone_and_each_can_still_change(): void
+    {
+        $admin = $this->admin();
+        $other = $this->userWith(['clients.view']);
+        $this->actingAs($other)->get('/')->assertSee('المظهر');   // every user has the labelled button
+        $this->actingAs($admin)->put("/users/{$other->id}", ['name' => $other->name, 'email' => $other->email, 'is_active' => 1, 'theme' => 'dark'])->assertSessionHasNoErrors();
+        $this->assertSame('dark', $other->fresh()->theme);
+        $this->actingAs($admin)->post('/users/theme', ['theme' => 'light'])->assertSessionHasNoErrors();
+        $this->assertSame(['light'], User::pluck('theme')->unique()->values()->all());
+        $this->actingAs($other->fresh())->post('/theme', ['mode' => 'system'])->assertRedirect();
+        $this->assertSame('system', $other->fresh()->theme);
+        $this->actingAs($other->fresh())->post('/users/theme', ['theme' => 'dark'])->assertForbidden();
+    }
 }

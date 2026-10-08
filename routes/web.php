@@ -398,6 +398,7 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
     });
 
     Route::middleware('permission:users.manage')->group(function () {
+        Route::post('/users/theme', [UserController::class, 'themeAll'])->name('users.theme');
         Route::resource('users', UserController::class)->except(['show', 'destroy']);
         Route::resource('roles', RoleController::class)->except(['show']);
         Route::get('/settings/demo', [DemoDataController::class, 'index'])->name('demo.index');

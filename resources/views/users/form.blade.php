@@ -20,6 +20,9 @@
             <input type="checkbox" name="is_active" value="1" style="width:auto" @checked(old('is_active', $user->is_active))> {{ __('الحساب نشط') }}
         </label></div>
     @endif
+    <div class="field" style="max-width:320px"><label>{{ __('مظهر الألوان') }}</label>
+        <select name="theme">@foreach(\App\Support\Theme::MODES as $m)<option value="{{ $m }}" @selected(old('theme', $user->theme ?? 'system') === $m)>{{ __(['system' => 'تلقائي (حسب الجهاز)', 'light' => 'فاتح', 'dark' => 'داكن'][$m]) }}</option>@endforeach</select>
+        <div class="hint">{{ __('يستطيع المستخدم تغييره بنفسه في أي وقت من زر «المظهر» أعلى الصفحة.') }}</div></div>
     <div class="field"><label>{{ __('الأدوار') }}</label>
         @forelse($roles as $r)
             <label style="display:flex;gap:6px;align-items:center;color:var(--ink)">

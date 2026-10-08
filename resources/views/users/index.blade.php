@@ -4,6 +4,12 @@
     @include('partials.control-panel', ['crumbs' => [[__('الإعدادات'), null], [__('المستخدمون'), null]]])
 @endsection
 @section('content')
+<form method="post" action="{{ route('users.theme') }}" class="card inline-form" data-confirm="{{ __('تطبيق هذا المظهر على كل المستخدمين؟ يستطيع كل مستخدم تغييره لنفسه بعدها.') }}">@csrf
+    <strong>{{ __('مظهر الألوان لكل المستخدمين') }}</strong>
+    <select name="theme">@foreach(\App\Support\Theme::MODES as $m)<option value="{{ $m }}">{{ __(['system' => 'تلقائي (حسب الجهاز)', 'light' => 'فاتح', 'dark' => 'داكن'][$m]) }}</option>@endforeach</select>
+    <button class="btn ghost sm">{{ __('تطبيق على الجميع') }}</button>
+    <span class="hint">{{ __('كل مستخدم يستطيع تغييره لنفسه من زر «المظهر» أعلى الصفحة.') }}</span>
+</form>
 <div class="card">
     <div class="actions" style="justify-content:space-between;margin-bottom:12px"><p class="muted" style="margin:0">{{ __('كل مستخدم يدخل ببريده وكلمة مروره، ويرى ما تسمح به أدواره فقط.') }}</p><a class="btn" href="{{ route('users.create') }}">{{ __('+ مستخدم جديد') }}</a></div>
     <div class="table-wrap"><table>

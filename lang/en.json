@@ -1894,5 +1894,12 @@
     "العملاء الحاليون والمحتملون.": "Current and prospective clients.",
     "نسبة ضريبة القيمة المضافة وسياسة التسعير": "VAT rate and pricing policy",
     "النسبة المعتمدة وهامش الربح المستهدف.": "The approved rate and the target margin.",
-    "بطاقات تكلفة الموظفين والآلات من البيانات الفعلية (لا تقديرات).": "Employee and machine cost cards from actual data (no estimates)."
+    "بطاقات تكلفة الموظفين والآلات من البيانات الفعلية (لا تقديرات).": "Employee and machine cost cards from actual data (no estimates).",
+    "المظهر": "Appearance",
+    "يستطيع المستخدم تغييره بنفسه في أي وقت من زر «المظهر» أعلى الصفحة.": "The user can change it any time from the “Appearance” button at the top of the page.",
+    "طُبِّق المظهر على كل المستخدمين؛ يستطيع كل مستخدم تغييره لنفسه.": "The appearance was applied to every user; each can change their own.",
+    "تطبيق هذا المظهر على كل المستخدمين؟ يستطيع كل مستخدم تغييره لنفسه بعدها.": "Apply this appearance to every user? Each can still change their own afterwards.",
+    "مظهر الألوان لكل المستخدمين": "Colour appearance for all users",
+    "تطبيق على الجميع": "Apply to everyone",
+    "كل مستخدم يستطيع تغييره لنفسه من زر «المظهر» أعلى الصفحة.": "Each user can change it from the “Appearance” button at the top of the page."
 }

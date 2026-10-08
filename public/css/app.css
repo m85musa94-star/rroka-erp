@@ -517,3 +517,5 @@ td.center, th.center { text-align: center; }
 .jc-todo { font-size: 13px; color: var(--warn); }
 .jc-todo.bad, .jc-todo.bad a { color: var(--bad); }
 .jc-links { display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; border-top: 1px solid var(--line); padding-top: 8px; }
+.theme-menu > summary { display: inline-flex; align-items: center; gap: 6px; }
+@media (max-width: 860px) { .theme-label { display: none; } }
