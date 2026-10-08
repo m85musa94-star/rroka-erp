@@ -6,7 +6,7 @@
     .fin-report { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
     .fin-report th { text-align: start; font-weight: 600; border-bottom: 1.5px solid var(--accent); padding: 1.6mm 1.5mm; background: var(--soft); }
     .fin-report th.num, .fin-report td.num { text-align: end; direction: ltr; font-variant-numeric: tabular-nums; white-space: nowrap; }
-    .fin-report td { padding: 1.3mm 1.5mm; border-bottom: .5px solid #d3ccc2; }
+    .fin-report td { padding: 1.3mm 1.5mm; border-bottom: .75px solid #a9a197; }
     .fin-report tr { break-inside: avoid; }
     .fin-report .code { color: var(--muted); margin-inline-end: 2mm; }
     .fin-report .fr-section td, .fin-report .fr-heading td { font-weight: 700; }

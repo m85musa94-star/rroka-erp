@@ -6,7 +6,7 @@
 <style>
     .pv { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
     .pv th { background: var(--soft); font-weight: 600; text-align: start; padding: 1.8mm 1.5mm; border-bottom: 1.5px solid var(--accent); }
-    .pv td { padding: 1.4mm 1.5mm; border-bottom: .5px solid #d3ccc2; }
+    .pv td { padding: 1.4mm 1.5mm; border-bottom: .75px solid #a9a197; }
     .pv .num { text-align: end; direction: ltr; font-variant-numeric: tabular-nums; white-space: nowrap; }
     .pv tfoot th { border-top: 1px solid var(--ink); border-bottom: 3px double var(--ink); background: none; }
     .pv tr { break-inside: avoid; }
