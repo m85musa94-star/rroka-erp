@@ -559,3 +559,13 @@ table.pivot tbody tr:nth-child(even) td { background: var(--surface-2); }
 @media (min-width: 1500px) { .report-list { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); } .main { max-width: 1680px; } }
 @media (max-width: 600px) { .report-card .muted { font-size: 13px; } .kpi-value { font-size: 20px; } .share-bar { width: 50px; } }
 @media (max-width: 600px) { .kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .kpi-strip .kpi-tile:first-child { grid-column: 1 / -1; } .kpi-tile { padding: 10px 12px; } }
+
+/* Report sections: each bundle has its own accent (validated series colours, light and dark) */
+.sec-finance { --sec: var(--series-1); } .sec-sales { --sec: var(--series-2); } .sec-production { --sec: var(--series-3); }
+.sec-inventory { --sec: var(--series-4); } .sec-purchasing { --sec: var(--series-5); } .sec-hr { --sec: var(--series-6); }
+.report-band { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 6px 0 12px; padding: 10px 16px; border-radius: 10px;
+  font-size: 16px; font-weight: 700; color: var(--ink); background: color-mix(in srgb, var(--sec) 16%, var(--surface)); border-inline-start: 5px solid var(--sec); }
+.band-count { font-size: 12.5px; font-weight: 700; min-width: 26px; text-align: center; padding: 2px 8px; border-radius: 999px; background: var(--sec); color: var(--surface); }
+.report-section .report-card:hover { border-top-color: var(--sec); }
+.report-section .report-icon { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--sec) 45%, transparent), var(--tile-shadow); }
+.report-jump a[class^="sec-"] { border-inline-start: 4px solid var(--sec); }

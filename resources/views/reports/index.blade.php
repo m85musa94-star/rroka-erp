@@ -15,11 +15,11 @@
     $sections = array_filter($sections, fn ($s) => $s['items']);
 @endphp
 <nav class="report-jump" aria-label="{{ __('أقسام التقارير') }}">
-    @foreach($sections as $k => $s)<a href="#sec-{{ $k }}">{{ $s['label'] }} <span>{{ count($s['items']) }}</span></a>@endforeach
+    @foreach($sections as $k => $s)<a class="sec-{{ $k }}" href="#sec-{{ $k }}">{{ $s['label'] }} <span>{{ count($s['items']) }}</span></a>@endforeach
 </nav>
 @foreach($sections as $k => $s)
-    <section class="report-section" id="sec-{{ $k }}">
-        <h2 class="report-group">{{ $s['label'] }} <span class="grp-count">({{ count($s['items']) }})</span></h2>
+    <section class="report-section sec-{{ $k }}" id="sec-{{ $k }}">
+        <h2 class="report-band"><span>{{ $s['label'] }}</span> <span class="band-count">{{ count($s['items']) }}</span></h2>
         <div class="report-list">
             @foreach($s['items'] as $i)
                 <a class="card report-card" href="{{ $i['url'] }}">
