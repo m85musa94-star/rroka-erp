@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\Employee;
 use App\Models\User;
+use App\Reports\ReportRegistry;
 use App\Services\DemoData;
 
 /**
@@ -25,7 +26,7 @@ class AppMenu
             ['key' => 'treasury', 'label' => __('الخزينة والعهد'), 'route' => 'treasury.accounts.index', 'match' => 'treasury.*', 'permission' => ['treasury.view', 'treasury.manage'], 'group' => 'buy'],
             ['key' => 'accounting', 'label' => __('المحاسبة'), 'route' => 'accounting.dashboard', 'match' => 'accounting.*', 'permission' => ['accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close'], 'group' => 'buy'],
             ['key' => 'expenses', 'label' => __('المصروفات'), 'route' => 'expenses.index', 'match' => ['expenses.*', 'expense-categories.*'], 'permission' => ['expenses.view', 'expenses.manage'], 'group' => 'buy'],
-            ['key' => 'reports', 'label' => __('التقارير'), 'route' => 'reports.index', 'match' => 'reports.*', 'permission' => ['quotations.view', 'projects.view', 'costing.view', 'purchases.view', 'expenses.view', 'inventory.view', 'accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close'], 'group' => 'reports'],
+            ['key' => 'reports', 'label' => __('التقارير'), 'route' => 'reports.index', 'match' => 'reports.*', 'permission' => self::reportPermissions(), 'group' => 'reports'],
             ['key' => 'production', 'label' => __('التصنيع'), 'route' => 'production.index', 'match' => ['production.*', 'designs.*', 'design-versions.*'], 'permission' => ['production.manage', 'production.log_time', 'quality.inspect', 'designs.manage', 'designs.release', 'bom.manage'], 'group' => 'mrp'],
             ['key' => 'inventory', 'label' => __('المخزون'), 'route' => 'materials.index', 'match' => 'materials.*', 'permission' => ['inventory.view', 'inventory.move'], 'group' => 'mrp'],
             ['key' => 'employees', 'label' => __('الموظفون'), 'route' => 'employees.index', 'match' => ['employees.*', 'departments.*', 'contracts.*'], 'permission' => ['hr.view', 'hr.manage', 'hr.contracts'], 'group' => 'hr'],
@@ -40,6 +41,17 @@ class AppMenu
             ['key' => 'roles', 'label' => __('الأدوار والصلاحيات'), 'route' => 'roles.index', 'match' => 'roles.*', 'permission' => 'users.manage', 'group' => 'settings'],
             ['key' => 'demo', 'label' => __('البيانات التجريبية'), 'route' => 'demo.index', 'match' => 'demo.*', 'permission' => 'users.manage', 'group' => 'settings'],
         ];
+    }
+
+    /** Whoever may open any report (or the financial statements) sees the Reports app. */
+    private static function reportPermissions(): array
+    {
+        $perms = ['accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close'];
+        foreach (ReportRegistry::all() as $r) {
+            $perms = array_merge($perms, $r->permissions());
+        }
+
+        return array_values(array_unique($perms));
     }
 
     /** Built apps the user may open first, then planned ones (never clickable). */

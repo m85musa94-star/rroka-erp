@@ -85,7 +85,7 @@ class ReportsTest extends ApiTestCase
         $this->actingAs($sales)->get('/reports/profitability')->assertForbidden();
         $this->actingAs($sales)->get('/reports/quotations')->assertOk();
 
-        $nobody = $this->userWith(['clients.view']);
+        $nobody = $this->userWith(['studio.view']);   // a module without reports
         $this->actingAs($nobody)->get('/reports')->assertForbidden();
         $this->actingAs($nobody)->get('/')->assertDontSee('التقارير');
     }

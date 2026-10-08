@@ -39,6 +39,7 @@ use App\Http\Controllers\Web\SupplierController;
 use App\Http\Controllers\Web\ThemeController;
 use App\Http\Controllers\Web\TreasuryTransferController;
 use App\Http\Controllers\Web\UserController;
+use App\Reports\ReportRegistry;
 use App\Support\Release;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -96,7 +97,7 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
 
     // Per-report permissions are checked in the controller.
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('/reports/{key}', [ReportController::class, 'show'])->whereIn('key', ['quotations', 'projects', 'profitability', 'purchases', 'expenses', 'consumption'])->name('reports.show');
+    Route::get('/reports/{key}', [ReportController::class, 'show'])->whereIn('key', array_keys(ReportRegistry::all()))->name('reports.show');
 
     Route::middleware('permission:settings.cost_rates')->prefix('settings/rates')->name('rates.')->group(function () {
         Route::get('/', [CostRateController::class, 'index'])->name('index');

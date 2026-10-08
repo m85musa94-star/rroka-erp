@@ -548,3 +548,14 @@ table.pivot tbody tr:nth-child(even) td { background: var(--surface-2); }
 .q-totals .grand { font-weight: 700; font-size: 16px; background: var(--brand-soft); color: var(--brand); }
 .q-totals .grand small { font-size: 12px; font-weight: 600; }
 .report-card { align-content: start; }
+
+/* Reports page: sections with a jump bar; cards size to the screen */
+.report-jump { position: sticky; top: 0; z-index: 5; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 8px 2px; margin: -6px 0 8px; background: var(--bg); }
+.report-jump a { white-space: nowrap; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; font-size: 13px; color: var(--ink); background: var(--surface); text-decoration: none; }
+.report-jump a:hover { background: var(--hover); }
+.report-jump a span { color: var(--muted); margin-inline-start: 4px; }
+.report-section { scroll-margin-top: 56px; margin-bottom: 18px; }
+.report-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 12px; }
+@media (min-width: 1500px) { .report-list { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); } .main { max-width: 1680px; } }
+@media (max-width: 600px) { .report-card .muted { font-size: 13px; } .kpi-value { font-size: 20px; } .share-bar { width: 50px; } }
+@media (max-width: 600px) { .kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .kpi-strip .kpi-tile:first-child { grid-column: 1 / -1; } .kpi-tile { padding: 10px 12px; } }

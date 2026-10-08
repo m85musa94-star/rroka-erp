@@ -30,6 +30,7 @@ use App\Models\StudioAsset;
 use App\Models\Supplier;
 use App\Models\TreasuryTransfer;
 use App\Models\User;
+use App\Reports\ReportRegistry;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
@@ -205,7 +206,7 @@ class LocalizationTest extends ApiTestCase
             '/production', '/production?v=kanban', '/production/create', "/production/{$orderId}",
             '/studio', '/studio?v=list', '/studio?g=category', '/studio/create', "/studio/{$assetId}", "/studio/{$assetId}/edit", "/quotations/{$draft['id']}/edit", "/quotations/{$draft['id']}",
         ];
-        foreach (['quotations', 'projects', 'profitability', 'purchases', 'expenses', 'consumption'] as $r) {
+        foreach (array_keys(ReportRegistry::all()) as $r) {
             $pages[] = "/reports/$r";
             $pages[] = "/reports/$r?view=graph";
         }
