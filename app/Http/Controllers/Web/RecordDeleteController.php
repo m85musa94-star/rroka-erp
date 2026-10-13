@@ -30,6 +30,8 @@ class RecordDeleteController extends Controller
         'expenses' => [Models\Expense::class, 'expenses.manage', 'expenses.index', true],
         'purchases' => [Models\PurchaseInvoice::class, 'purchases.manage', 'purchases.index', true],
         'transfers' => [Models\TreasuryTransfer::class, 'treasury.manage', 'treasury.transfers.index', true],
+        'sales-invoices' => [Models\SalesInvoice::class, 'sales.manage', 'sales.invoices.index', true],
+        'receipts' => [Models\CustomerReceipt::class, 'sales.manage', 'sales.receipts.index', true],
     ];
 
     /** Whether the delete button is offered for this record to this user. */

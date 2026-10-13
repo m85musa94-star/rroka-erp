@@ -40,6 +40,22 @@
     @if($client->notes)<p style="margin-top:14px"><span class="muted">{{ __('ملاحظات:') }}</span> {{ $client->notes }}</p>@endif
 </div>
 
+@if($balance)
+<div class="card">
+    <div class="section-title"><h2>{{ __('الحساب') }}</h2>
+        <span class="actions">
+            <a class="btn ghost sm" href="{{ route('sales.invoices.index', ['client_id' => $client->id]) }}">{{ __('الفواتير') }}</a>
+            <a class="btn ghost sm" href="{{ route('sales.receipts.index', ['client_id' => $client->id]) }}">{{ __('التحصيل') }}</a>
+        </span></div>
+    <dl class="kv">
+        <dt>{{ __('الفواتير') }}</dt><dd class="num">{{ number_format($balance->invoiced, 2) }}</dd>
+        <dt>{{ __('الإشعارات الدائنة') }}</dt><dd class="num">{{ number_format($balance->credited, 2) }}</dd>
+        <dt>{{ __('المحصّل') }}</dt><dd class="num">{{ number_format($balance->collected, 2) }}</dd>
+        <dt>{{ __('الرصيد') }}</dt><dd class="num"><strong>{{ $balance->balance < 0 ? '('.number_format(-$balance->balance, 2).')' : number_format($balance->balance, 2) }}</strong></dd>
+    </dl>
+</div>
+@endif
+
 <div class="card">
     <h2>{{ __('عروض الأسعار') }} <span class="muted" style="font-weight:400">({{ $quotations->count() }})</span></h2>
     @if($quotations->isEmpty())

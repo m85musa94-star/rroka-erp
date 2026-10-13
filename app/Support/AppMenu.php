@@ -19,6 +19,7 @@ class AppMenu
         return [
             ['key' => 'clients', 'label' => __('العملاء'), 'route' => 'clients.index', 'match' => 'clients.*', 'permission' => 'clients.view', 'group' => 'sales'],
             ['key' => 'quotations', 'label' => __('عروض الأسعار'), 'route' => 'quotations.index', 'match' => 'quotations.*', 'permission' => 'quotations.view', 'group' => 'sales'],
+            ['key' => 'invoicing', 'label' => __('الفواتير والتحصيل'), 'route' => 'sales.invoices.index', 'match' => 'sales.*', 'permission' => ['sales.view', 'sales.manage'], 'group' => 'sales'],
             ['key' => 'projects', 'label' => __('المشاريع'), 'route' => 'projects.index', 'match' => 'projects.*', 'permission' => 'projects.view', 'group' => 'ops'],
             ['key' => 'studio', 'label' => __('الاستوديو'), 'route' => 'studio.index', 'match' => 'studio.*', 'permission' => 'studio.view', 'group' => 'ops'],
             ['key' => 'purchasing', 'label' => __('المشتريات'), 'route' => 'purchases.index', 'match' => 'purchases.*', 'permission' => ['purchases.view', 'purchases.manage'], 'group' => 'buy'],
@@ -124,8 +125,15 @@ class AppMenu
                     ['العملاء', 'clients.index', [], 'clients.view'],
                     ['التقارير', 'reports.show', ['key' => 'quotations'], 'quotations.view'],
                 ],
+                'invoicing' => [
+                    ['فواتير العملاء', 'sales.invoices.index', [], ['sales.view', 'sales.manage']],
+                    ['سندات القبض', 'sales.receipts.index', [], ['sales.view', 'sales.manage']],
+                    ['أرصدة العملاء', 'sales.balances', [], ['sales.view', 'sales.manage']],
+                    ['العملاء', 'clients.index', [], 'clients.view'],
+                ],
                 'projects' => [
                     ['كل المشاريع', 'projects.index', [], 'projects.view'],
+                    ['مشروع سابق', 'projects.past.create', [], 'quotations.approve'],
                     ['الجارية', 'projects.index', ['f' => ['open']], 'projects.view'],
                     ['مراحل المشاريع', 'projects.index', ['v' => 'kanban'], 'projects.view'],
                     ['التقارير', 'reports.show', ['key' => 'projects'], 'projects.view'],

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Account;
 use App\Models\Client;
 use App\Models\CostCenter;
+use App\Models\CustomerReceipt;
 use App\Models\Department;
 use App\Models\DesignVersion;
 use App\Models\Employee;
@@ -26,6 +27,7 @@ use App\Models\Project;
 use App\Models\PurchaseInvoice;
 use App\Models\RawMaterial;
 use App\Models\Role;
+use App\Models\SalesInvoice;
 use App\Models\StudioAsset;
 use App\Models\Supplier;
 use App\Models\TreasuryTransfer;
@@ -177,10 +179,30 @@ class LocalizationTest extends ApiTestCase
             'lines' => [['account_id' => $cashAcc, 'debit' => 10], ['account_id' => $ownerAcc, 'credit' => 5]]]);
         $manualDraftId = JournalEntry::where('description', 'Rent')->value('id');
 
+        // Past project, customer invoice, credit note and receipt in English.
+        $this->actingAs($admin)->post('/projects/past', ['client_id' => $client->id, 'title' => 'Old wardrobe', 'contract_value' => 3000, 'start_date' => '2026-02-01',
+            'stage' => 'COMPLETED', 'completed_on' => '2026-03-01', 'reason' => 'Before the system'])->assertSessionHasNoErrors();
+        $pastId = Project::where('title', 'Old wardrobe')->value('id');
+        $this->actingAs($admin)->post('/sales/invoices', ['kind' => 'INVOICE', 'daftra_invoice_no' => 'INV-1', 'invoice_date' => '2026-03-01', 'client_id' => $client->id,
+            'project_id' => $pastId, 'description' => 'Wardrobe', 'amount' => 3000, 'vat_amount' => 450])->assertSessionHasNoErrors();
+        $invoiceId = SalesInvoice::value('id');
+        $this->actingAs($admin)->post("/sales/invoices/{$invoiceId}/approve");
+        $this->actingAs($admin)->post('/sales/invoices', ['kind' => 'CREDIT_NOTE', 'original_invoice_id' => $invoiceId, 'daftra_invoice_no' => 'CN-1', 'invoice_date' => '2026-03-02',
+            'description' => 'Discount', 'amount' => 100, 'vat_amount' => 15])->assertSessionHasNoErrors();
+        $creditId = SalesInvoice::where('kind', 'CREDIT_NOTE')->value('id');
+        $this->actingAs($admin)->post('/sales/receipts', ['receipt_date' => '2026-03-05', 'client_id' => $client->id, 'sales_invoice_id' => $invoiceId,
+            'payment_account_id' => $cashId, 'amount' => 1000, 'reference' => 'TRX-1'])->assertSessionHasNoErrors();
+        $receiptId = CustomerReceipt::value('id');
+        $this->actingAs($admin)->post("/sales/receipts/{$receiptId}/approve");
+        $pastQuote = Project::find($pastId)->quotation_id;
+
         $pages = [
             '/', '/clients', '/clients?v=kanban', '/clients?g=city', '/clients/create', "/clients/{$client->id}", "/clients/{$client->id}/edit",
             '/quotations', '/quotations?v=kanban', '/quotations/create', "/quotations/{$q['id']}", "/quotations/{$q['id']}/print", "/quotations/{$draft['id']}/print",
-            '/projects', '/projects?v=kanban', "/projects/{$projectId}",
+            '/projects', '/projects?v=kanban', "/projects/{$projectId}", '/projects/past/create', "/projects/{$pastId}", "/quotations/{$pastQuote}",
+            '/sales/invoices', '/sales/invoices?g=client', '/sales/invoices/create', "/sales/invoices/create?original={$invoiceId}", "/sales/invoices/{$invoiceId}",
+            "/sales/invoices/{$creditId}", "/sales/invoices/{$creditId}/edit", '/sales/receipts', '/sales/receipts?g=account', '/sales/receipts/create',
+            "/sales/receipts/create?invoice={$invoiceId}", "/sales/receipts/{$receiptId}", '/sales/balances',
             '/settings/rates', '/users', '/users/create', "/users/{$admin->id}/edit",
             '/roles', '/roles/create', "/roles/{$roleId}/edit",
             '/reports', '/settings/daftra', '/settings/demo',

@@ -25,6 +25,7 @@ abstract class ApiTestCase extends TestCase
         parent::setUp();
         if (! $this->costingGate) {
             DB::statement('ALTER TABLE quotations ALTER COLUMN requires_costing SET DEFAULT false');
+            DB::statement("ALTER TABLE quotations ALTER COLUMN costing_exempt_reason SET DEFAULT 'TEST: not a costing test'");
         }
     }
 

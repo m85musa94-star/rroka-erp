@@ -46,7 +46,7 @@ SELECT set_config('rroka.user_id', '1', false);
 
 INSERT INTO clients (id, business_name) VALUES (1, 'TEST client A'), (2, 'TEST client B');
 -- Quotations of the workflow tests predate the costing gate (tested in its own section).
-INSERT INTO quotations (id, client_id, requires_costing) VALUES (1, 1, false), (2, 1, false), (3, 2, false);
+INSERT INTO quotations (id, client_id, requires_costing, costing_exempt_reason) VALUES (1, 1, false, 'test'), (2, 1, false, 'test'), (3, 2, false, 'test');
 INSERT INTO quotation_lines (quotation_id, line_no, description, quantity, unit_price) VALUES
     (1, 1, 'خزانة', 2, 1500), (1, 2, 'طاولة', 1, 1000), (2, 1, 'رف', 1, 300);
 
@@ -313,7 +313,7 @@ SELECT pg_temp.expect_error('project stage: completed project is final',
 -- ---------------------------------------------------------------------
 -- Studio (image library)
 -- ---------------------------------------------------------------------
-INSERT INTO quotations (id, client_id, requires_costing) VALUES (20, 1, false), (21, 2, false);
+INSERT INTO quotations (id, client_id, requires_costing, costing_exempt_reason) VALUES (20, 1, false, 'test'), (21, 2, false, 'test');
 INSERT INTO studio_assets (id, title, category, client_id, disk, path, mime_type, size_bytes, sha256) VALUES
     (1, 'TEST client A photo', 'CLIENT_REFERENCE', 1, 'studio', 't/1.jpg', 'image/jpeg', 100, repeat('a', 64)),
     (2, 'TEST finished wardrobe', 'FINISHED_WORK', NULL, 'studio', 't/2.jpg', 'image/jpeg', 100, repeat('b', 64));
@@ -962,7 +962,7 @@ SELECT pg_temp.expect_error('auto-posting: not switched on while mappings are mi
 SELECT pg_temp.expect_error('posting: a missing role refuses the posting',
     'SELECT fn_post_document(''PURCHASE'', 1, 1)', 'RROKA_POSTING_MAPPING');
 
-INSERT INTO accounts (id, code, name, account_type, is_postable) VALUES (904, '2', 'TEST liabilities', 'LIABILITY', false);
+INSERT INTO accounts (id, code, name, account_type, is_postable) VALUES (904, '2', 'TEST liabilities', 'LIABILITY', false), (905, '4', 'TEST revenue', 'REVENUE', false);
 INSERT INTO accounts (id, code, name, account_type, parent_id, system_role, detail_type) VALUES
     (920, '1120', 'TEST inventory', 'ASSET', 900, 'INVENTORY', 'CURRENT_ASSETS'),
     (921, '1130', 'TEST WIP', 'ASSET', 900, 'WIP', 'CURRENT_ASSETS'),
@@ -970,7 +970,10 @@ INSERT INTO accounts (id, code, name, account_type, parent_id, system_role, deta
     (923, '2101', 'TEST payables', 'LIABILITY', 904, 'PAYABLE', 'PAYABLE'),
     (924, '1101', 'TEST cash', 'ASSET', 900, NULL, 'BANK_CASH'),
     (925, '1103', 'TEST custody', 'ASSET', 900, NULL, 'CURRENT_ASSETS'),
-    (927, '5309', 'TEST transport', 'EXPENSE', 901, NULL, 'EXPENSES');
+    (927, '5309', 'TEST transport', 'EXPENSE', 901, NULL, 'EXPENSES'),
+    (930, '1111', 'TEST receivable', 'ASSET', 900, 'RECEIVABLE', 'RECEIVABLE'),
+    (931, '2110', 'TEST output VAT', 'LIABILITY', 904, 'OUTPUT_VAT', 'CURRENT_LIABILITIES'),
+    (932, '4101', 'TEST project revenue', 'REVENUE', 905, 'SALES', 'INCOME');
 SELECT pg_temp.expect_error('mapping: a payment account maps to a postable account only',
     'UPDATE payment_accounts SET account_id = 900 WHERE id = 1', 'RROKA_ACCOUNT_NOT_POSTABLE');
 SELECT pg_temp.expect_error('mapping: a payment account does not map to an expense account',
@@ -1157,6 +1160,107 @@ INSERT INTO expenses (id, expense_date, category_id, payee, description, amount,
 SELECT pg_temp.expect_ok('delete: a draft expense is deleted', 'DELETE FROM expenses WHERE id = 12');
 SELECT pg_temp.expect_ok('delete: a draft purchase invoice is deleted with its lines', 'DELETE FROM purchase_invoices WHERE id = 20');
 SELECT pg_temp.expect_error('delete: a supplier with invoices is not deleted', 'DELETE FROM suppliers WHERE id = 1', 'foreign key');
+
+-- ---------------------------------------------------------------------
+-- Past projects: a quotation exempt from the cost sheet, with its reason
+-- ---------------------------------------------------------------------
+SELECT pg_temp.expect_error('exemption: a quotation without a cost sheet needs the reason',
+    'INSERT INTO quotations (client_id, requires_costing) VALUES (1, false)', 'RROKA_QUOTATION_EXEMPT_REASON');
+SELECT pg_temp.expect_error('exemption: a blank reason is no reason',
+    'INSERT INTO quotations (client_id, is_legacy, costing_exempt_reason) VALUES (1, true, ''  '')', 'RROKA_QUOTATION_EXEMPT_REASON');
+SELECT pg_temp.expect_ok('exemption: a past quotation with its reason',
+    'INSERT INTO quotations (id, client_id, issue_date, is_legacy, costing_exempt_reason) VALUES (200, 1, ''2026-02-01'', true, ''TEST delivered before the system'')');
+SELECT pg_temp.expect_eq('exemption: a past quotation needs no cost sheet', (SELECT requires_costing FROM quotations WHERE id = 200), false);
+SELECT pg_temp.expect_error('exemption: fixed at creation',
+    'UPDATE quotations SET costing_exempt_reason = ''other'' WHERE id = 200', 'RROKA_QUOTATION_EXEMPT_LOCKED');
+SELECT pg_temp.expect_error('exemption: a costed quotation cannot drop its cost sheet later',
+    'UPDATE quotations SET requires_costing = false WHERE id = 100', 'RROKA_QUOTATION_EXEMPT_LOCKED');
+SELECT pg_temp.expect_error('exemption: a past quotation is never sent to Daftra',
+    'UPDATE quotations SET daftra_estimate_id = 777 WHERE id = 200', 'RROKA_QUOTATION_LEGACY_DAFTRA');
+INSERT INTO quotation_lines (quotation_id, line_no, description, quantity, unit_price) VALUES (200, 1, 'TEST past wardrobe', 1, 4000);
+UPDATE quotations SET status = 'SENT' WHERE id = 200;
+SELECT pg_temp.expect_ok('exemption: approved without a cost sheet',
+    'UPDATE quotations SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 200');
+SELECT pg_temp.expect_ok('exemption: its project is created as usual',
+    'INSERT INTO projects (id, quotation_id, title, contract_value, start_date) VALUES (200, 200, ''TEST past project'', 0, ''2026-02-01'')');
+SELECT pg_temp.expect_eq('exemption: contract value from the quotation', (SELECT contract_value FROM projects WHERE id = 200), 4000.00::numeric);
+
+-- ---------------------------------------------------------------------
+-- Customer invoices, credit notes and receipts (posted automatically)
+-- ---------------------------------------------------------------------
+UPDATE accounting_settings SET auto_posting = true;
+SELECT pg_temp.expect_error('sales: the project belongs to the invoice''s client',
+    'INSERT INTO sales_invoices (daftra_invoice_no, invoice_date, client_id, project_id, description, amount) VALUES (''X'', ''2026-03-15'', 2, 1, ''TEST'', 10)', 'RROKA_SALES_CLIENT_MISMATCH');
+SELECT pg_temp.expect_error('sales: an invoice starts as draft',
+    'INSERT INTO sales_invoices (daftra_invoice_no, invoice_date, client_id, description, amount, status) VALUES (''X'', ''2026-03-15'', 1, ''TEST'', 10, ''APPROVED'')', 'RROKA_SALES_TRANSITION');
+SELECT pg_temp.expect_error('sales: VAT above the amount is a typing error',
+    'INSERT INTO sales_invoices (daftra_invoice_no, invoice_date, client_id, description, amount, vat_amount) VALUES (''X'', ''2026-03-15'', 1, ''TEST'', 10, 15)', 'check constraint');
+SELECT pg_temp.expect_error('sales: Daftra''s number is required',
+    'INSERT INTO sales_invoices (daftra_invoice_no, invoice_date, client_id, description, amount) VALUES ('' '', ''2026-03-15'', 1, ''TEST'', 10)', 'check constraint');
+INSERT INTO sales_invoices (id, daftra_invoice_no, invoice_date, client_id, project_id, description, amount, vat_amount)
+    VALUES (1, 'INV-0001', '2026-03-15', 1, 1, 'TEST kitchen invoice', 1000, 150);
+SELECT pg_temp.expect_error('sales: a Daftra invoice is entered once',
+    'INSERT INTO sales_invoices (daftra_invoice_no, invoice_date, client_id, description, amount) VALUES (''INV-0001'', ''2026-03-16'', 1, ''TEST'', 10)', 'ux_sales_invoices_daftra_no');
+SELECT pg_temp.expect_ok('sales: approving the invoice posts it',
+    'UPDATE sales_invoices SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 1');
+SELECT pg_temp.expect_eq('sales: receivable debited 1,150 for client 1 on project 1',
+    (SELECT l.debit || ':' || l.partner_type || l.partner_id || ':' || l.project_id FROM journal_lines l JOIN journal_entries e ON e.id = l.entry_id
+      WHERE e.source_type = 'SALE' AND e.source_id = 1 AND l.account_id = 930), '1150.00:CLIENT1:1');
+SELECT pg_temp.expect_eq('sales: project revenue credited 1,000 on project 1',
+    (SELECT l.credit || ':' || l.project_id FROM journal_lines l JOIN journal_entries e ON e.id = l.entry_id
+      WHERE e.source_type = 'SALE' AND e.source_id = 1 AND l.account_id = 932), '1000.00:1');
+SELECT pg_temp.expect_eq('sales: output VAT credited 150',
+    (SELECT l.credit FROM journal_lines l JOIN journal_entries e ON e.id = l.entry_id
+      WHERE e.source_type = 'SALE' AND e.source_id = 1 AND l.account_id = 931), 150.00::numeric);
+SELECT pg_temp.expect_error('sales: an approved invoice never changes',
+    'UPDATE sales_invoices SET amount = 900 WHERE id = 1', 'RROKA_SALES_LOCKED');
+SELECT pg_temp.expect_error('sales: an approved invoice is never deleted', 'DELETE FROM sales_invoices WHERE id = 1', 'RROKA_DELETE_NOT_DRAFT');
+SELECT pg_temp.expect_error('sales: its entry is not written by hand',
+    'INSERT INTO journal_entries (entry_date, description, created_by, source_type, source_id) VALUES (''2026-03-15'', ''TEST'', 1, ''SALE'', 99)', 'RROKA_JOURNAL_AUTO');
+
+INSERT INTO sales_invoices (id, kind, original_invoice_id, daftra_invoice_no, invoice_date, client_id, description, amount, vat_amount)
+    VALUES (2, 'CREDIT_NOTE', 1, 'CN-0001', '2026-03-18', 1, 'TEST discount after delivery', 200, 30);
+SELECT pg_temp.expect_eq('credit note: stays on its invoice''s project', (SELECT project_id FROM sales_invoices WHERE id = 2), 1::bigint);
+SELECT pg_temp.expect_ok('credit note: approved and posted',
+    'UPDATE sales_invoices SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 2');
+SELECT pg_temp.expect_eq('credit note: receivable credited 230, revenue debited 200',
+    (SELECT sum(l.credit) FILTER (WHERE l.account_id = 930) || ':' || sum(l.debit) FILTER (WHERE l.account_id = 932)
+       FROM journal_lines l JOIN journal_entries e ON e.id = l.entry_id WHERE e.source_type = 'SALE' AND e.source_id = 2), '230.00:200.00');
+INSERT INTO sales_invoices (id, kind, original_invoice_id, daftra_invoice_no, invoice_date, client_id, description, amount, vat_amount)
+    VALUES (3, 'CREDIT_NOTE', 1, 'CN-0002', '2026-03-19', 1, 'TEST too much', 900, 135);
+SELECT pg_temp.expect_error('credit note: never more than what is left of the invoice',
+    'UPDATE sales_invoices SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 3', 'RROKA_SALES_CREDIT_EXCEEDS');
+SELECT pg_temp.expect_error('credit note: refers to an invoice of the same client',
+    'INSERT INTO sales_invoices (kind, original_invoice_id, daftra_invoice_no, invoice_date, client_id, description, amount) VALUES (''CREDIT_NOTE'', 1, ''CN-9'', ''2026-03-19'', 2, ''TEST'', 10)', 'RROKA_SALES_CREDIT_INVOICE');
+SELECT pg_temp.expect_error('credit note: names its invoice',
+    'INSERT INTO sales_invoices (kind, daftra_invoice_no, invoice_date, client_id, description, amount) VALUES (''CREDIT_NOTE'', ''CN-8'', ''2026-03-19'', 1, ''TEST'', 10)', 'check constraint');
+
+SELECT pg_temp.expect_error('receipt: refers to an invoice of the same client',
+    'INSERT INTO customer_receipts (receipt_date, client_id, sales_invoice_id, payment_account_id, amount) VALUES (''2026-03-20'', 2, 1, 2, 10)', 'RROKA_SALES_RECEIPT_INVOICE');
+INSERT INTO customer_receipts (id, receipt_date, client_id, sales_invoice_id, payment_account_id, amount, reference)
+    VALUES (1, '2026-03-20', 1, 1, 2, 500, 'TEST bank ref 1');
+SELECT pg_temp.expect_eq('receipt: takes the invoice''s project', (SELECT project_id FROM customer_receipts WHERE id = 1), 1::bigint);
+SELECT pg_temp.expect_ok('receipt: approved and posted',
+    'UPDATE customer_receipts SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 1');
+SELECT pg_temp.expect_eq('receipt: bank debited 500, receivable credited 500 for client 1',
+    (SELECT sum(l.debit) FILTER (WHERE l.account_id = 910) || ':' || sum(l.credit) FILTER (WHERE l.account_id = 930 AND l.partner_id = 1)
+       FROM journal_lines l JOIN journal_entries e ON e.id = l.entry_id WHERE e.source_type = 'RECEIPT' AND e.source_id = 1), '500.00:500.00');
+SELECT pg_temp.expect_eq('balances: client 1 = 1,150 − 230 − 500 = 420',
+    (SELECT invoiced || ':' || credited || ':' || collected || ':' || balance FROM v_client_balances WHERE client_id = 1), '1150.00:230.00:500.00:420.00');
+SELECT pg_temp.expect_eq('balances: the books agree (receivable of client 1 = 420)',
+    (SELECT sum(net) FROM v_ledger_lines WHERE account_id = 930 AND partner_type = 'CLIENT' AND partner_id = 1), 420.00::numeric);
+SELECT pg_temp.expect_eq('balances: project 1 revenue 1,000 − 200 = 800, collected 500',
+    (SELECT revenue || ':' || collected FROM v_project_sales WHERE project_id = 1), '800.00:500.00');
+SELECT pg_temp.expect_eq('backlog: no sales document is left unposted',
+    (SELECT count(*) FROM v_posting_backlog WHERE source_type IN ('SALE', 'RECEIPT')), 0::bigint);
+INSERT INTO sales_invoices (id, daftra_invoice_no, invoice_date, client_id, description, amount)
+    VALUES (4, 'INV-2025-9', '2025-12-20', 1, 'TEST before the books start', 100);
+UPDATE sales_invoices SET status = 'APPROVED', approved_by = 2, approved_at = now() WHERE id = 4;
+SELECT pg_temp.expect_eq('sales: an invoice before the books start is part of the opening balances (no entry)',
+    (SELECT count(*) FROM journal_entries WHERE source_type = 'SALE' AND source_id = 4), 0::bigint);
+INSERT INTO sales_invoices (id, daftra_invoice_no, invoice_date, client_id, description, amount) VALUES (5, 'INV-DRAFT', '2026-03-21', 1, 'TEST draft', 10);
+SELECT pg_temp.expect_ok('sales: a draft invoice is deleted', 'DELETE FROM sales_invoices WHERE id = 5');
+UPDATE accounting_settings SET auto_posting = false;
 
 -- ---------------------------------------------------------------------
 -- Report

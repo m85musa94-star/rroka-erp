@@ -126,6 +126,14 @@
         <circle cx="45" cy="44" r="13" fill="#F2BD5B"/>
         <path d="M38 41h14M38 47h14" stroke="#8E5486" stroke-width="3.5" stroke-linecap="round"/>
         @break
+    @case('invoicing')
+        <path d="M14 6h28l8 8v44H14z" fill="#3E8E6A"/>
+        <path d="M42 6v8h8z" fill="#2C6B4F"/>
+        <rect x="20" y="20" width="20" height="3" rx="1.5" fill="#fff" opacity=".85"/>
+        <rect x="20" y="27" width="14" height="3" rx="1.5" fill="#fff" opacity=".85"/>
+        <circle cx="44" cy="44" r="12" fill="#F2BD5B"/>
+        <path d="M39 44l4 4 7-8" stroke="#2C6B4F" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        @break
     @case('treasury')
         <rect x="8" y="18" width="48" height="34" rx="6" fill="#2A5F7E"/>
         <rect x="8" y="26" width="48" height="6" fill="#1E4A63"/>

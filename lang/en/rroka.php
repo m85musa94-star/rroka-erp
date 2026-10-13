@@ -65,6 +65,15 @@ return [
         'RROKA_PURCHASE_NEGATIVE' => 'The discount is larger than the lines total.',
         'RROKA_EXPENSE_TRANSITION' => 'An expense starts as a draft.',
         'RROKA_EXPENSE_LOCKED' => 'An approved or cancelled expense cannot change.',
+        'RROKA_QUOTATION_EXEMPT_REASON' => 'A quotation without a cost sheet needs the reason for the exemption.',
+        'RROKA_QUOTATION_EXEMPT_LOCKED' => 'The cost-sheet exemption is set when the quotation is created and does not change.',
+        'RROKA_QUOTATION_LEGACY_DAFTRA' => 'A past project\'s quotation is not sent to Daftra; its invoice is already there.',
+        'RROKA_SALES_TRANSITION' => 'A document starts as a draft, then is approved or cancelled.',
+        'RROKA_SALES_LOCKED' => 'An approved or cancelled document cannot change; correct it with a credit note or an entry.',
+        'RROKA_SALES_CLIENT_MISMATCH' => 'The chosen project belongs to another client.',
+        'RROKA_SALES_CREDIT_INVOICE' => 'A credit note is on an approved invoice of the same client and on its project.',
+        'RROKA_SALES_CREDIT_EXCEEDS' => 'Credit notes cannot exceed the invoice.',
+        'RROKA_SALES_RECEIPT_INVOICE' => 'A receipt is on an invoice of the same client.',
         'RROKA_EXPENSE_NEEDS_PAYMENT_ACCOUNT' => 'Say where the expense was paid from (cash box, bank or custody) before approving it.',
         'RROKA_EXPENSE_PAYMENT_MISMATCH' => 'The payment method does not fit the account: cash box = cash, bank = transfer or card, custody = employee petty cash.',
         'RROKA_PAYMENT_ACCOUNT_INACTIVE' => 'The account is closed; no new movement can be approved on it.',
@@ -139,13 +148,13 @@ return [
         'projects' => 'Projects', 'designs' => 'Designs', 'bom' => 'Bills of materials',
         'inventory' => 'Inventory', 'production' => 'Production', 'quality' => 'Quality',
         'installations' => 'Installation', 'costing' => 'Costing & profitability', 'settings' => 'Settings',
-        'daftra' => 'Daftra', 'hr' => 'Human resources', 'purchases' => 'Purchasing', 'expenses' => 'Expenses', 'treasury' => 'Treasury & custody', 'studio' => 'Studio', 'users' => 'Users & roles', 'audit' => 'Audit log',
+        'daftra' => 'Daftra', 'hr' => 'Human resources', 'purchases' => 'Purchasing', 'expenses' => 'Expenses', 'treasury' => 'Treasury & custody', 'sales' => 'Invoicing & collections', 'studio' => 'Studio', 'users' => 'Users & roles', 'audit' => 'Audit log',
     ],
 
     'entities' => [
         'accounts' => 'account', 'journal_entries' => 'journal entry', 'journal_lines' => 'journal line', 'fiscal_periods' => 'fiscal period', 'accounting_settings' => 'books settings', 'cost_estimates' => 'cost estimate', 'cost_estimate_materials' => 'estimate material', 'cost_estimate_operations' => 'estimate operation', 'cost_estimate_direct_costs' => 'direct cost', 'cost_estimate_snapshots' => 'frozen cost', 'vat_rates' => 'VAT rate', 'pricing_policies' => 'pricing policy',
         'cost_centers' => 'cost centre', 'energy_rates' => 'electricity price', 'employee_cost_cards' => 'employee cost card', 'employee_cost_card_shares' => 'cost centre share', 'machine_cost_cards' => 'machine cost card', 'material_standard_prices' => 'standard price', 'waste_defaults' => 'waste rate', 'overhead_pools' => 'overhead pool', 'overhead_pool_lines' => 'pool line',
-        'payment_accounts' => 'account', 'treasury_transfers' => 'transfer', 'suppliers' => 'supplier', 'purchase_invoices' => 'supplier invoice', 'purchase_invoice_lines' => 'supplier invoice line', 'expenses' => 'expense', 'expense_categories' => 'expense category',
+        'payment_accounts' => 'account', 'treasury_transfers' => 'transfer', 'suppliers' => 'supplier', 'purchase_invoices' => 'supplier invoice', 'purchase_invoice_lines' => 'supplier invoice line', 'expenses' => 'expense', 'expense_categories' => 'expense category', 'sales_invoices' => 'customer invoice', 'customer_receipts' => 'customer receipt',
         'employee_contracts' => 'contract', 'leave_requests' => 'time-off request', 'leave_allocations' => 'allocation', 'attendances' => 'attendance', 'leave_types' => 'time-off type',
         'workers' => 'employee', 'departments' => 'department', 'job_positions' => 'job position', 'employee_documents' => 'document',
         'raw_materials' => 'material', 'designs' => 'design', 'design_versions' => 'design version', 'design_bom_lines' => 'BOM line', 'production_orders' => 'manufacturing order',
@@ -174,7 +183,7 @@ return [
 
     'studio_category' => ['DOCUMENT' => 'Supporting document', 'CLIENT_REFERENCE' => 'From customers', 'FINISHED_WORK' => 'Finished work', 'CATALOG' => 'Product catalogue', 'SITE' => 'Site photos', 'MATERIAL' => 'Materials & samples'],
 
-    'movement_type' => ['RECEIPT' => 'Receipt', 'RESERVE' => 'Reserve for project', 'UNRESERVE' => 'Unreserve', 'ISSUE' => 'Issue to production', 'RETURN' => 'Return to store', 'ADJUST_IN' => 'Adjustment in', 'ADJUST_OUT' => 'Adjustment out'],
+    'movement_type' => ['RECEIPT' => 'Receipt', 'RESERVE' => 'Reserve for project', 'UNRESERVE' => 'Unreserve', 'ISSUE' => 'Issue to production', 'RETURN' => 'Return to store', 'ADJUST_IN' => 'Adjustment in', 'ADJUST_OUT' => 'Adjustment out', 'CREDIT_NOTE' => 'Credit note'],
 
     'qc_stage' => ['IN_PROCESS' => 'In process', 'FINAL' => 'Final', 'PRE_DELIVERY' => 'Pre-delivery', 'POST_INSTALLATION' => 'Post-installation'],
 
@@ -224,7 +233,7 @@ return [
 
     'account_role' => ['CASH' => 'Cash', 'BANK' => 'Bank', 'CUSTODY' => 'Custody', 'RECEIVABLE' => 'Accounts receivable', 'INVENTORY' => 'Materials inventory', 'WIP' => 'Work in progress', 'INPUT_VAT' => 'Input VAT', 'PAYABLE' => 'Accounts payable', 'OUTPUT_VAT' => 'Output VAT', 'CUSTOMER_ADVANCES' => 'Customer advances', 'CAPITAL' => 'Capital', 'OWNER_CURRENT' => 'Owner current account', 'RETAINED_EARNINGS' => 'Retained earnings', 'SALES' => 'Sales revenue', 'SALES_DISCOUNT' => 'Sales discounts', 'COST_OF_SALES' => 'Cost of sales', 'FIXED_ASSETS' => 'Fixed assets', 'ACCUMULATED_DEPRECIATION' => 'Accumulated depreciation', 'DEPRECIATION' => 'Depreciation expense', 'INVENTORY_ADJUSTMENT' => 'Inventory count differences'],
 
-    'journal_source' => ['MANUAL' => 'Manual', 'OPENING' => 'Opening', 'REVERSAL' => 'Reversal', 'EXPENSE' => 'Expense', 'PURCHASE' => 'Purchase invoice', 'TRANSFER' => 'Treasury transfer', 'STOCK' => 'Stock movement'],
+    'journal_source' => ['MANUAL' => 'Manual', 'OPENING' => 'Opening', 'REVERSAL' => 'Reversal', 'EXPENSE' => 'Expense', 'PURCHASE' => 'Purchase invoice', 'TRANSFER' => 'Treasury transfer', 'STOCK' => 'Stock movement', 'SALE' => 'Customer invoice', 'RECEIPT' => 'Customer receipt'],
 
     'expense_kind' => ['PROJECT' => 'On a project', 'OVERHEAD' => 'Workshop overhead', 'OTHER' => 'General & admin'],
 

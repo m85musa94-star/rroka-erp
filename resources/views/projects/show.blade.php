@@ -63,7 +63,25 @@
         <tr><th>{{ __('مجمل الربح') }}</th><th></th><th class="num">{!! $m($cost->gross_profit) !!}</th></tr>
         <tr><th>{{ __('هامش مجمل الربح') }}</th><th></th><th class="num">{!! $cost->gross_margin_pct === null ? __('<span class="na">غير مكتمل</span>') : $cost->gross_margin_pct.'%' !!}</th></tr>
     </table></div>
-    <p class="hint">{{ __('الربح هنا ربح تشغيلي للمشروع قبل الضريبة، ولا يحل محل القوائم المالية في دفترة.') }}</p>
+    <p class="hint">{{ __('الربح هنا ربح تشغيلي للمشروع قبل الضريبة، ولا يحل محل القوائم المالية.') }}</p>
+</div>
+@endif
+@if($sales)
+<div class="card">
+    <div class="section-title"><h2>{{ __('الفواتير والتحصيل') }}</h2>
+        <span class="actions">
+            <a class="btn ghost sm" href="{{ route('sales.invoices.index', ['project_id' => $project->id]) }}">{{ __('الفواتير') }}</a>
+            <a class="btn ghost sm" href="{{ route('sales.receipts.index', ['project_id' => $project->id]) }}">{{ __('التحصيل') }}</a>
+            @if(auth()->user()->hasPermission('sales.manage'))<a class="btn sm" href="{{ route('sales.invoices.create', ['project_id' => $project->id, 'client_id' => $project->client_id]) }}">{{ __('فاتورة عميل') }}</a>@endif
+        </span></div>
+    <div class="table-wrap"><table>
+        <tr><td>{{ __('قيمة العقد قبل الضريبة') }}</td><td class="num">{{ number_format($project->contract_value, 2) }}</td></tr>
+        <tr><td>{{ __('الإيراد المفوتر قبل الضريبة (بعد الإشعارات الدائنة)') }}</td><td class="num">{{ number_format($sales->revenue, 2) }}</td></tr>
+        <tr><td>{{ __('المتبقي من العقد دون فوترة') }}</td><td class="num">{{ number_format($project->contract_value - $sales->revenue, 2) }}</td></tr>
+        <tr><td>{{ __('المفوتر شاملًا الضريبة') }}</td><td class="num">{{ number_format($sales->invoiced, 2) }}</td></tr>
+        <tr><td>{{ __('المحصّل') }}</td><td class="num">{{ number_format($sales->collected, 2) }}</td></tr>
+        <tr><th>{{ __('رصيد المشروع على العميل') }}</th><th class="num">{{ $sales->balance < 0 ? '('.number_format(-$sales->balance, 2).')' : number_format($sales->balance, 2) }}</th></tr>
+    </table></div>
 </div>
 @endif
 @php($u = auth()->user())

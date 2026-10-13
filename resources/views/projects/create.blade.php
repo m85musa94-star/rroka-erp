@@ -4,6 +4,9 @@
     @include('partials.control-panel', ['crumbs' => [[__('المشاريع'), route('projects.index')], [__('جديد'), null]]])
 @endsection
 @section('content')
+@if(auth()->user()->hasPermission('quotations.approve'))
+    <p class="hint">{{ __('مشروع من قبل تشغيل المنظومة؟') }} <a href="{{ route('projects.past.create') }}">{{ __('أدخله كمشروع سابق') }}</a></p>
+@endif
 @if($quotations->isEmpty())
     <div class="alert warn">{{ __('لا توجد عروض أسعار معتمدة بلا مشروع. المشروع لا يُنشأ إلا على عرض سعر معتمد.') }}</div>
 @else

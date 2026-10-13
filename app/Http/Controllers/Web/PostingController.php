@@ -28,7 +28,7 @@ use Illuminate\View\View;
 class PostingController extends Controller
 {
     /** Roles every automatic entry may need. */
-    public const REQUIRED_ROLES = ['INVENTORY', 'WIP', 'INPUT_VAT', 'PAYABLE', 'INVENTORY_ADJUSTMENT'];
+    public const REQUIRED_ROLES = ['INVENTORY', 'WIP', 'INPUT_VAT', 'PAYABLE', 'INVENTORY_ADJUSTMENT', 'RECEIVABLE', 'SALES', 'OUTPUT_VAT'];
 
     public function settings(): View
     {
@@ -201,6 +201,8 @@ class PostingController extends Controller
         $wip = $role('WIP');
         $vat = $role('INPUT_VAT');
         $ap = $role('PAYABLE');
+        $ar = $role('RECEIVABLE');
+        $outVat = $role('OUTPUT_VAT');
 
         $rows = [
             [
@@ -224,6 +226,16 @@ class PostingController extends Controller
                 'label' => __('الموردون'), 'account' => $ap,
                 'sub' => (float) DB::table('v_purchase_totals as t')->join('purchase_invoices as p', 'p.id', '=', 't.purchase_invoice_id')->where('p.status', 'APPROVED')->sum('t.total'),
                 'gl' => $ap ? -$gl($ap) : null, 'note' => __('فواتير المشتريات المعتمدة؛ سداد الموردين يُسجَّل في المرحلة (ب)'), 'link' => route('purchases.index'),
+            ],
+            [
+                'label' => __('العملاء'), 'account' => $ar,
+                'sub' => (float) DB::table('v_client_balances')->sum('balance'),
+                'gl' => $gl($ar), 'note' => __('فواتير العملاء − الإشعارات الدائنة − سندات القبض (المعتمدة)'), 'link' => route('sales.balances'),
+            ],
+            [
+                'label' => __('ضريبة المخرجات'), 'account' => $outVat,
+                'sub' => (float) DB::table('sales_invoices')->where('status', 'APPROVED')->sum(DB::raw("CASE kind WHEN 'CREDIT_NOTE' THEN -vat_amount ELSE vat_amount END")),
+                'gl' => $outVat ? -$gl($outVat) : null, 'note' => __('ضريبة فواتير العملاء المعتمدة بعد الإشعارات الدائنة (قبل تسوية الإقرار)'), 'link' => route('sales.invoices.index'),
             ],
         ];
 

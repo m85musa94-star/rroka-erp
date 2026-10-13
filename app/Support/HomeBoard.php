@@ -39,6 +39,12 @@ class HomeBoard
         $add($can('treasury.approve', 'treasury.manage'), __('تحويلات وعهد بانتظار الاعتماد'),
             fn () => DB::table('treasury_transfers')->where('status', 'DRAFT')->count(), route('treasury.transfers.index', ['f' => ['draft']]), 'warn',
             fn () => DB::table('treasury_transfers')->where('status', 'DRAFT')->sum('amount'));
+        $add($can('sales.approve', 'sales.manage'), __('فواتير عملاء بانتظار الاعتماد'),
+            fn () => DB::table('sales_invoices')->where('status', 'DRAFT')->count(), route('sales.invoices.index', ['f' => ['draft']]), 'warn',
+            fn () => DB::table('sales_invoices')->where('status', 'DRAFT')->sum(DB::raw("CASE kind WHEN 'CREDIT_NOTE' THEN -total ELSE total END")));
+        $add($can('sales.approve', 'sales.manage'), __('سندات قبض بانتظار الاعتماد'),
+            fn () => DB::table('customer_receipts')->where('status', 'DRAFT')->count(), route('sales.receipts.index', ['f' => ['draft']]), 'warn',
+            fn () => DB::table('customer_receipts')->where('status', 'DRAFT')->sum('amount'));
         $add($can('accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close'), __('مستندات معتمدة لم تُرحَّل للدفاتر'),
             fn () => DB::table('v_posting_backlog')->count(), route('accounting.posting.backlog'), 'bad',
             fn () => DB::table('v_posting_backlog')->sum('amount'));

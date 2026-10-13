@@ -65,6 +65,15 @@ return [
         'RROKA_PURCHASE_NEGATIVE' => 'الخصم أكبر من مجموع البنود.',
         'RROKA_EXPENSE_TRANSITION' => 'المصروف يبدأ مسودة.',
         'RROKA_EXPENSE_LOCKED' => 'المصروف المعتمد أو الملغى لا يُعدَّل.',
+        'RROKA_QUOTATION_EXEMPT_REASON' => 'عرض السعر بلا ورقة تكلفة يحتاج سبب الإعفاء.',
+        'RROKA_QUOTATION_EXEMPT_LOCKED' => 'الإعفاء من ورقة التكلفة يُحدَّد عند إنشاء العرض ولا يتغير بعده.',
+        'RROKA_QUOTATION_LEGACY_DAFTRA' => 'عرض المشروع السابق لا يُرسل إلى دفترة؛ فاتورته صادرة هناك أصلًا.',
+        'RROKA_SALES_TRANSITION' => 'المستند يبدأ مسودة ثم يُعتمد أو يُلغى.',
+        'RROKA_SALES_LOCKED' => 'المستند المعتمد أو الملغى لا يُعدَّل؛ يُصحَّح بإشعار دائن أو قيد.',
+        'RROKA_SALES_CLIENT_MISMATCH' => 'المشروع المختار لعميل آخر.',
+        'RROKA_SALES_CREDIT_INVOICE' => 'الإشعار الدائن يكون على فاتورة معتمدة للعميل نفسه وعلى مشروعها نفسه.',
+        'RROKA_SALES_CREDIT_EXCEEDS' => 'الإشعارات الدائنة لا تتجاوز قيمة الفاتورة.',
+        'RROKA_SALES_RECEIPT_INVOICE' => 'سند القبض يكون على فاتورة للعميل نفسه.',
         'RROKA_EXPENSE_NEEDS_PAYMENT_ACCOUNT' => 'حدّد من أين دُفع المصروف (صندوق أو بنك أو عهدة) قبل اعتماده.',
         'RROKA_EXPENSE_PAYMENT_MISMATCH' => 'طريقة الدفع لا تناسب الحساب: الصندوق نقدًا، والبنك تحويل أو بطاقة، والعهدة من عهدة الموظف.',
         'RROKA_PAYMENT_ACCOUNT_INACTIVE' => 'الحساب مغلق؛ لا تُعتمد عليه حركة جديدة.',
@@ -139,13 +148,13 @@ return [
         'projects' => 'المشاريع', 'designs' => 'التصاميم', 'bom' => 'قوائم المواد',
         'inventory' => 'المخزون', 'production' => 'الإنتاج', 'quality' => 'الجودة',
         'installations' => 'التركيب', 'costing' => 'التكلفة والربحية', 'settings' => 'الإعدادات',
-        'daftra' => 'دفترة', 'hr' => 'الموارد البشرية', 'purchases' => 'المشتريات', 'expenses' => 'المصروفات', 'treasury' => 'الخزينة والعهد', 'studio' => 'الاستوديو', 'users' => 'المستخدمون والأدوار', 'audit' => 'سجل التدقيق',
+        'daftra' => 'دفترة', 'hr' => 'الموارد البشرية', 'purchases' => 'المشتريات', 'expenses' => 'المصروفات', 'treasury' => 'الخزينة والعهد', 'sales' => 'الفواتير والتحصيل', 'studio' => 'الاستوديو', 'users' => 'المستخدمون والأدوار', 'audit' => 'سجل التدقيق',
     ],
 
     'entities' => [
         'accounts' => 'الحساب', 'journal_entries' => 'القيد', 'journal_lines' => 'سطر القيد', 'fiscal_periods' => 'الفترة المالية', 'accounting_settings' => 'إعدادات الدفاتر', 'cost_estimates' => 'تقدير التكلفة', 'cost_estimate_materials' => 'مادة التقدير', 'cost_estimate_operations' => 'عملية التقدير', 'cost_estimate_direct_costs' => 'تكلفة مباشرة', 'cost_estimate_snapshots' => 'التكلفة المجمّدة', 'vat_rates' => 'نسبة الضريبة', 'pricing_policies' => 'سياسة التسعير',
         'cost_centers' => 'مركز التكلفة', 'energy_rates' => 'سعر الكهرباء', 'employee_cost_cards' => 'بطاقة تكلفة الموظف', 'employee_cost_card_shares' => 'حصة مركز التكلفة', 'machine_cost_cards' => 'بطاقة تكلفة الآلة', 'material_standard_prices' => 'السعر المعياري', 'waste_defaults' => 'نسبة الهالك', 'overhead_pools' => 'وعاء التكاليف غير المباشرة', 'overhead_pool_lines' => 'بند الوعاء',
-        'payment_accounts' => 'الحساب', 'treasury_transfers' => 'التحويل', 'suppliers' => 'المورد', 'purchase_invoices' => 'فاتورة المورد', 'purchase_invoice_lines' => 'بند فاتورة المورد', 'expenses' => 'المصروف', 'expense_categories' => 'تصنيف المصروف',
+        'payment_accounts' => 'الحساب', 'treasury_transfers' => 'التحويل', 'suppliers' => 'المورد', 'purchase_invoices' => 'فاتورة المورد', 'purchase_invoice_lines' => 'بند فاتورة المورد', 'expenses' => 'المصروف', 'expense_categories' => 'تصنيف المصروف', 'sales_invoices' => 'فاتورة العميل', 'customer_receipts' => 'سند القبض',
         'employee_contracts' => 'العقد', 'leave_requests' => 'طلب الإجازة', 'leave_allocations' => 'رصيد الإجازة', 'attendances' => 'سجل الحضور', 'leave_types' => 'نوع الإجازة',
         'workers' => 'الموظف', 'departments' => 'القسم', 'job_positions' => 'المسمى الوظيفي', 'employee_documents' => 'الوثيقة',
         'raw_materials' => 'الخامة', 'designs' => 'التصميم', 'design_versions' => 'نسخة التصميم', 'design_bom_lines' => 'بند قائمة المواد', 'production_orders' => 'أمر التصنيع',
@@ -174,7 +183,7 @@ return [
 
     'studio_category' => ['DOCUMENT' => 'مستند مؤيد', 'CLIENT_REFERENCE' => 'صور من العملاء', 'FINISHED_WORK' => 'أعمال منجزة', 'CATALOG' => 'كتالوج المنتجات', 'SITE' => 'صور المواقع', 'MATERIAL' => 'خامات وعينات'],
 
-    'movement_type' => ['RECEIPT' => 'استلام', 'RESERVE' => 'حجز للمشروع', 'UNRESERVE' => 'فك حجز', 'ISSUE' => 'صرف للإنتاج', 'RETURN' => 'إرجاع للمخزن', 'ADJUST_IN' => 'تسوية بالزيادة', 'ADJUST_OUT' => 'تسوية بالنقص'],
+    'movement_type' => ['RECEIPT' => 'استلام', 'RESERVE' => 'حجز للمشروع', 'UNRESERVE' => 'فك حجز', 'ISSUE' => 'صرف للإنتاج', 'RETURN' => 'إرجاع للمخزن', 'ADJUST_IN' => 'تسوية بالزيادة', 'ADJUST_OUT' => 'تسوية بالنقص', 'CREDIT_NOTE' => 'إشعار دائن'],
 
     'qc_stage' => ['IN_PROCESS' => 'أثناء التصنيع', 'FINAL' => 'فحص نهائي', 'PRE_DELIVERY' => 'قبل التسليم', 'POST_INSTALLATION' => 'بعد التركيب'],
 
@@ -224,7 +233,7 @@ return [
 
     'account_role' => ['CASH' => 'النقدية', 'BANK' => 'البنك', 'CUSTODY' => 'العهد', 'RECEIVABLE' => 'العملاء (الذمم المدينة)', 'INVENTORY' => 'مخزون الخامات', 'WIP' => 'أعمال تحت التنفيذ', 'INPUT_VAT' => 'ضريبة المدخلات', 'PAYABLE' => 'الموردون', 'OUTPUT_VAT' => 'ضريبة المخرجات', 'CUSTOMER_ADVANCES' => 'دفعات مقدمة من العملاء', 'CAPITAL' => 'رأس المال', 'OWNER_CURRENT' => 'جاري المالك', 'RETAINED_EARNINGS' => 'الأرباح المبقاة', 'SALES' => 'إيرادات المبيعات', 'SALES_DISCOUNT' => 'خصومات المبيعات', 'COST_OF_SALES' => 'تكلفة المبيعات', 'FIXED_ASSETS' => 'الأصول الثابتة', 'ACCUMULATED_DEPRECIATION' => 'مجمع الإهلاك', 'DEPRECIATION' => 'مصروف الإهلاك', 'INVENTORY_ADJUSTMENT' => 'فروقات جرد المخزون'],
 
-    'journal_source' => ['MANUAL' => 'يدوي', 'OPENING' => 'افتتاحي', 'REVERSAL' => 'عكسي', 'EXPENSE' => 'مصروف', 'PURCHASE' => 'فاتورة مشتريات', 'TRANSFER' => 'تحويل خزينة', 'STOCK' => 'حركة مخزون'],
+    'journal_source' => ['MANUAL' => 'يدوي', 'OPENING' => 'افتتاحي', 'REVERSAL' => 'عكسي', 'EXPENSE' => 'مصروف', 'PURCHASE' => 'فاتورة مشتريات', 'TRANSFER' => 'تحويل خزينة', 'STOCK' => 'حركة مخزون', 'SALE' => 'فاتورة عميل', 'RECEIPT' => 'سند قبض'],
 
     'expense_kind' => ['PROJECT' => 'على مشروع', 'OVERHEAD' => 'غير مباشر للورشة', 'OTHER' => 'إداري وعمومي'],
 

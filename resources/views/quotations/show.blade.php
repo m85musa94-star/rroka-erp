@@ -37,7 +37,7 @@
         @if($q->project)
             <a class="btn ghost sm" href="{{ route('projects.show', $q->project) }}">{{ __('المشروع') }} {{ $q->project->project_no }}</a>
         @endif
-        @if(in_array($q->status, ['SENT', 'APPROVED']) && ! $q->daftra_estimate_id && $u->hasPermission('daftra.sync'))
+        @if(in_array($q->status, ['SENT', 'APPROVED']) && ! $q->daftra_estimate_id && ! $q->is_legacy && $u->hasPermission('daftra.sync'))
             <form method="post" action="{{ route('quotations.sync', $q) }}" class="inline">@csrf<button class="btn ghost sm">{{ __('إنشاء في دفترة') }}</button></form>
         @endif
         <a class="btn ghost sm" href="{{ route('quotations.print', [$q, 'autoprint' => 1]) }}" target="_blank" rel="noopener">{{ __('طباعة') }}</a>
@@ -45,8 +45,9 @@
     @include('partials.statusbar', ['path' => $path, 'current' => $q->status, 'bad' => ['REJECTED', 'EXPIRED', 'CANCELLED']])
 </div>
 <div class="card">
-    <h1 class="rec-title">{{ $q->quotation_no }}</h1>
+    <h1 class="rec-title">{{ $q->quotation_no }} @if($q->is_legacy)<span class="badge b-ON_HOLD">{{ __('مشروع سابق') }}</span>@endif</h1>
     <dl class="kv">
+        @if($q->costing_exempt_reason)<dt>{{ __('معفى من ورقة التكلفة') }}</dt><dd>{{ $q->costing_exempt_reason }}</dd>@endif
         <dt>{{ __('العميل') }}</dt><dd><a href="{{ route('clients.show', $q->client) }}">{{ $q->client->business_name }}</a></dd>
         <dt>{{ __('تاريخ الإصدار') }}</dt><dd>{{ $q->issue_date->format('Y-m-d') }}</dd>
         <dt>{{ __('صالح حتى') }}</dt><dd>{{ $q->valid_until?->format('Y-m-d') ?? '—' }}</dd>

@@ -20,6 +20,7 @@ class Quotation extends Model
             'approved_at' => 'datetime',
             'discount_amount' => 'decimal:2',
             'requires_costing' => 'boolean',
+            'is_legacy' => 'boolean',
         ];
     }
 

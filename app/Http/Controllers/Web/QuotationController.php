@@ -172,6 +172,10 @@ class QuotationController extends Controller
 
     public function sync(Request $request, Quotation $quotation, DaftraSyncService $sync): RedirectResponse
     {
+        // A past quotation's invoice already exists in Daftra: never create it there again.
+        if ($quotation->is_legacy) {
+            return back()->withErrors(['rule' => __('rroka.errors.RROKA_QUOTATION_LEGACY_DAFTRA')]);
+        }
         $sync->syncQuotation($quotation->load('lines', 'client'), $request->user());
 
         return back()->with('ok', __('تم إنشاء عرض السعر في دفترة.'));

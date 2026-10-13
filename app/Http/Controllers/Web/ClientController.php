@@ -10,6 +10,7 @@ use App\Support\ActivityLog;
 use App\Support\ListView;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -66,6 +67,8 @@ class ClientController extends Controller
         return view('clients.show', [
             'client' => $client,
             'quotations' => $client->quotations()->orderByDesc('id')->get(),
+            'balance' => auth()->user()->hasPermission('sales.view') || auth()->user()->hasPermission('sales.manage')
+                ? DB::table('v_client_balances')->where('client_id', $client->id)->first() : null,
             'syncLog' => DaftraSyncLog::where(['entity_type' => 'CLIENT', 'entity_id' => $client->id])->orderByDesc('id')->get(),
             'activity' => ActivityLog::for(['clients' => [$client->id]]),
         ]);

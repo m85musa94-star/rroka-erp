@@ -9,6 +9,7 @@ use App\Http\Controllers\Web\ContractController;
 use App\Http\Controllers\Web\CostEstimateController;
 use App\Http\Controllers\Web\CostingController;
 use App\Http\Controllers\Web\CostRateController;
+use App\Http\Controllers\Web\CustomerReceiptController;
 use App\Http\Controllers\Web\DaftraSettingsController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\DemoDataController;
@@ -34,6 +35,7 @@ use App\Http\Controllers\Web\QuotationController;
 use App\Http\Controllers\Web\RecordDeleteController;
 use App\Http\Controllers\Web\ReportController;
 use App\Http\Controllers\Web\RoleController;
+use App\Http\Controllers\Web\SalesInvoiceController;
 use App\Http\Controllers\Web\StudioController;
 use App\Http\Controllers\Web\SupplierController;
 use App\Http\Controllers\Web\ThemeController;
@@ -90,9 +92,11 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
     Route::middleware('permission:projects.view')->group(function () {
         Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
         Route::get('/projects/create', [ProjectController::class, 'create'])->name('projects.create')->middleware('permission:projects.manage');
+        Route::get('/projects/past/create', [ProjectController::class, 'createPast'])->name('projects.past.create')->middleware('permission:projects.manage', 'permission:quotations.approve');
         Route::get('/projects/{project}', [ProjectController::class, 'show'])->name('projects.show');
     });
     Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store')->middleware('permission:projects.manage');
+    Route::post('/projects/past', [ProjectController::class, 'storePast'])->name('projects.past.store')->middleware('permission:projects.manage');
     Route::post('/projects/{project}/stage/{to}', [ProjectController::class, 'stage'])->name('projects.stage')->middleware('permission:projects.manage');
 
     // Per-report permissions are checked in the controller.
@@ -282,6 +286,31 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::post('/purchases/{purchase}/cancel', [PurchaseController::class, 'cancel'])->name('purchases.cancel')->whereNumber('purchase');
     });
     Route::post('/purchases/{purchase}/approve', [PurchaseController::class, 'approve'])->name('purchases.approve')->whereNumber('purchase')->middleware('permission:purchases.approve');
+
+    // Customer invoices (as issued in Daftra) and receipts: approval posts them to the books.
+    Route::middleware('permission:sales.view|sales.manage')->prefix('sales')->name('sales.')->group(function () {
+        Route::get('/invoices', [SalesInvoiceController::class, 'index'])->name('invoices.index');
+        Route::get('/invoices/create', [SalesInvoiceController::class, 'create'])->name('invoices.create')->middleware('permission:sales.manage');
+        Route::get('/invoices/{invoice}', [SalesInvoiceController::class, 'show'])->name('invoices.show')->whereNumber('invoice');
+        Route::get('/receipts', [CustomerReceiptController::class, 'index'])->name('receipts.index');
+        Route::get('/receipts/create', [CustomerReceiptController::class, 'create'])->name('receipts.create')->middleware('permission:sales.manage');
+        Route::get('/receipts/{receipt}', [CustomerReceiptController::class, 'show'])->name('receipts.show')->whereNumber('receipt');
+        Route::get('/balances', [SalesInvoiceController::class, 'balances'])->name('balances');
+    });
+    Route::middleware('permission:sales.manage')->prefix('sales')->name('sales.')->group(function () {
+        Route::post('/invoices', [SalesInvoiceController::class, 'store'])->name('invoices.store')->middleware('throttle:30,1');
+        Route::get('/invoices/{invoice}/edit', [SalesInvoiceController::class, 'edit'])->name('invoices.edit')->whereNumber('invoice');
+        Route::put('/invoices/{invoice}', [SalesInvoiceController::class, 'update'])->name('invoices.update')->whereNumber('invoice');
+        Route::post('/invoices/{invoice}/cancel', [SalesInvoiceController::class, 'cancel'])->name('invoices.cancel')->whereNumber('invoice');
+        Route::post('/receipts', [CustomerReceiptController::class, 'store'])->name('receipts.store')->middleware('throttle:30,1');
+        Route::get('/receipts/{receipt}/edit', [CustomerReceiptController::class, 'edit'])->name('receipts.edit')->whereNumber('receipt');
+        Route::put('/receipts/{receipt}', [CustomerReceiptController::class, 'update'])->name('receipts.update')->whereNumber('receipt');
+        Route::post('/receipts/{receipt}/cancel', [CustomerReceiptController::class, 'cancel'])->name('receipts.cancel')->whereNumber('receipt');
+    });
+    Route::middleware('permission:sales.approve')->prefix('sales')->name('sales.')->group(function () {
+        Route::post('/invoices/{invoice}/approve', [SalesInvoiceController::class, 'approve'])->name('invoices.approve')->whereNumber('invoice');
+        Route::post('/receipts/{receipt}/approve', [CustomerReceiptController::class, 'approve'])->name('receipts.approve')->whereNumber('receipt');
+    });
 
     Route::middleware('permission:expenses.view|expenses.manage')->group(function () {
         Route::get('/expenses', [ExpenseController::class, 'index'])->name('expenses.index');

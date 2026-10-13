@@ -149,6 +149,7 @@ form.inline { display: inline; }
 .alert.ok { background: var(--ok-soft); color: var(--ok); }
 .alert.bad { background: var(--bad-soft); color: var(--bad); }
 .alert.warn { background: var(--warn-soft); color: var(--warn); }
+.alert.info { background: var(--brand-soft); color: var(--ink); }
 .alert ul { margin: 0; padding-inline-start: 18px; }
 .muted { color: var(--muted); }
 .na { color: var(--warn); font-weight: 600; }
