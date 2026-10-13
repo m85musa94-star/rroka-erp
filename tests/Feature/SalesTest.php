@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Account;
 use App\Models\Client;
 use App\Models\CustomerReceipt;
+use App\Models\Expense;
+use App\Models\ExpenseCategory;
 use App\Models\JournalEntry;
 use App\Models\PaymentAccount;
 use App\Models\Project;
@@ -139,6 +141,63 @@ class SalesTest extends ApiTestCase
         $draft = CustomerReceipt::where('status', 'DRAFT')->sole();
         $this->actingAs($admin)->delete(route('records.destroy', ['receipts', $draft->id]))->assertSessionHasNoErrors();
         $this->assertNull(CustomerReceipt::find($draft->id));
+    }
+
+    public function test_delivery_moves_project_cost_to_cost_of_delivered_projects(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin)->post('/accounting/accounts/template')->assertSessionHasNoErrors();
+        $this->actingAs($admin)->post('/treasury/accounts', ['kind' => 'CASH', 'name' => 'TEST cash box'])->assertSessionHasNoErrors();
+        $cash = PaymentAccount::sole();
+        $cat = ExpenseCategory::create(['name' => 'TEST joinery', 'is_overhead' => false]);
+        $this->actingAs($admin)->put('/accounting/posting/links', ['payment' => [$cash->id => $this->acc('1101')], 'category' => [$cat->id => $this->acc('5205')]])->assertSessionHasNoErrors();
+        $this->actingAs($admin)->post('/accounting/posting/auto', ['auto_posting' => 1])->assertSessionHasNoErrors();
+        $client = Client::create(['business_name' => 'TEST client']);
+        $wipBalance = fn (int $project) => (float) DB::table('v_ledger_lines')->where('account_id', $this->acc('1130'))->where('project_id', $project)->sum('net');
+        $expense = function (Project $p, float $amount) use ($admin, $cash, $cat) {
+            $this->actingAs($admin)->post('/expenses', ['expense_date' => '2026-03-05', 'category_id' => $cat->id, 'payee' => 'TEST', 'description' => 'TEST cost',
+                'amount' => $amount, 'vat_amount' => 0, 'payment_account_id' => $cash->id, 'project_id' => $p->id])->assertSessionHasNoErrors();
+            $x = Expense::latest('id')->first();
+            $this->actingAs($admin)->post("/expenses/{$x->id}/approve")->assertSessionHasNoErrors();
+
+            return $x;
+        };
+
+        // Open project: cost waits in work in progress; delivery moves it, dated the delivery day.
+        $p = $this->pastProject($admin, $client, ['stage' => 'INSTALLATION', 'completed_on' => null]);
+        $expense($p, 4000);
+        $this->assertSame(4000.0, $wipBalance($p->id));
+        $this->actingAs($admin)->post("/projects/{$p->id}/stage/COMPLETED")->assertSessionHasNoErrors();
+        $je = JournalEntry::forDocument('PROJECT_CLOSE', $p->id);
+        $this->assertNotNull($je);
+        $this->assertSame(today()->toDateString(), $je->entry_date->toDateString());
+        $this->assertSame([['1130', 0.0, 4000.0, null, $p->id], ['5101', 4000.0, 0.0, null, $p->id]], $this->lines('PROJECT_CLOSE', $p->id));
+        $this->assertSame(0.0, $wipBalance($p->id));
+        $this->actingAs($admin)->get("/projects/{$p->id}")->assertOk()->assertSee($je->entry_no);
+
+        // A cost after delivery goes straight to the cost of delivered projects.
+        $late = $expense($p, 250);
+        $this->assertSame([['1101', 0.0, 250.0, null, null], ['5101', 250.0, 0.0, null, $p->id]], $this->lines('EXPENSE', $late->id));
+
+        // Delivered while auto-posting was off: the move waits in the backlog and is posted from there.
+        $q = $this->pastProject($admin, $client, ['title' => 'TEST second', 'stage' => 'INSTALLATION', 'completed_on' => null]);
+        $expense($q, 700);
+        $this->actingAs($admin)->post('/accounting/posting/auto', ['auto_posting' => 0])->assertSessionHasNoErrors();
+        $this->actingAs($admin)->post("/projects/{$q->id}/stage/COMPLETED")->assertSessionHasNoErrors();
+        $this->assertNull(JournalEntry::forDocument('PROJECT_CLOSE', $q->id));
+        $this->actingAs($admin)->get('/accounting/posting/backlog')->assertOk()->assertSee($q->project_no)->assertSee('700.00');
+        $this->actingAs($admin)->get('/accounting/reconciliation')->assertOk();
+        $this->actingAs($admin)->post("/accounting/posting/PROJECT_CLOSE/{$q->id}")->assertSessionHasNoErrors();
+        $this->assertSame(0.0, $wipBalance($q->id));
+        $this->assertSame(0, DB::table('v_posting_backlog')->where('source_type', 'PROJECT_CLOSE')->count());
+
+        // A past project entered as delivered has nothing in progress: its costs go to cost at once, no backlog.
+        $r = $this->pastProject($admin, $client, ['title' => 'TEST third']);
+        $this->actingAs($admin)->post('/accounting/posting/auto', ['auto_posting' => 1])->assertSessionHasNoErrors();
+        $x = $expense($r, 100);
+        $this->assertSame('5101', DB::table('accounts')->where('id', DB::table('journal_lines as l')->join('journal_entries as j', 'j.id', '=', 'l.entry_id')
+            ->where('j.source_type', 'EXPENSE')->where('j.source_id', $x->id)->where('l.debit', '>', 0)->value('l.account_id'))->value('code'));
+        $this->actingAs($admin)->get("/projects/{$r->id}")->assertOk()->assertSee('لا تكلفة في أعمال تحت التنفيذ لنقلها');
     }
 
     public function test_permissions(): void

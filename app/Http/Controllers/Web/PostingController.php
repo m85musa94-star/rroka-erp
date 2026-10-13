@@ -28,7 +28,7 @@ use Illuminate\View\View;
 class PostingController extends Controller
 {
     /** Roles every automatic entry may need. */
-    public const REQUIRED_ROLES = ['INVENTORY', 'WIP', 'INPUT_VAT', 'PAYABLE', 'INVENTORY_ADJUSTMENT', 'RECEIVABLE', 'SALES', 'OUTPUT_VAT'];
+    public const REQUIRED_ROLES = ['INVENTORY', 'WIP', 'INPUT_VAT', 'PAYABLE', 'INVENTORY_ADJUSTMENT', 'RECEIVABLE', 'SALES', 'OUTPUT_VAT', 'COST_OF_SALES'];
 
     public function settings(): View
     {
@@ -203,6 +203,13 @@ class PostingController extends Controller
         $ap = $role('PAYABLE');
         $ar = $role('RECEIVABLE');
         $outVat = $role('OUTPUT_VAT');
+        $cogs = $role('COST_OF_SALES');
+        // Cost recorded on projects (net stock issued + approved project expenses), open or delivered.
+        $projectCost = fn (bool $delivered) => (float) DB::selectOne("
+            SELECT COALESCE((SELECT sum(CASE movement_type WHEN 'ISSUE' THEN 1 ELSE -1 END * round(quantity * unit_cost, 2)) FROM stock_movements
+                              WHERE movement_type IN ('ISSUE', 'RETURN') AND project_id IN (SELECT id FROM projects WHERE (status = 'COMPLETED') = ?)), 0)
+                 + COALESCE((SELECT sum(amount) FROM expenses WHERE status = 'APPROVED'
+                              AND project_id IN (SELECT id FROM projects WHERE (status = 'COMPLETED') = ?)), 0) AS v", [$delivered, $delivered])->v;
 
         $rows = [
             [
@@ -212,9 +219,13 @@ class PostingController extends Controller
             ],
             [
                 'label' => __('أعمال تحت التنفيذ (المشاريع)'), 'account' => $wip,
-                'sub' => (float) DB::selectOne("SELECT COALESCE((SELECT sum(CASE movement_type WHEN 'ISSUE' THEN 1 ELSE -1 END * round(quantity * unit_cost, 2)) FROM stock_movements WHERE movement_type IN ('ISSUE', 'RETURN')), 0)
-                    + COALESCE((SELECT sum(amount) FROM expenses WHERE status = 'APPROVED' AND project_id IS NOT NULL), 0) AS v")->v,
-                'gl' => $gl($wip), 'note' => __('خامات مصروفة صافية + مصروفات معتمدة على المشاريع'), 'link' => null,
+                'sub' => $projectCost(false),
+                'gl' => $gl($wip), 'note' => __('خامات مصروفة صافية + مصروفات معتمدة على المشاريع المفتوحة'), 'link' => null,
+            ],
+            [
+                'label' => __('تكلفة المشاريع المسلّمة'), 'account' => $cogs,
+                'sub' => $projectCost(true),
+                'gl' => $gl($cogs), 'note' => __('خامات مصروفة صافية + مصروفات معتمدة على المشاريع المكتملة'), 'link' => null,
             ],
             [
                 'label' => __('ضريبة المدخلات'), 'account' => $vat,
@@ -256,7 +267,7 @@ class PostingController extends Controller
                   FROM stock_movements WHERE movement_type IN ('ISSUE', 'RETURN') GROUP BY project_id
                 UNION ALL
                 SELECT project_id, sum(amount) FROM expenses WHERE status = 'APPROVED' AND project_id IS NOT NULL GROUP BY project_id
-            ), s AS (SELECT project_id, sum(v) AS v FROM sub GROUP BY project_id),
+            ), s AS (SELECT project_id, sum(v) AS v FROM sub WHERE project_id IN (SELECT id FROM projects WHERE status <> 'COMPLETED') GROUP BY project_id),
             g AS (SELECT project_id, sum(net) AS v FROM v_ledger_lines WHERE account_id = ? AND project_id IS NOT NULL GROUP BY project_id)
             SELECT p.id, p.project_no, p.title, COALESCE(s.v, 0) AS sub, COALESCE(g.v, 0) AS gl
               FROM projects p LEFT JOIN s ON s.project_id = p.id LEFT JOIN g ON g.project_id = p.id

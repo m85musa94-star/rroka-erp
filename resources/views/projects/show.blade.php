@@ -40,6 +40,16 @@
         <dt>{{ __('البدء') }}</dt><dd>{{ $project->start_date->format('Y-m-d') }}</dd>
         <dt>{{ __('التسليم المستهدف') }}</dt><dd>{{ $project->target_date?->format('Y-m-d') ?? '—' }}</dd>
         <dt>{{ __('مدير المشروع') }}</dt><dd>{{ $manager ?? '—' }}</dd>
+        @if($project->status === 'COMPLETED')
+            <dt>{{ __('التسليم الفعلي') }}</dt><dd>{{ $project->completed_at?->timezone('Asia/Riyadh')->format('Y-m-d') ?? '—' }}</dd>
+            @if(collect(['accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close'])->contains(fn ($p) => auth()->user()->hasPermission($p)))
+                @php($closeEntry = \App\Models\JournalEntry::forDocument('PROJECT_CLOSE', $project->id))
+                <dt>{{ __('قيد نقل التكلفة') }}</dt>
+                <dd>@if($closeEntry)<a href="{{ route('accounting.journal.show', $closeEntry) }}" dir="ltr">{{ $closeEntry->entry_no }}</a>
+                    @elseif(\App\Models\PostingBacklog::where('source_type', 'PROJECT_CLOSE')->where('source_id', $project->id)->exists())<a class="badge b-ON_HOLD" href="{{ route('accounting.posting.backlog') }}">{{ __('لم يُرحَّل') }}</a>
+                    @else<span class="muted">{{ __('لا تكلفة في أعمال تحت التنفيذ لنقلها؛ تكاليفه تذهب مباشرة إلى تكلفة المشاريع المسلّمة.') }}</span>@endif</dd>
+            @endif
+        @endif
     </dl>
 </div>
 

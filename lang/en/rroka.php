@@ -233,7 +233,7 @@ return [
 
     'account_role' => ['CASH' => 'Cash', 'BANK' => 'Bank', 'CUSTODY' => 'Custody', 'RECEIVABLE' => 'Accounts receivable', 'INVENTORY' => 'Materials inventory', 'WIP' => 'Work in progress', 'INPUT_VAT' => 'Input VAT', 'PAYABLE' => 'Accounts payable', 'OUTPUT_VAT' => 'Output VAT', 'CUSTOMER_ADVANCES' => 'Customer advances', 'CAPITAL' => 'Capital', 'OWNER_CURRENT' => 'Owner current account', 'RETAINED_EARNINGS' => 'Retained earnings', 'SALES' => 'Sales revenue', 'SALES_DISCOUNT' => 'Sales discounts', 'COST_OF_SALES' => 'Cost of sales', 'FIXED_ASSETS' => 'Fixed assets', 'ACCUMULATED_DEPRECIATION' => 'Accumulated depreciation', 'DEPRECIATION' => 'Depreciation expense', 'INVENTORY_ADJUSTMENT' => 'Inventory count differences'],
 
-    'journal_source' => ['MANUAL' => 'Manual', 'OPENING' => 'Opening', 'REVERSAL' => 'Reversal', 'EXPENSE' => 'Expense', 'PURCHASE' => 'Purchase invoice', 'TRANSFER' => 'Treasury transfer', 'STOCK' => 'Stock movement', 'SALE' => 'Customer invoice', 'RECEIPT' => 'Customer receipt'],
+    'journal_source' => ['MANUAL' => 'Manual', 'OPENING' => 'Opening', 'REVERSAL' => 'Reversal', 'EXPENSE' => 'Expense', 'PURCHASE' => 'Purchase invoice', 'TRANSFER' => 'Treasury transfer', 'STOCK' => 'Stock movement', 'SALE' => 'Customer invoice', 'RECEIPT' => 'Customer receipt', 'PROJECT_CLOSE' => 'Project delivery'],
 
     'expense_kind' => ['PROJECT' => 'On a project', 'OVERHEAD' => 'Workshop overhead', 'OTHER' => 'General & admin'],
 

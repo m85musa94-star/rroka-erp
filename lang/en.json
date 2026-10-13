@@ -2068,5 +2068,12 @@
     "اعتماد فواتير العملاء وسندات القبض (تُرحَّل للدفاتر)": "Approve customer invoices and receipts (posted to the books)",
     "ضريبة المخرجات": "Output VAT",
     "فواتير العملاء − الإشعارات الدائنة − سندات القبض (المعتمدة)": "Customer invoices − credit notes − receipts (approved)",
-    "ضريبة فواتير العملاء المعتمدة بعد الإشعارات الدائنة (قبل تسوية الإقرار)": "VAT of approved customer invoices after credit notes (before the return settlement)"
+    "ضريبة فواتير العملاء المعتمدة بعد الإشعارات الدائنة (قبل تسوية الإقرار)": "VAT of approved customer invoices after credit notes (before the return settlement)",
+    "المشاريع المفتوحة فقط؛ المشروع المكتمل انتقلت تكلفته إلى «تكلفة المشاريع المسلّمة»، فإن ظهر هنا فله تكلفة لم تُنقل بعد.": "Open projects only; a completed project's cost moved to the cost of delivered projects, so if one shows here it has cost not yet moved.",
+    "التسليم الفعلي": "Actual delivery",
+    "قيد نقل التكلفة": "Cost transfer entry",
+    "لا تكلفة في أعمال تحت التنفيذ لنقلها؛ تكاليفه تذهب مباشرة إلى تكلفة المشاريع المسلّمة.": "No work in progress to move; its costs go straight to the cost of delivered projects.",
+    "تكلفة المشاريع المسلّمة": "Cost of delivered projects",
+    "خامات مصروفة صافية + مصروفات معتمدة على المشاريع المفتوحة": "Net materials issued + approved expenses on open projects",
+    "خامات مصروفة صافية + مصروفات معتمدة على المشاريع المكتملة": "Net materials issued + approved expenses on completed projects"
 }

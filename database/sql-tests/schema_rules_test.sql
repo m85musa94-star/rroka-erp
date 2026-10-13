@@ -973,7 +973,8 @@ INSERT INTO accounts (id, code, name, account_type, parent_id, system_role, deta
     (927, '5309', 'TEST transport', 'EXPENSE', 901, NULL, 'EXPENSES'),
     (930, '1111', 'TEST receivable', 'ASSET', 900, 'RECEIVABLE', 'RECEIVABLE'),
     (931, '2110', 'TEST output VAT', 'LIABILITY', 904, 'OUTPUT_VAT', 'CURRENT_LIABILITIES'),
-    (932, '4101', 'TEST project revenue', 'REVENUE', 905, 'SALES', 'INCOME');
+    (932, '4101', 'TEST project revenue', 'REVENUE', 905, 'SALES', 'INCOME'),
+    (933, '5102', 'TEST cost of delivered projects', 'EXPENSE', 901, 'COST_OF_SALES', 'COST_OF_REVENUE');
 SELECT pg_temp.expect_error('mapping: a payment account maps to a postable account only',
     'UPDATE payment_accounts SET account_id = 900 WHERE id = 1', 'RROKA_ACCOUNT_NOT_POSTABLE');
 SELECT pg_temp.expect_error('mapping: a payment account does not map to an expense account',
@@ -995,11 +996,11 @@ SELECT pg_temp.expect_error('journal: a document entry names its document',
        INSERT INTO journal_entries (entry_date, description, created_by, source_type) VALUES ('2026-03-02', 'TEST', 1, 'EXPENSE'); END $b$$q$,
     'journal_entries_document_source');
 
--- Backlog posting (auto-posting still off): the project expense goes to WIP.
+-- Backlog posting (auto-posting still off): the expense of a delivered project goes to its cost.
 SELECT pg_temp.expect_ok('backlog: post the project expense', 'SELECT fn_post_document(''EXPENSE'', 1, 1)');
-SELECT pg_temp.expect_eq('expense entry: WIP 250 for project 1',
+SELECT pg_temp.expect_eq('expense entry: project 1 is delivered, so 250 goes to the cost of delivered projects',
     (SELECT sum(l.debit) FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id
-      WHERE j.source_type = 'EXPENSE' AND j.source_id = 1 AND l.account_id = 921 AND l.project_id = 1), 250.00::numeric);
+      WHERE j.source_type = 'EXPENSE' AND j.source_id = 1 AND l.account_id = 933 AND l.project_id = 1), 250.00::numeric);
 SELECT pg_temp.expect_eq('expense entry: input VAT 37.50',
     (SELECT sum(l.debit) FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id
       WHERE j.source_type = 'EXPENSE' AND j.source_id = 1 AND l.account_id = 922), 37.50::numeric);
@@ -1068,7 +1069,7 @@ INSERT INTO expenses (id, expense_date, category_id, payee, description, amount,
 SELECT pg_temp.expect_error('auto-posting: an unmapped category refuses the approval',
     'UPDATE expenses SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 7', 'RROKA_POSTING_MAPPING');
 SELECT pg_temp.expect_eq('auto-posting: the refused expense stays a draft', (SELECT status FROM expenses WHERE id = 7), 'DRAFT');
-SELECT pg_temp.expect_ok('auto-posting: a project expense needs no category account (it goes to WIP)',
+SELECT pg_temp.expect_ok('auto-posting: a project expense needs no category account (it goes to the project)',
     'UPDATE expenses SET project_id = 1, status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 7');
 
 INSERT INTO expenses (id, expense_date, category_id, payee, description, amount, vat_amount, payment_method, payment_account_id)
@@ -1096,13 +1097,13 @@ SELECT pg_temp.expect_eq('auto-posting: bank debited 50',
 INSERT INTO stock_movements (id, material_id, movement_type, quantity, project_id, created_by) VALUES (9001, 5, 'RESERVE', 1, 1, 1);
 SELECT pg_temp.expect_eq('stock: a reservation posts nothing', (SELECT count(*) FROM journal_entries WHERE source_type = 'STOCK' AND source_id = 9001), 0::bigint);
 INSERT INTO stock_movements (id, material_id, movement_type, quantity, project_id, created_by) VALUES (9002, 5, 'ISSUE', 2, 1, 1);
-SELECT pg_temp.expect_eq('stock: issue 2 × 87.30 → WIP of project 1',
+SELECT pg_temp.expect_eq('stock: issue 2 × 87.30 to delivered project 1 → its cost',
     (SELECT l.debit || ':' || l.project_id FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id
-      WHERE j.source_type = 'STOCK' AND j.source_id = 9002 AND l.account_id = 921), '174.60:1');
+      WHERE j.source_type = 'STOCK' AND j.source_id = 9002 AND l.account_id = 933), '174.60:1');
 INSERT INTO stock_movements (id, material_id, movement_type, quantity, project_id, created_by) VALUES (9003, 5, 'RETURN', 1, 1, 1);
-SELECT pg_temp.expect_eq('stock: return credits WIP of project 1',
+SELECT pg_temp.expect_eq('stock: return from delivered project 1 credits its cost',
     (SELECT l.credit || ':' || l.project_id FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id
-      WHERE j.source_type = 'STOCK' AND j.source_id = 9003 AND l.account_id = 921), '87.30:1');
+      WHERE j.source_type = 'STOCK' AND j.source_id = 9003 AND l.account_id = 933), '87.30:1');
 INSERT INTO stock_movements (id, material_id, movement_type, quantity, reason, created_by) VALUES (9004, 6, 'ADJUST_OUT', 1, 'TEST count', 1);
 SELECT pg_temp.expect_eq('stock: a count shortage goes to the adjustment account',
     (SELECT sum(l.debit) FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id
@@ -1260,6 +1261,38 @@ SELECT pg_temp.expect_eq('sales: an invoice before the books start is part of th
     (SELECT count(*) FROM journal_entries WHERE source_type = 'SALE' AND source_id = 4), 0::bigint);
 INSERT INTO sales_invoices (id, daftra_invoice_no, invoice_date, client_id, description, amount) VALUES (5, 'INV-DRAFT', '2026-03-21', 1, 'TEST draft', 10);
 SELECT pg_temp.expect_ok('sales: a draft invoice is deleted', 'DELETE FROM sales_invoices WHERE id = 5');
+-- ---------------------------------------------------------------------
+-- Project delivery: work in progress moves to the cost of delivered projects
+-- ---------------------------------------------------------------------
+INSERT INTO expenses (id, expense_date, category_id, payee, description, amount, vat_amount, payment_method, payment_account_id, project_id)
+    VALUES (30, '2026-03-05', 2, 'TEST joiner', 'TEST past project cost', 1200, 0, 'CASH', 1, 200);
+UPDATE expenses SET status = 'APPROVED', approved_by = 2, approved_at = now() WHERE id = 30;
+SELECT pg_temp.expect_eq('delivery: an open project''s cost is work in progress',
+    (SELECT sum(net) FROM v_ledger_lines WHERE account_id = 921 AND project_id = 200), 1200.00::numeric);
+SELECT pg_temp.expect_error('delivery: an open project has no delivery entry', 'SELECT fn_post_document(''PROJECT_CLOSE'', 200, 1)', 'RROKA_POSTING_NOT_APPROVED');
+UPDATE projects SET status = 'IN_PRODUCTION' WHERE id = 200;
+UPDATE projects SET status = 'INSTALLATION' WHERE id = 200;
+SELECT pg_temp.expect_ok('delivery: completing the project posts the delivery entry',
+    'UPDATE projects SET status = ''COMPLETED'', completed_at = ''2026-03-25 10:00+03'' WHERE id = 200');
+SELECT pg_temp.expect_eq('delivery: cost of delivered projects debited 1,200 on the delivery day',
+    (SELECT j.entry_date || ':' || l.debit || ':' || l.project_id FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id
+      WHERE j.source_type = 'PROJECT_CLOSE' AND j.source_id = 200 AND l.account_id = 933), '2026-03-25:1200.00:200');
+SELECT pg_temp.expect_eq('delivery: nothing of the project is left in work in progress',
+    (SELECT sum(net) FROM v_ledger_lines WHERE account_id = 921 AND project_id = 200), 0.00::numeric);
+INSERT INTO expenses (id, expense_date, category_id, payee, description, amount, vat_amount, payment_method, payment_account_id, project_id)
+    VALUES (31, '2026-03-28', 2, 'TEST fitter', 'TEST late snagging', 300, 0, 'CASH', 1, 200);
+UPDATE expenses SET status = 'APPROVED', approved_by = 2, approved_at = now() WHERE id = 31;
+SELECT pg_temp.expect_eq('delivery: a cost after delivery goes straight to the cost of delivered projects',
+    (SELECT l.account_id FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id
+      WHERE j.source_type = 'EXPENSE' AND j.source_id = 31 AND l.debit > 0), 933::bigint);
+SELECT pg_temp.expect_eq('delivery: project cost in the books = 1,500, none in progress',
+    (SELECT sum(net) FILTER (WHERE account_id = 933) || ':' || COALESCE(sum(net) FILTER (WHERE account_id = 921), 0)
+       FROM v_ledger_lines WHERE project_id = 200), '1500.00:0.00');
+SELECT pg_temp.expect_error('delivery: posted once only', 'SELECT fn_post_document(''PROJECT_CLOSE'', 200, 1)', 'RROKA_POSTING_DUPLICATE');
+SELECT pg_temp.expect_error('delivery: its entry is not written by hand',
+    'INSERT INTO journal_entries (entry_date, description, created_by, source_type, source_id) VALUES (''2026-03-25'', ''TEST'', 1, ''PROJECT_CLOSE'', 99)', 'RROKA_JOURNAL_AUTO');
+SELECT pg_temp.expect_eq('delivery: no delivery is left unposted',
+    (SELECT count(*) FROM v_posting_backlog WHERE source_type = 'PROJECT_CLOSE'), 0::bigint);
 UPDATE accounting_settings SET auto_posting = false;
 
 -- ---------------------------------------------------------------------

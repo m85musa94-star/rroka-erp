@@ -41,6 +41,7 @@ use App\Http\Controllers\Web\SupplierController;
 use App\Http\Controllers\Web\ThemeController;
 use App\Http\Controllers\Web\TreasuryTransferController;
 use App\Http\Controllers\Web\UserController;
+use App\Models\JournalEntry;
 use App\Reports\ReportRegistry;
 use App\Support\Release;
 use Illuminate\Http\Request;
@@ -394,8 +395,8 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::post('/journal/{entry}/post', [JournalEntryController::class, 'post'])->name('journal.post')->whereNumber('entry');
         Route::post('/journal/{entry}/reverse', [JournalEntryController::class, 'reverse'])->name('journal.reverse')->whereNumber('entry');
         Route::post('/posting/post-all', [PostingController::class, 'postAll'])->name('posting.post-all');
-        Route::post('/posting/{type}/{id}', [PostingController::class, 'post'])->name('posting.post')->whereIn('type', ['EXPENSE', 'PURCHASE', 'TRANSFER', 'STOCK'])->whereNumber('id');
-        Route::post('/posting/{type}/{id}/exclude', [PostingController::class, 'exclude'])->name('posting.exclude')->whereIn('type', ['EXPENSE', 'PURCHASE', 'TRANSFER', 'STOCK'])->whereNumber('id');
+        Route::post('/posting/{type}/{id}', [PostingController::class, 'post'])->name('posting.post')->whereIn('type', JournalEntry::DOCUMENT_SOURCES)->whereNumber('id');
+        Route::post('/posting/{type}/{id}/exclude', [PostingController::class, 'exclude'])->name('posting.exclude')->whereIn('type', JournalEntry::DOCUMENT_SOURCES)->whereNumber('id');
         Route::delete('/posting/exclusions/{exclusion}', [PostingController::class, 'unexclude'])->name('posting.unexclude')->whereNumber('exclusion');
     });
     Route::middleware('permission:accounting.close')->prefix('accounting')->name('accounting.')->group(function () {

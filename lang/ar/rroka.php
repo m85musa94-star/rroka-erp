@@ -233,7 +233,7 @@ return [
 
     'account_role' => ['CASH' => 'النقدية', 'BANK' => 'البنك', 'CUSTODY' => 'العهد', 'RECEIVABLE' => 'العملاء (الذمم المدينة)', 'INVENTORY' => 'مخزون الخامات', 'WIP' => 'أعمال تحت التنفيذ', 'INPUT_VAT' => 'ضريبة المدخلات', 'PAYABLE' => 'الموردون', 'OUTPUT_VAT' => 'ضريبة المخرجات', 'CUSTOMER_ADVANCES' => 'دفعات مقدمة من العملاء', 'CAPITAL' => 'رأس المال', 'OWNER_CURRENT' => 'جاري المالك', 'RETAINED_EARNINGS' => 'الأرباح المبقاة', 'SALES' => 'إيرادات المبيعات', 'SALES_DISCOUNT' => 'خصومات المبيعات', 'COST_OF_SALES' => 'تكلفة المبيعات', 'FIXED_ASSETS' => 'الأصول الثابتة', 'ACCUMULATED_DEPRECIATION' => 'مجمع الإهلاك', 'DEPRECIATION' => 'مصروف الإهلاك', 'INVENTORY_ADJUSTMENT' => 'فروقات جرد المخزون'],
 
-    'journal_source' => ['MANUAL' => 'يدوي', 'OPENING' => 'افتتاحي', 'REVERSAL' => 'عكسي', 'EXPENSE' => 'مصروف', 'PURCHASE' => 'فاتورة مشتريات', 'TRANSFER' => 'تحويل خزينة', 'STOCK' => 'حركة مخزون', 'SALE' => 'فاتورة عميل', 'RECEIPT' => 'سند قبض'],
+    'journal_source' => ['MANUAL' => 'يدوي', 'OPENING' => 'افتتاحي', 'REVERSAL' => 'عكسي', 'EXPENSE' => 'مصروف', 'PURCHASE' => 'فاتورة مشتريات', 'TRANSFER' => 'تحويل خزينة', 'STOCK' => 'حركة مخزون', 'SALE' => 'فاتورة عميل', 'RECEIPT' => 'سند قبض', 'PROJECT_CLOSE' => 'تسليم مشروع'],
 
     'expense_kind' => ['PROJECT' => 'على مشروع', 'OVERHEAD' => 'غير مباشر للورشة', 'OTHER' => 'إداري وعمومي'],
 
