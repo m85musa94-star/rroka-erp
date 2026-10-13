@@ -38,6 +38,7 @@ use App\Http\Controllers\Web\RoleController;
 use App\Http\Controllers\Web\SalesInvoiceController;
 use App\Http\Controllers\Web\StudioController;
 use App\Http\Controllers\Web\SupplierController;
+use App\Http\Controllers\Web\SupplierPaymentController;
 use App\Http\Controllers\Web\ThemeController;
 use App\Http\Controllers\Web\TreasuryTransferController;
 use App\Http\Controllers\Web\UserController;
@@ -287,6 +288,21 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::post('/purchases/{purchase}/cancel', [PurchaseController::class, 'cancel'])->name('purchases.cancel')->whereNumber('purchase');
     });
     Route::post('/purchases/{purchase}/approve', [PurchaseController::class, 'approve'])->name('purchases.approve')->whereNumber('purchase')->middleware('permission:purchases.approve');
+
+    // Supplier payments: settle invoices on credit; approval posts them to payables.
+    Route::middleware('permission:purchases.view|purchases.manage')->prefix('supplier-payments')->name('supplier-payments.')->group(function () {
+        Route::get('/', [SupplierPaymentController::class, 'index'])->name('index');
+        Route::get('/create', [SupplierPaymentController::class, 'create'])->name('create')->middleware('permission:purchases.manage');
+        Route::get('/balances', [SupplierPaymentController::class, 'balances'])->name('balances');
+        Route::get('/{payment}', [SupplierPaymentController::class, 'show'])->name('show')->whereNumber('payment');
+    });
+    Route::middleware('permission:purchases.manage')->prefix('supplier-payments')->name('supplier-payments.')->group(function () {
+        Route::post('/', [SupplierPaymentController::class, 'store'])->name('store')->middleware('throttle:30,1');
+        Route::get('/{payment}/edit', [SupplierPaymentController::class, 'edit'])->name('edit')->whereNumber('payment');
+        Route::put('/{payment}', [SupplierPaymentController::class, 'update'])->name('update')->whereNumber('payment');
+        Route::post('/{payment}/cancel', [SupplierPaymentController::class, 'cancel'])->name('cancel')->whereNumber('payment');
+    });
+    Route::post('/supplier-payments/{payment}/approve', [SupplierPaymentController::class, 'approve'])->name('supplier-payments.approve')->whereNumber('payment')->middleware('permission:purchases.approve');
 
     // Customer invoices (as issued in Daftra) and receipts: approval posts them to the books.
     Route::middleware('permission:sales.view|sales.manage')->prefix('sales')->name('sales.')->group(function () {

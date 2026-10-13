@@ -17,7 +17,7 @@ class JournalEntry extends Model
     public const SOURCES = ['MANUAL', 'OPENING', 'REVERSAL'];
 
     /** Entries written by approving a document (fn_post_document): never edited or reversed by hand. */
-    public const DOCUMENT_SOURCES = ['EXPENSE', 'PURCHASE', 'TRANSFER', 'STOCK', 'SALE', 'RECEIPT', 'PROJECT_CLOSE'];
+    public const DOCUMENT_SOURCES = ['EXPENSE', 'PURCHASE', 'TRANSFER', 'STOCK', 'SALE', 'RECEIPT', 'PROJECT_CLOSE', 'SUPPLIER_PAYMENT'];
 
     protected $fillable = ['entry_date', 'description', 'reference', 'source_type'];
 
@@ -72,6 +72,7 @@ class JournalEntry extends Model
             'SALE' => route('sales.invoices.show', $id),
             'RECEIPT' => route('sales.receipts.show', $id),
             'PROJECT_CLOSE' => route('projects.show', $id),
+            'SUPPLIER_PAYMENT' => route('supplier-payments.show', $id),
             'STOCK' => ($m = DB::table('stock_movements')->where('id', $id)->value('material_id')) ? route('materials.show', $m) : null,
             default => null,
         };

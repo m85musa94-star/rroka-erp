@@ -24,7 +24,7 @@
         <div class="field"><label>{{ __('المورد') }}</label>
             <select name="supplier_id"><option value="">{{ __('— بلا —') }}</option>@foreach($suppliers as $s)<option value="{{ $s->id }}" @selected((string) $v('supplier_id') === (string) $s->id)>{{ $s->name }}</option>@endforeach</select></div>
         <div class="field"><label>{{ __('أو الجهة المستفيدة') }}</label><input name="payee" value="{{ $v('payee') }}" placeholder="{{ __('إن لم تكن موردًا مسجلًا') }}"></div>
-        <div class="field"><label>{{ __('رقم الإيصال / المرجع') }}</label><input name="reference" value="{{ $v('reference') }}" dir="ltr"></div>
+        <div class="field"><label>{{ __('رقم الإيصال / فاتورة المورد') }}</label><input name="reference" value="{{ $v('reference') }}" dir="ltr"><div class="hint">{{ __('إلزامي للفاتورة الآجلة.') }}</div></div>
     </div>
     <div class="field"><label>{{ __('الوصف *') }}</label><input name="description" value="{{ $v('description') }}" required></div>
     <div class="grid g3">
@@ -33,13 +33,14 @@
         <div class="field"><label>{{ __('دُفع من *') }}</label>
             <select name="payment_account_id" id="account" required>
                 <option value="">{{ __('— اختر الصندوق أو البنك أو العهدة —') }}</option>
+                <optgroup label="{{ __('لم يُدفع بعد') }}"><option value="CREDIT" data-kind="CREDIT" @selected(old('payment_account_id', $x->payment_method === 'CREDIT' ? 'CREDIT' : null) === 'CREDIT')>{{ __('آجل — على حساب المورد') }}</option></optgroup>
                 @foreach(['CASH' => __('الصناديق النقدية'), 'BANK' => __('الحسابات البنكية'), 'CUSTODY' => __('عهد الموظفين')] as $kind => $label)
                     @if($accounts->where('kind', $kind)->isNotEmpty())
                         <optgroup label="{{ $label }}">@foreach($accounts->where('kind', $kind) as $a)<option value="{{ $a->id }}" data-kind="{{ $a->kind }}" @selected((string) $v('payment_account_id') === (string) $a->id)>{{ $a->name }}</option>@endforeach</optgroup>
                     @endif
                 @endforeach
             </select>
-            <div class="hint">{{ __('يُرسل لاحقًا إلى الخزينة المقابلة في دفترة، وهناك تتم مطابقة البنك والنقدية.') }}</div></div>
+            <div class="hint">{{ __('«آجل» لفاتورة مورد لم تُدفع بعد: تُسجَّل دَينًا للمورد، وتُسدَّد لاحقًا بسند صرف.') }}</div></div>
         <div class="field" id="bank-method"><label>{{ __('طريقة الدفع من البنك') }}</label>
             <select name="payment_method">@foreach(\App\Models\PaymentAccount::METHODS['BANK'] as $m)<option value="{{ $m }}" @selected($v('payment_method') === $m)>{{ __("rroka.payment_method.$m") }}</option>@endforeach</select></div>
         <div class="field"><label>{{ __('صورة الإيصال') }}</label>

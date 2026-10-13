@@ -20,7 +20,7 @@
         @foreach($items as $x)
             <tr class="row-link" onclick="location='{{ route('expenses.show', $x) }}'">
                 <td><a href="{{ route('expenses.show', $x) }}">{{ $x->expense_no }}</a></td><td class="num">{{ $x->expense_date->format('Y-m-d') }}</td>
-                <td>{{ $x->category->name }}</td><td>{{ $x->description }}</td><td>{{ $x->project?->project_no ?? '—' }}</td><td>{{ $x->paymentAccount?->name ?? '—' }}</td>
+                <td>{{ $x->category->name }}</td><td>{{ $x->description }}</td><td>{{ $x->project?->project_no ?? '—' }}</td><td>{{ $x->paymentAccount?->name ?? ($x->payment_method === 'CREDIT' ? __('آجل') : '—') }}</td>
                 <td class="num">{{ number_format($x->amount, 2) }}</td>
                 <td>@include('partials.badge', ['s' => $x->status]) @if($x->selfApproved())<span class="badge b-ON_HOLD">{{ __('اعتماد ذاتي') }}</span>@endif</td>
             </tr>

@@ -14,6 +14,7 @@
             @if($u->hasPermission('expenses.approve'))<form method="post" action="{{ route('expenses.approve', $x) }}" class="inline" data-confirm="{{ __('اعتماد المصروف؟ لا يمكن تعديله بعدها.') }}">@csrf<button class="btn ok sm">{{ __('اعتماد') }}</button></form>@endif
             @if($u->hasPermission('expenses.manage'))<form method="post" action="{{ route('expenses.cancel', $x) }}" class="inline" data-confirm="{{ __('إلغاء المسودة؟') }}">@csrf<button class="btn ghost sm">{{ __('إلغاء') }}</button></form>@endif
         @endif
+        @if($open !== null && $open > 0 && $u->hasPermission('purchases.manage'))<a class="btn sm" href="{{ route('supplier-payments.create', ['expense' => $x->id]) }}">{{ __('سداد للمورد') }}</a>@endif
         @if($x->attachment)<a class="btn ghost sm" href="{{ $x->attachment->url(false) }}" target="_blank" rel="noopener">{{ __('صورة الإيصال') }}</a>@endif
     </div>
     @include('partials.statusbar', ['path' => $path, 'current' => $x->status, 'bad' => ['CANCELLED']])
@@ -26,7 +27,7 @@
             <dt>{{ __('التاريخ') }}</dt><dd>{{ $x->expense_date->format('Y-m-d') }}</dd>
             <dt>{{ __('الجهة') }}</dt><dd>@if($x->supplier)<a href="{{ route('suppliers.show', $x->supplier) }}">{{ $x->supplier->name }}</a>@else{{ $x->payee }}@endif</dd>
             <dt>{{ __('المشروع') }}</dt><dd>@if($x->project)<a href="{{ route('projects.show', $x->project) }}">{{ $x->project->project_no }}</a>@else{{ __('مصروف عام للورشة') }}@endif</dd>
-            <dt>{{ __('دُفع من') }}</dt><dd>@if($x->paymentAccount)@if($u->hasPermission('treasury.view') || $u->hasPermission('treasury.manage'))<a href="{{ route('treasury.accounts.show', $x->paymentAccount) }}">{{ $x->paymentAccount->name }}</a>@else{{ $x->paymentAccount->name }}@endif @else<span class="warn-text">{{ __('غير محدد') }}</span>@endif</dd>
+            <dt>{{ __('دُفع من') }}</dt><dd>@if($x->isCredit())<span class="badge b-ON_HOLD">{{ __('آجل على حساب المورد') }}</span>@elseif($x->paymentAccount)@if($u->hasPermission('treasury.view') || $u->hasPermission('treasury.manage'))<a href="{{ route('treasury.accounts.show', $x->paymentAccount) }}">{{ $x->paymentAccount->name }}</a>@else{{ $x->paymentAccount->name }}@endif @else<span class="warn-text">{{ __('غير محدد') }}</span>@endif</dd>
             <dt>{{ __('طريقة الدفع') }}</dt><dd>{{ __("rroka.payment_method.$x->payment_method") }}{{ $x->paidBy ? ' — '.$x->paidBy->name : '' }}</dd>
             <dt>{{ __('المرجع') }}</dt><dd>{{ $x->reference ?? '—' }}</dd>
             @include('partials.journal-link', ['type' => 'EXPENSE', 'id' => $x->id, 'approved' => $x->status === 'APPROVED'])
@@ -35,6 +36,7 @@
             <tr><td>{{ __('المبلغ قبل الضريبة') }}</td><td class="num">{{ number_format($x->amount, 2) }}</td></tr>
             <tr><td>{{ __('ضريبة القيمة المضافة (كما في الإيصال)') }}</td><td class="num">{{ number_format($x->vat_amount, 2) }}</td></tr>
             <tr><th>{{ __('الإجمالي') }}</th><th class="num">{{ number_format($x->amount + $x->vat_amount, 2) }}</th></tr>
+            @if($open !== null)<tr><th>{{ __('المتبقي للمورد') }}</th><th class="num">{{ number_format($open, 2) }}</th></tr>@endif
         </table></div>
     </div>
     <dl class="kv" style="margin-top:10px">
@@ -44,5 +46,16 @@
     </dl>
     @unless($x->attachment_id)<p class="hint warn-text">{{ __('لا توجد صورة للمستند المؤيد.') }}</p>@endunless
 </div>
+@if($payments->isNotEmpty())
+<div class="card">
+    <h2>{{ __('السداد') }}</h2>
+    <div class="table-wrap"><table>
+        <tr><th>{{ __('السند') }}</th><th>{{ __('التاريخ') }}</th><th>{{ __('من') }}</th><th class="num">{{ __('المبلغ') }}</th><th>{{ __('الحالة') }}</th></tr>
+        @foreach($payments as $sp)
+            <tr><td><a href="{{ route('supplier-payments.show', $sp) }}">{{ $sp->payment_no }}</a></td><td class="num">{{ $sp->payment_date->format('Y-m-d') }}</td><td>{{ $sp->paymentAccount->name }}</td><td class="num">{{ number_format($sp->amount, 2) }}</td><td>@include('partials.badge', ['s' => $sp->status])</td></tr>
+        @endforeach
+    </table></div>
+</div>
+@endif
 @include('partials.chatter', ['activity' => $activity])
 @endsection

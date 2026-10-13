@@ -21,6 +21,7 @@
                 <form method="post" action="{{ route('purchases.cancel', $p) }}" class="inline" data-confirm="{{ __('إلغاء المسودة؟') }}">@csrf<button class="btn ghost sm">{{ __('إلغاء') }}</button></form>
             @endif
         @endif
+        @if($p->status === 'APPROVED' && auth()->user()->hasPermission('purchases.manage') && \App\Http\Controllers\Web\SupplierPaymentController::purchaseOpen($p) > 0)<a class="btn sm" href="{{ route('supplier-payments.create', ['purchase' => $p->id]) }}">{{ __('سداد للمورد') }}</a>@endif
         @if($p->attachment)<a class="btn ghost sm" href="{{ $p->attachment->url(false) }}" target="_blank" rel="noopener">{{ __('صورة الفاتورة') }}</a>@endif
     </div>
     @include('partials.statusbar', ['path' => $path, 'current' => $p->status, 'bad' => ['CANCELLED']])

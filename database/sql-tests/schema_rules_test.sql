@@ -1293,6 +1293,53 @@ SELECT pg_temp.expect_error('delivery: its entry is not written by hand',
     'INSERT INTO journal_entries (entry_date, description, created_by, source_type, source_id) VALUES (''2026-03-25'', ''TEST'', 1, ''PROJECT_CLOSE'', 99)', 'RROKA_JOURNAL_AUTO');
 SELECT pg_temp.expect_eq('delivery: no delivery is left unposted',
     (SELECT count(*) FROM v_posting_backlog WHERE source_type = 'PROJECT_CLOSE'), 0::bigint);
+-- ---------------------------------------------------------------------
+-- Suppliers on credit and supplier payments
+-- ---------------------------------------------------------------------
+SELECT pg_temp.expect_error('credit: needs a registered supplier',
+    'INSERT INTO expenses (expense_date, category_id, payee, description, amount, vat_amount, payment_method, reference) VALUES (''2026-04-01'', 2, ''x'', ''TEST'', 10, 0, ''CREDIT'', ''A-1'')', 'RROKA_EXPENSE_CREDIT');
+SELECT pg_temp.expect_error('credit: needs the supplier''s invoice number',
+    'INSERT INTO expenses (expense_date, category_id, supplier_id, description, amount, vat_amount, payment_method) VALUES (''2026-04-01'', 2, 1, ''TEST'', 10, 0, ''CREDIT'')', 'RROKA_EXPENSE_CREDIT');
+SELECT pg_temp.expect_error('credit: no cash box or bank',
+    'INSERT INTO expenses (expense_date, category_id, supplier_id, description, amount, vat_amount, payment_method, reference, payment_account_id) VALUES (''2026-04-01'', 2, 1, ''TEST'', 10, 0, ''CREDIT'', ''A-1'', 1)', 'RROKA_EXPENSE_CREDIT');
+INSERT INTO expenses (id, expense_date, category_id, supplier_id, description, amount, vat_amount, payment_method, reference)
+    VALUES (40, '2026-04-01', 2, 1, 'TEST board on credit', 1000, 150, 'CREDIT', 'SUP-77');
+SELECT pg_temp.expect_error('credit: a supplier''s invoice is entered once',
+    'INSERT INTO expenses (id, expense_date, category_id, supplier_id, description, amount, vat_amount, payment_method, reference) VALUES (41, ''2026-04-02'', 2, 1, ''TEST'', 10, 0, ''CREDIT'', '' SUP-77 '')', 'ux_expenses_credit_invoice');
+SELECT pg_temp.expect_ok('credit: approved without a cash box',
+    'UPDATE expenses SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 40');
+SELECT pg_temp.expect_eq('credit: payables credited 1,150 in the supplier''s name',
+    (SELECT l.credit || ':' || l.partner_type || l.partner_id FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id
+      WHERE j.source_type = 'EXPENSE' AND j.source_id = 40 AND l.account_id = 923), '1150.00:SUPPLIER1');
+SELECT pg_temp.expect_eq('credit: cost debited 1,000 to the category account',
+    (SELECT l.debit FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id
+      WHERE j.source_type = 'EXPENSE' AND j.source_id = 40 AND l.account_id = 911), 1000.00::numeric);
+
+SELECT pg_temp.expect_error('payment: the invoice paid is the same supplier''s',
+    'INSERT INTO supplier_payments (payment_date, supplier_id, payment_account_id, expense_id, amount) VALUES (''2026-04-10'', 2, 2, 40, 10)', 'RROKA_SUPPLIER_PAYMENT_INVOICE');
+SELECT pg_temp.expect_error('payment: an expense paid at once has nothing to settle',
+    'INSERT INTO supplier_payments (payment_date, supplier_id, payment_account_id, expense_id, amount) VALUES (''2026-04-10'', 1, 2, 6, 10)', 'RROKA_SUPPLIER_PAYMENT_INVOICE');
+SELECT pg_temp.expect_error('payment: one invoice at most',
+    'INSERT INTO supplier_payments (payment_date, supplier_id, payment_account_id, expense_id, purchase_invoice_id, amount) VALUES (''2026-04-10'', 1, 2, 40, 21, 10)', 'check constraint');
+INSERT INTO supplier_payments (id, payment_date, supplier_id, payment_account_id, expense_id, amount, reference)
+    VALUES (1, '2026-04-10', 1, 2, 40, 700, 'TEST transfer 1');
+SELECT pg_temp.expect_ok('payment: approved and posted',
+    'UPDATE supplier_payments SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 1');
+SELECT pg_temp.expect_eq('payment: payables debited 700 for the supplier, bank credited 700',
+    (SELECT sum(l.debit) FILTER (WHERE l.account_id = 923 AND l.partner_id = 1) || ':' || sum(l.credit) FILTER (WHERE l.account_id = 910)
+       FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id WHERE j.source_type = 'SUPPLIER_PAYMENT' AND j.source_id = 1), '700.00:700.00');
+INSERT INTO supplier_payments (id, payment_date, supplier_id, payment_account_id, expense_id, amount) VALUES (2, '2026-04-12', 1, 2, 40, 500);
+SELECT pg_temp.expect_error('payment: never more than the invoice',
+    'UPDATE supplier_payments SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 2', 'RROKA_SUPPLIER_PAYMENT_EXCEEDS');
+SELECT pg_temp.expect_ok('payment: a draft is deleted', 'DELETE FROM supplier_payments WHERE id = 2');
+SELECT pg_temp.expect_error('payment: an approved payment never changes', 'UPDATE supplier_payments SET amount = 1 WHERE id = 1', 'RROKA_SALES_LOCKED');
+SELECT pg_temp.expect_error('payment: an approved payment is never deleted', 'DELETE FROM supplier_payments WHERE id = 1', 'RROKA_DELETE_NOT_DRAFT');
+SELECT pg_temp.expect_eq('balances: the supplier''s balance agrees with the books',
+    (SELECT balance FROM v_supplier_balances WHERE supplier_id = 1),
+    (SELECT -sum(net) FROM v_ledger_lines WHERE account_id = 923 AND partner_type = 'SUPPLIER' AND partner_id = 1)::numeric(16,2));
+SELECT pg_temp.expect_eq('backlog: no supplier payment is left unposted',
+    (SELECT count(*) FROM v_posting_backlog WHERE source_type = 'SUPPLIER_PAYMENT'), 0::bigint);
+
 UPDATE accounting_settings SET auto_posting = false;
 
 -- ---------------------------------------------------------------------

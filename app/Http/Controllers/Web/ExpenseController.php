@@ -11,6 +11,7 @@ use App\Models\Supplier;
 use App\Services\StudioStorage;
 use App\Support\ActivityLog;
 use App\Support\ListView;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -36,14 +37,15 @@ class ExpenseController extends Controller
                 'self' => ['label' => __('اعتماد ذاتي (للمراجعة)'), 'group' => 'x', 'apply' => fn ($q) => $q->where('expenses.status', 'APPROVED')->whereColumn('approved_by', 'expenses.created_by')],
                 'no_doc' => ['label' => __('بلا صورة مستند'), 'group' => 'd', 'apply' => fn ($q) => $q->whereNull('attachment_id')],
                 'custody' => ['label' => __('من عهد الموظفين'), 'group' => 'pay', 'apply' => fn ($q) => $q->where('payment_method', 'PETTY_CASH')],
-                'no_account' => ['label' => __('معتمدة بلا جهة دفع (قبل تفعيل الخزينة)'), 'group' => 'pay', 'apply' => fn ($q) => $q->where('expenses.status', 'APPROVED')->whereNull('payment_account_id')],
+                'no_account' => ['label' => __('معتمدة بلا جهة دفع (قبل تفعيل الخزينة)'), 'group' => 'pay', 'apply' => fn ($q) => $q->where('expenses.status', 'APPROVED')->whereNull('payment_account_id')->where('payment_method', '<>', 'CREDIT')],
+                'credit' => ['label' => __('آجلة على حساب المورد'), 'group' => 'pay', 'apply' => fn ($q) => $q->where('payment_method', 'CREDIT')],
                 'this_month' => ['label' => __('هذا الشهر'), 'group' => 'date', 'apply' => fn ($q) => $q->where('expense_date', '>=', now()->startOfMonth())],
             ],
             groups: [
                 'category' => ['label' => __('التصنيف'), 'key' => fn ($e) => $e->category_id, 'title' => fn ($e) => $e->category->name],
                 'project' => ['label' => __('المشروع'), 'key' => fn ($e) => $e->project_id ?? 0, 'title' => fn ($e) => $e->project?->project_no ?? __('بلا مشروع')],
                 'month' => ['label' => __('الشهر'), 'key' => fn ($e) => $e->expense_date->format('Y-m'), 'title' => fn ($e) => $e->expense_date->format('Y-m')],
-                'account' => ['label' => __('دُفع من'), 'key' => fn ($e) => $e->payment_account_id ?? 0, 'title' => fn ($e) => $e->paymentAccount?->name ?? __('بلا جهة دفع')],
+                'account' => ['label' => __('دُفع من'), 'key' => fn ($e) => $e->payment_account_id ?? ($e->payment_method === 'CREDIT' ? -1 : 0), 'title' => fn ($e) => $e->paymentAccount?->name ?? ($e->payment_method === 'CREDIT' ? __('آجل على حساب المورد') : __('بلا جهة دفع'))],
                 'method' => ['label' => __('طريقة الدفع'), 'key' => fn ($e) => $e->payment_method, 'title' => fn ($e) => __("rroka.payment_method.$e->payment_method")],
             ],
             keep: ['project_id', 'payment_account_id'],
@@ -72,14 +74,15 @@ class ExpenseController extends Controller
 
     public function store(Request $request, StudioStorage $storage): RedirectResponse
     {
-        $x = DB::transaction(function () use ($request, $storage) {
-            $x = new Expense($this->validated($request));
+        $data = $this->validated($request);
+        $x = $this->once(fn () => DB::transaction(function () use ($data, $request, $storage) {
+            $x = new Expense($data);
             $x->created_by = $request->user()->id;
             $x->save();
             $this->attach($x, $request, $storage);
 
             return $x;
-        });
+        }));
 
         return redirect()->route('expenses.show', $x)->with('ok', __('حُفظ المصروف كمسودة.'));
     }
@@ -87,6 +90,8 @@ class ExpenseController extends Controller
     public function show(Expense $expense): View
     {
         return view('expenses.show', [
+            'open' => $expense->payment_method === 'CREDIT' && $expense->status === 'APPROVED' ? $expense->openAmount() : null,
+            'payments' => $expense->supplierPayments()->with('paymentAccount:id,name')->get(),
             'x' => $expense->load('category', 'project', 'supplier', 'paidBy', 'paymentAccount', 'attachment'),
             'names' => DB::table('users')->whereIn('id', array_filter([$expense->created_by, $expense->approved_by]))->pluck('name', 'id'),
             'activity' => ActivityLog::for(['expenses' => [$expense->id]]),
@@ -104,10 +109,11 @@ class ExpenseController extends Controller
 
     public function update(Request $request, Expense $expense, StudioStorage $storage): RedirectResponse
     {
-        DB::transaction(function () use ($expense, $request, $storage) {
-            $expense->update($this->validated($request));
+        $data = $this->validated($request);
+        $this->once(fn () => DB::transaction(function () use ($expense, $data, $request, $storage) {
+            $expense->update($data);
             $this->attach($expense, $request, $storage);
-        });
+        }));
 
         return redirect()->route('expenses.show', $expense)->with('ok', __('حُدّث المصروف.'));
     }
@@ -173,12 +179,21 @@ class ExpenseController extends Controller
             'description' => ['required', 'string', 'max:500'],
             'amount' => ['required', 'numeric', 'gt:0'],
             'vat_amount' => ['required', 'numeric', 'min:0'],
-            'payment_account_id' => ['required', 'integer', Rule::exists('payment_accounts', 'id')->where('is_active', true)],
+            // "CREDIT" = the supplier's invoice is not paid yet (owed to the supplier).
+            'payment_account_id' => ['required', $request->input('payment_account_id') === 'CREDIT' ? 'in:CREDIT'
+                : Rule::exists('payment_accounts', 'id')->where('is_active', true)],
             'payment_method' => ['nullable', Rule::in(PaymentAccount::METHODS['BANK'])],
             'project_id' => ['nullable', 'integer', 'exists:projects,id'],
-            'reference' => ['nullable', 'string', 'max:100'],
+            'reference' => ['nullable', 'string', 'max:100', 'required_if:payment_account_id,CREDIT'],
             'document' => ['nullable', 'file', 'max:20480', 'mimetypes:image/jpeg,image/png,image/webp'],
-        ]);
+        ], ['reference.required_if' => __('رقم فاتورة المورد مطلوب للفاتورة الآجلة.')]);
+        if ($data['payment_account_id'] === 'CREDIT') {
+            if (empty($data['supplier_id'])) {
+                throw ValidationException::withMessages(['supplier_id' => __('الفاتورة الآجلة تحتاج موردًا مسجلًا.')]);
+            }
+
+            return ['payment_account_id' => null, 'payment_method' => 'CREDIT', 'paid_by_employee_id' => null, 'reference' => trim($data['reference'])] + $data;
+        }
         $account = PaymentAccount::findOrFail($data['payment_account_id']);
         $data['payment_method'] = $account->kind === 'BANK' ? ($data['payment_method'] ?? 'BANK') : PaymentAccount::METHODS[$account->kind][0];
         $data['paid_by_employee_id'] = $account->isCustody() ? $account->employee_id : null;
@@ -195,6 +210,19 @@ class ExpenseController extends Controller
             'accounts' => PaymentAccount::where('is_active', true)->orderBy('kind')->orderBy('name')->get(['id', 'name', 'kind']),
             'canAttach' => StudioStorage::isReady(),
         ];
+    }
+
+    /** A supplier's invoice on credit is entered once (unique per supplier and number). */
+    private function once(callable $save): mixed
+    {
+        try {
+            return $save();
+        } catch (QueryException $e) {
+            if ($e->getCode() === '23505' && str_contains($e->getMessage(), 'ux_expenses_credit_invoice')) {
+                throw ValidationException::withMessages(['reference' => __('فاتورة هذا المورد بهذا الرقم مسجّلة من قبل.')]);
+            }
+            throw $e;
+        }
     }
 
     /** Approve/cancel act on a draft only (the database refuses changes after that). */

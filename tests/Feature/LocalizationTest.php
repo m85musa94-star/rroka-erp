@@ -30,6 +30,7 @@ use App\Models\Role;
 use App\Models\SalesInvoice;
 use App\Models\StudioAsset;
 use App\Models\Supplier;
+use App\Models\SupplierPayment;
 use App\Models\TreasuryTransfer;
 use App\Models\User;
 use App\Reports\ReportRegistry;
@@ -195,6 +196,14 @@ class LocalizationTest extends ApiTestCase
         $receiptId = CustomerReceipt::value('id');
         $this->actingAs($admin)->post("/sales/receipts/{$receiptId}/approve");
         $pastQuote = Project::find($pastId)->quotation_id;
+        // Supplier invoice on credit and its payment.
+        $this->actingAs($admin)->post('/expenses', ['expense_date' => now()->toDateString(), 'category_id' => ExpenseCategory::value('id'), 'supplier_id' => $supplierId,
+            'description' => 'Boards on credit', 'amount' => 500, 'vat_amount' => 75, 'payment_account_id' => 'CREDIT', 'reference' => 'TC-9'])->assertSessionHasNoErrors();
+        $creditExpenseId = Expense::where('payment_method', 'CREDIT')->value('id');
+        $this->actingAs($admin)->post("/expenses/{$creditExpenseId}/approve");
+        $this->actingAs($admin)->post('/supplier-payments', ['payment_date' => now()->toDateString(), 'supplier_id' => $supplierId, 'invoice' => "E{$creditExpenseId}",
+            'payment_account_id' => $cashId, 'amount' => 200])->assertSessionHasNoErrors();
+        $supplierPaymentId = SupplierPayment::value('id');
 
         $pages = [
             '/', '/clients', '/clients?v=kanban', '/clients?g=city', '/clients/create', "/clients/{$client->id}", "/clients/{$client->id}/edit",
@@ -203,6 +212,9 @@ class LocalizationTest extends ApiTestCase
             '/sales/invoices', '/sales/invoices?g=client', '/sales/invoices/create', "/sales/invoices/create?original={$invoiceId}", "/sales/invoices/{$invoiceId}",
             "/sales/invoices/{$creditId}", "/sales/invoices/{$creditId}/edit", '/sales/receipts', '/sales/receipts?g=account', '/sales/receipts/create',
             "/sales/receipts/create?invoice={$invoiceId}", "/sales/receipts/{$receiptId}", '/sales/balances',
+            "/expenses/{$creditExpenseId}", "/expenses/{$creditExpenseId}?x=1", '/expenses?f[]=credit', '/supplier-payments', '/supplier-payments?g=supplier', '/supplier-payments/create',
+            "/supplier-payments/create?expense={$creditExpenseId}", "/supplier-payments/create?purchase={$purchaseId}", "/supplier-payments/{$supplierPaymentId}",
+            "/supplier-payments/{$supplierPaymentId}/edit", '/supplier-payments/balances',
             '/settings/rates', '/users', '/users/create', "/users/{$admin->id}/edit",
             '/roles', '/roles/create', "/roles/{$roleId}/edit",
             '/reports', '/settings/daftra', '/settings/demo',

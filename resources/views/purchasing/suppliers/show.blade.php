@@ -31,6 +31,20 @@
         </dl>
     </div>
 </div>
+@if($balance)
+<div class="card">
+    <div class="section-title"><h2>{{ __('الحساب') }}</h2>
+        <span class="actions">
+            <a class="btn ghost sm" href="{{ route('supplier-payments.index', ['supplier_id' => $s->id]) }}">{{ __('السداد') }}</a>
+            @if($balance->balance > 0 && auth()->user()->hasPermission('purchases.manage'))<a class="btn sm" href="{{ route('supplier-payments.create', ['supplier_id' => $s->id]) }}">{{ __('سداد جديد') }}</a>@endif
+        </span></div>
+    <dl class="kv">
+        <dt>{{ __('الفواتير') }}</dt><dd class="num">{{ number_format($balance->invoiced, 2) }}</dd>
+        <dt>{{ __('المدفوع') }}</dt><dd class="num">{{ number_format($balance->paid, 2) }}</dd>
+        <dt>{{ __('المستحق للمورد') }}</dt><dd class="num"><strong>{{ $balance->balance < 0 ? '('.number_format(-$balance->balance, 2).')' : number_format($balance->balance, 2) }}</strong></dd>
+    </dl>
+</div>
+@endif
 <div class="card" style="padding:0">
     <h2 style="padding:16px 16px 0">{{ __('فواتير المورد') }}</h2>
     <div class="table-wrap"><table>

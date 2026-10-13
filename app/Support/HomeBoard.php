@@ -45,6 +45,12 @@ class HomeBoard
         $add($can('sales.approve', 'sales.manage'), __('سندات قبض بانتظار الاعتماد'),
             fn () => DB::table('customer_receipts')->where('status', 'DRAFT')->count(), route('sales.receipts.index', ['f' => ['draft']]), 'warn',
             fn () => DB::table('customer_receipts')->where('status', 'DRAFT')->sum('amount'));
+        $add($can('purchases.approve', 'purchases.manage'), __('سندات صرف للموردين بانتظار الاعتماد'),
+            fn () => DB::table('supplier_payments')->where('status', 'DRAFT')->count(), route('supplier-payments.index', ['f' => ['draft']]), 'warn',
+            fn () => DB::table('supplier_payments')->where('status', 'DRAFT')->sum('amount'));
+        $add($can('purchases.view', 'purchases.manage'), __('موردون لهم مستحقات قائمة'),
+            fn () => DB::table('v_supplier_balances')->where('balance', '>', 0)->count(), route('supplier-payments.balances', ['open' => 1]), 'info',
+            fn () => DB::table('v_supplier_balances')->where('balance', '>', 0)->sum('balance'));
         $add($can('accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close'), __('مستندات معتمدة لم تُرحَّل للدفاتر'),
             fn () => DB::table('v_posting_backlog')->count(), route('accounting.posting.backlog'), 'bad',
             fn () => DB::table('v_posting_backlog')->sum('amount'));

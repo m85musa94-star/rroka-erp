@@ -22,7 +22,7 @@ class AppMenu
             ['key' => 'invoicing', 'label' => __('الفواتير والتحصيل'), 'route' => 'sales.invoices.index', 'match' => 'sales.*', 'permission' => ['sales.view', 'sales.manage'], 'group' => 'sales'],
             ['key' => 'projects', 'label' => __('المشاريع'), 'route' => 'projects.index', 'match' => 'projects.*', 'permission' => 'projects.view', 'group' => 'ops'],
             ['key' => 'studio', 'label' => __('الاستوديو'), 'route' => 'studio.index', 'match' => 'studio.*', 'permission' => 'studio.view', 'group' => 'ops'],
-            ['key' => 'purchasing', 'label' => __('المشتريات'), 'route' => 'purchases.index', 'match' => 'purchases.*', 'permission' => ['purchases.view', 'purchases.manage'], 'group' => 'buy'],
+            ['key' => 'purchasing', 'label' => __('المشتريات'), 'route' => 'purchases.index', 'match' => ['purchases.*', 'supplier-payments.*'], 'permission' => ['purchases.view', 'purchases.manage'], 'group' => 'buy'],
             ['key' => 'suppliers', 'label' => __('الموردون'), 'route' => 'suppliers.index', 'match' => 'suppliers.*', 'permission' => ['purchases.view', 'purchases.manage'], 'group' => 'buy'],
             ['key' => 'treasury', 'label' => __('الخزينة والعهد'), 'route' => 'treasury.accounts.index', 'match' => 'treasury.*', 'permission' => ['treasury.view', 'treasury.manage'], 'group' => 'buy'],
             ['key' => 'accounting', 'label' => __('المحاسبة'), 'route' => 'accounting.dashboard', 'match' => 'accounting.*', 'permission' => ['accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close'], 'group' => 'buy'],
@@ -156,6 +156,8 @@ class AppMenu
                 'purchasing' => [
                     ['فواتير المشتريات', 'purchases.index', [], ['purchases.view', 'purchases.manage']],
                     ['الموردون', 'suppliers.index', [], ['purchases.view', 'purchases.manage']],
+                    ['سداد الموردين', 'supplier-payments.index', [], ['purchases.view', 'purchases.manage']],
+                    ['أرصدة الموردين', 'supplier-payments.balances', [], ['purchases.view', 'purchases.manage']],
                     ['الخامات والمخزون', 'materials.index', [], ['inventory.view', 'inventory.move']],
                     ['التقارير', 'reports.show', ['key' => 'purchases'], ['purchases.view', 'purchases.manage']],
                 ],
@@ -164,6 +166,8 @@ class AppMenu
                     ['مسجلون في ضريبة القيمة المضافة', 'suppliers.index', ['f' => ['vat']], ['purchases.view', 'purchases.manage']],
                     ['فواتير المشتريات', 'purchases.index', [], ['purchases.view', 'purchases.manage']],
                     ['المصروفات', 'expenses.index', [], ['expenses.view', 'expenses.manage']],
+                    ['سداد الموردين', 'supplier-payments.index', [], ['purchases.view', 'purchases.manage']],
+                    ['أرصدة الموردين', 'supplier-payments.balances', [], ['purchases.view', 'purchases.manage']],
                 ],
                 'costing' => [
                     ['البداية', 'costing.index', [], ['settings.cost_rates', 'cost_rates.approve']],

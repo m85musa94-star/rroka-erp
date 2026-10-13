@@ -235,8 +235,8 @@ class PostingController extends Controller
             ],
             [
                 'label' => __('الموردون'), 'account' => $ap,
-                'sub' => (float) DB::table('v_purchase_totals as t')->join('purchase_invoices as p', 'p.id', '=', 't.purchase_invoice_id')->where('p.status', 'APPROVED')->sum('t.total'),
-                'gl' => $ap ? -$gl($ap) : null, 'note' => __('فواتير المشتريات المعتمدة؛ سداد الموردين يُسجَّل في المرحلة (ب)'), 'link' => route('purchases.index'),
+                'sub' => (float) DB::table('v_supplier_balances')->sum('balance'),
+                'gl' => $ap ? -$gl($ap) : null, 'note' => __('فواتير المشتريات والفواتير الآجلة المعتمدة − سندات الصرف للموردين'), 'link' => route('supplier-payments.balances'),
             ],
             [
                 'label' => __('العملاء'), 'account' => $ar,

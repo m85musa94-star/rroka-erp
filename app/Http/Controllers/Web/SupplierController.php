@@ -8,6 +8,7 @@ use App\Support\ActivityLog;
 use App\Support\ListView;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -57,6 +58,7 @@ class SupplierController extends Controller
             's' => $supplier,
             'invoices' => $supplier->purchaseInvoices()->join('v_purchase_totals as t', 't.purchase_invoice_id', '=', 'purchase_invoices.id')
                 ->select('purchase_invoices.*', 't.net_before_vat', 't.total')->limit(50)->get(),
+            'balance' => DB::table('v_supplier_balances')->where('supplier_id', $supplier->id)->first(),
             'activity' => ActivityLog::for(['suppliers' => [$supplier->id]]),
         ]);
     }
