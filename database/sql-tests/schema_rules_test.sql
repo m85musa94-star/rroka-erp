@@ -974,6 +974,7 @@ INSERT INTO accounts (id, code, name, account_type, parent_id, system_role, deta
     (927, '5309', 'TEST transport', 'EXPENSE', 901, NULL, 'EXPENSES'),
     (930, '1111', 'TEST receivable', 'ASSET', 900, 'RECEIVABLE', 'RECEIVABLE'),
     (931, '2110', 'TEST output VAT', 'LIABILITY', 904, 'OUTPUT_VAT', 'CURRENT_LIABILITIES'),
+    (934, '2115', 'TEST VAT payable', 'LIABILITY', 904, 'VAT_PAYABLE', 'CURRENT_LIABILITIES'),
     (932, '4101', 'TEST project revenue', 'REVENUE', 905, 'SALES', 'INCOME'),
     (933, '5102', 'TEST cost of delivered projects', 'EXPENSE', 901, 'COST_OF_SALES', 'COST_OF_REVENUE');
 SELECT pg_temp.expect_error('mapping: a payment account maps to a postable account only',
@@ -1387,6 +1388,75 @@ SELECT pg_temp.expect_ok('manual: the opening entry may use the owner account',
     $q$INSERT INTO journal_entries (id, entry_date, description, created_by, source_type) VALUES (901, '2026-01-01', 'TEST opening', 1, 'OPENING');
        INSERT INTO journal_lines (entry_id, account_id, credit) VALUES (901, 912, 10)$q$);
 DELETE FROM journal_entries WHERE id IN (900, 901);
+
+-- ---------------------------------------------------------------------
+-- VAT return: figures, filed return, period lock, settlement and payment
+-- ---------------------------------------------------------------------
+UPDATE suppliers SET vat_number = '300000000000003' WHERE id = 1;
+INSERT INTO suppliers (id, name) VALUES (60, 'TEST supplier without a VAT number');
+INSERT INTO sales_invoices (id, daftra_invoice_no, invoice_date, client_id, description, amount, vat_amount) VALUES
+    (60, 'INV-MAY-1', '2026-05-10', 1, 'TEST May sale', 10000, 1500),
+    (61, 'INV-MAY-2', '2026-05-12', 1, 'TEST May export', 2000, 0),
+    (62, 'INV-MAY-3', '2026-05-14', 1, 'TEST odd rate', 1000, 100);
+UPDATE sales_invoices SET status = 'APPROVED', approved_by = 2, approved_at = now() WHERE id IN (60, 61);
+INSERT INTO expenses (id, expense_date, category_id, supplier_id, description, amount, vat_amount, payment_method, payment_account_id) VALUES
+    (60, '2026-05-15', 2, 1, 'TEST registered supplier', 2000, 300, 'BANK', 2),
+    (61, '2026-05-16', 2, 60, 'TEST unregistered supplier', 400, 60, 'BANK', 2);
+UPDATE expenses SET status = 'APPROVED', approved_by = 2, approved_at = now() WHERE id IN (60, 61);
+SELECT pg_temp.expect_eq('vat: output 1,500, deductible input 300, to verify 60 (supplier without a VAT number)',
+    (SELECT string_agg(bucket || '=' || vat, ',' ORDER BY bucket) FROM fn_vat_figures('2026-05-01', '2026-05-31')),
+    'PURCH_DEDUCT=300.00,PURCH_VERIFY=60.00,SALES_STD=1500.00,SALES_ZERO=0.00');
+SELECT pg_temp.expect_eq('vat: a rate other than 15% or 0 is flagged',
+    (SELECT rate_ok FROM v_vat_documents WHERE source_type = 'SALE' AND source_id = 62), NULL::boolean);
+UPDATE sales_invoices SET status = 'APPROVED', approved_by = 2, approved_at = now() WHERE id = 62;
+SELECT pg_temp.expect_eq('vat: … the 10% sale is flagged once approved',
+    (SELECT rate_ok FROM v_vat_documents WHERE source_type = 'SALE' AND source_id = 62), false);
+INSERT INTO vat_returns (id, period_start, period_end) VALUES (1, '2026-05-01', '2026-05-31');
+SELECT pg_temp.expect_error('vat: not approved without the filed figures',
+    'UPDATE vat_returns SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 1', 'check constraint');
+SELECT pg_temp.expect_error('vat: including the unverified VAT needs the reason',
+    'UPDATE vat_returns SET include_verify = true WHERE id = 1', 'check constraint');
+SELECT pg_temp.expect_error('vat: not paid before it is approved',
+    'UPDATE vat_returns SET paid_date = ''2026-06-20'', paid_account_id = 2, paid_amount = 1, paid_by = 2 WHERE id = 1', 'RROKA_VAT_PAYMENT_DATE');
+UPDATE vat_returns SET filed_output_vat = 1600, filed_input_vat = 300 WHERE id = 1;
+SELECT pg_temp.expect_ok('vat: the filed return is approved',
+    'UPDATE vat_returns SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 1');
+SELECT pg_temp.expect_eq('vat: the books are frozen with the return (output 1,600 incl. the flagged sale; input 300)',
+    (SELECT sys_output_vat || ':' || sys_input_vat || ':' || sys_verify_vat FROM vat_returns WHERE id = 1), '1600.00:300.00:60.00');
+SELECT pg_temp.expect_eq('vat: the period is locked', (SELECT vat_locked_until FROM accounting_settings), '2026-05-31'::date);
+SELECT pg_temp.expect_eq('vat: settlement Dr output 1,600 / Cr input 300 / Cr payable 1,300',
+    (SELECT sum(l.debit) FILTER (WHERE l.account_id = 931) || ':' || sum(l.credit) FILTER (WHERE l.account_id = 922) || ':' || sum(l.credit) FILTER (WHERE l.account_id = 934)
+       FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id WHERE j.source_type = 'VAT_RETURN' AND j.source_id = 1), '1600.00:300.00:1300.00');
+INSERT INTO expenses (id, expense_date, category_id, supplier_id, description, amount, vat_amount, payment_method, payment_account_id)
+    VALUES (62, '2026-05-20', 2, 1, 'TEST late May receipt', 100, 15, 'BANK', 2);
+SELECT pg_temp.expect_error('vat: a taxed document is not approved inside a filed period',
+    'UPDATE expenses SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 62', 'RROKA_VAT_PERIOD_LOCKED');
+INSERT INTO expenses (id, expense_date, category_id, payee, description, amount, vat_amount, payment_method, payment_account_id)
+    VALUES (63, '2026-05-20', 2, 'x', 'TEST untaxed', 100, 0, 'BANK', 2);
+SELECT pg_temp.expect_ok('vat: an untaxed expense in the period is still approved',
+    'UPDATE expenses SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 63');
+SELECT pg_temp.expect_error('vat: the lock is not moved back directly',
+    'UPDATE accounting_settings SET vat_locked_until = ''2026-04-30''', 'RROKA_VAT_LOCK');
+SELECT pg_temp.expect_error('vat: an approved return never changes', 'UPDATE vat_returns SET filed_output_vat = 1 WHERE id = 1', 'RROKA_SALES_LOCKED');
+SELECT pg_temp.expect_error('vat: returns never overlap',
+    $q$INSERT INTO vat_returns (id, period_start, period_end, filed_output_vat, filed_input_vat) VALUES (2, '2026-05-15', '2026-06-30', 0, 0);
+       UPDATE vat_returns SET status = 'APPROVED', approved_by = 2, approved_at = now() WHERE id = 2$q$, 'RROKA_VAT_RETURN_OVERLAP');
+SELECT pg_temp.expect_error('vat: never pay more than due',
+    'UPDATE vat_returns SET paid_date = ''2026-06-20'', paid_account_id = 2, paid_amount = 1300.01, paid_by = 2 WHERE id = 1', 'RROKA_VAT_PAYMENT_EXCEEDS');
+SELECT pg_temp.expect_ok('vat: the payment is recorded and posted',
+    'UPDATE vat_returns SET paid_date = ''2026-06-20'', paid_account_id = 2, paid_amount = 1300, paid_reference = ''SADAD 1'', paid_by = 2 WHERE id = 1');
+SELECT pg_temp.expect_eq('vat: payable settled (Dr 1,300) from the bank',
+    (SELECT sum(l.debit) FILTER (WHERE l.account_id = 934) || ':' || sum(l.credit) FILTER (WHERE l.account_id = 910)
+       FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id WHERE j.source_type = 'VAT_PAYMENT' AND j.source_id = 1), '1300.00:1300.00');
+SELECT pg_temp.expect_eq('vat: nothing left payable', (SELECT sum(net) FROM v_ledger_lines WHERE account_id = 934), 0.00::numeric);
+SELECT pg_temp.expect_error('vat: paid once', 'UPDATE vat_returns SET paid_amount = 1 WHERE id = 1', 'RROKA_SALES_LOCKED');
+SELECT pg_temp.expect_error('vat: reopening needs a reason', 'SELECT fn_vat_reopen(''2026-04-30'', '' '', 2)', 'RROKA_VAT_LOCK');
+SELECT pg_temp.expect_ok('vat: reopened with a reason', 'SELECT fn_vat_reopen(''2026-04-30'', ''TEST late receipt found'', 2)');
+SELECT pg_temp.expect_eq('vat: the reopening is on record', (SELECT reason FROM vat_lock_events ORDER BY id DESC LIMIT 1), 'TEST late receipt found');
+SELECT pg_temp.expect_ok('vat: after reopening the late receipt is approved',
+    'UPDATE expenses SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 62');
+SELECT pg_temp.expect_eq('backlog: no VAT document is left unposted',
+    (SELECT count(*) FROM v_posting_backlog WHERE source_type IN ('VAT_RETURN', 'VAT_PAYMENT')), 0::bigint);
 
 UPDATE accounting_settings SET auto_posting = false;
 

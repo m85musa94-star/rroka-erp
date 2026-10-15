@@ -65,6 +65,11 @@ return [
         'RROKA_PURCHASE_NEGATIVE' => 'The discount is larger than the lines total.',
         'RROKA_EXPENSE_TRANSITION' => 'An expense starts as a draft.',
         'RROKA_EXPENSE_LOCKED' => 'An approved or cancelled expense cannot change.',
+        'RROKA_VAT_LOCK' => 'A filed VAT period is reopened from the VAT return screen with a reason.',
+        'RROKA_VAT_PERIOD_LOCKED' => 'The document date is inside a filed VAT period; it is approved only after reopening the period with a reason.',
+        'RROKA_VAT_RETURN_OVERLAP' => 'Another approved return covers part of this period.',
+        'RROKA_VAT_PAYMENT_EXCEEDS' => 'The payment exceeds the VAT due on the return.',
+        'RROKA_VAT_PAYMENT_DATE' => 'The payment is recorded after the return is approved and its period has ended.',
         'RROKA_EXPENSE_OWNER' => 'An expense paid by the owner has no cash box or bank.',
         'RROKA_JOURNAL_PARTNER' => 'A receivables line needs the client and a payables line the supplier (a registered one).',
         'RROKA_JOURNAL_OWNER_MANUAL' => 'The owner account takes no manual entry; use owner transactions or an expense paid by the owner.',
@@ -160,7 +165,7 @@ return [
     'entities' => [
         'accounts' => 'account', 'journal_entries' => 'journal entry', 'journal_lines' => 'journal line', 'fiscal_periods' => 'fiscal period', 'accounting_settings' => 'books settings', 'cost_estimates' => 'cost estimate', 'cost_estimate_materials' => 'estimate material', 'cost_estimate_operations' => 'estimate operation', 'cost_estimate_direct_costs' => 'direct cost', 'cost_estimate_snapshots' => 'frozen cost', 'vat_rates' => 'VAT rate', 'pricing_policies' => 'pricing policy',
         'cost_centers' => 'cost centre', 'energy_rates' => 'electricity price', 'employee_cost_cards' => 'employee cost card', 'employee_cost_card_shares' => 'cost centre share', 'machine_cost_cards' => 'machine cost card', 'material_standard_prices' => 'standard price', 'waste_defaults' => 'waste rate', 'overhead_pools' => 'overhead pool', 'overhead_pool_lines' => 'pool line',
-        'payment_accounts' => 'account', 'treasury_transfers' => 'transfer', 'suppliers' => 'supplier', 'purchase_invoices' => 'supplier invoice', 'purchase_invoice_lines' => 'supplier invoice line', 'expenses' => 'expense', 'expense_categories' => 'expense category', 'sales_invoices' => 'customer invoice', 'customer_receipts' => 'customer receipt', 'supplier_payments' => 'supplier payment', 'owner_transactions' => 'owner transaction',
+        'payment_accounts' => 'account', 'treasury_transfers' => 'transfer', 'suppliers' => 'supplier', 'purchase_invoices' => 'supplier invoice', 'purchase_invoice_lines' => 'supplier invoice line', 'expenses' => 'expense', 'expense_categories' => 'expense category', 'sales_invoices' => 'customer invoice', 'customer_receipts' => 'customer receipt', 'supplier_payments' => 'supplier payment', 'owner_transactions' => 'owner transaction', 'vat_returns' => 'VAT return', 'vat_lock_events' => 'VAT period reopening',
         'employee_contracts' => 'contract', 'leave_requests' => 'time-off request', 'leave_allocations' => 'allocation', 'attendances' => 'attendance', 'leave_types' => 'time-off type',
         'workers' => 'employee', 'departments' => 'department', 'job_positions' => 'job position', 'employee_documents' => 'document',
         'raw_materials' => 'material', 'designs' => 'design', 'design_versions' => 'design version', 'design_bom_lines' => 'BOM line', 'production_orders' => 'manufacturing order',
@@ -237,11 +242,14 @@ return [
 
     'detail_type' => ['RECEIVABLE' => 'Receivable', 'BANK_CASH' => 'Bank and Cash', 'CURRENT_ASSETS' => 'Current Assets', 'NON_CURRENT_ASSETS' => 'Non-current Assets', 'PREPAYMENTS' => 'Prepayments', 'FIXED_ASSETS' => 'Fixed Assets', 'PAYABLE' => 'Payable', 'CREDIT_CARD' => 'Credit Card', 'CURRENT_LIABILITIES' => 'Current Liabilities', 'NON_CURRENT_LIABILITIES' => 'Non-current Liabilities', 'EQUITY' => 'Equity', 'CURRENT_YEAR_EARNINGS' => 'Current Year Earnings', 'INCOME' => 'Income', 'OTHER_INCOME' => 'Other Income', 'EXPENSES' => 'Expenses', 'DEPRECIATION' => 'Depreciation', 'COST_OF_REVENUE' => 'Cost of Revenue'],
 
-    'account_role' => ['CASH' => 'Cash', 'BANK' => 'Bank', 'CUSTODY' => 'Custody', 'RECEIVABLE' => 'Accounts receivable', 'INVENTORY' => 'Materials inventory', 'WIP' => 'Work in progress', 'INPUT_VAT' => 'Input VAT', 'PAYABLE' => 'Accounts payable', 'OUTPUT_VAT' => 'Output VAT', 'CUSTOMER_ADVANCES' => 'Customer advances', 'CAPITAL' => 'Capital', 'OWNER_CURRENT' => 'Owner current account', 'RETAINED_EARNINGS' => 'Retained earnings', 'SALES' => 'Sales revenue', 'SALES_DISCOUNT' => 'Sales discounts', 'COST_OF_SALES' => 'Cost of sales', 'FIXED_ASSETS' => 'Fixed assets', 'ACCUMULATED_DEPRECIATION' => 'Accumulated depreciation', 'DEPRECIATION' => 'Depreciation expense', 'INVENTORY_ADJUSTMENT' => 'Inventory count differences'],
+    'account_role' => ['CASH' => 'Cash', 'BANK' => 'Bank', 'CUSTODY' => 'Custody', 'RECEIVABLE' => 'Accounts receivable', 'INVENTORY' => 'Materials inventory', 'WIP' => 'Work in progress', 'INPUT_VAT' => 'Input VAT', 'PAYABLE' => 'Accounts payable', 'OUTPUT_VAT' => 'Output VAT', 'CUSTOMER_ADVANCES' => 'Customer advances', 'CAPITAL' => 'Capital', 'OWNER_CURRENT' => 'Owner current account', 'RETAINED_EARNINGS' => 'Retained earnings', 'SALES' => 'Sales revenue', 'SALES_DISCOUNT' => 'Sales discounts', 'COST_OF_SALES' => 'Cost of sales', 'FIXED_ASSETS' => 'Fixed assets', 'ACCUMULATED_DEPRECIATION' => 'Accumulated depreciation', 'DEPRECIATION' => 'Depreciation expense', 'INVENTORY_ADJUSTMENT' => 'Inventory count differences', 'VAT_PAYABLE' => 'VAT payable to ZATCA'],
+
+    'vat_bucket' => ['SALES_STD' => 'Taxable sales', 'SALES_ZERO' => 'Sales without VAT (zero-rated or exempt)', 'SALES_CREDIT' => 'Credit notes on sales',
+        'PURCH_DEDUCT' => 'Purchases and expenses with deductible VAT', 'PURCH_VERIFY' => 'VAT to verify (supplier without a VAT number)', 'PURCH_NOVAT' => 'Purchases and expenses without VAT'],
 
     'owner_kind' => ['FUNDING' => 'Owner funding', 'WITHDRAWAL' => 'Owner withdrawal', 'PAID_EXPENSE' => 'Expense paid by the owner'],
 
-    'journal_source' => ['MANUAL' => 'Manual', 'OPENING' => 'Opening', 'REVERSAL' => 'Reversal', 'EXPENSE' => 'Expense', 'PURCHASE' => 'Purchase invoice', 'TRANSFER' => 'Treasury transfer', 'STOCK' => 'Stock movement', 'SALE' => 'Customer invoice', 'RECEIPT' => 'Customer receipt', 'PROJECT_CLOSE' => 'Project delivery', 'SUPPLIER_PAYMENT' => 'Supplier payment', 'OWNER' => 'Owner transaction'],
+    'journal_source' => ['MANUAL' => 'Manual', 'OPENING' => 'Opening', 'REVERSAL' => 'Reversal', 'EXPENSE' => 'Expense', 'PURCHASE' => 'Purchase invoice', 'TRANSFER' => 'Treasury transfer', 'STOCK' => 'Stock movement', 'SALE' => 'Customer invoice', 'RECEIPT' => 'Customer receipt', 'PROJECT_CLOSE' => 'Project delivery', 'SUPPLIER_PAYMENT' => 'Supplier payment', 'OWNER' => 'Owner transaction', 'VAT_RETURN' => 'VAT return settlement', 'VAT_PAYMENT' => 'VAT payment to ZATCA'],
 
     'expense_kind' => ['PROJECT' => 'On a project', 'OVERHEAD' => 'Workshop overhead', 'OTHER' => 'General & admin'],
 

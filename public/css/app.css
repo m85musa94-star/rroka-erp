@@ -576,3 +576,7 @@ table.pivot tbody tr:nth-child(even) td { background: var(--surface-2); }
 .fin-report tr.fr-heading td { border-bottom: none; }
 .fin-report tr.fr-total td { border-top: 1px solid var(--ink); }
 .fin-report tr.fr-grand td { border-top: 1.5px solid var(--ink); border-bottom: 3px double var(--ink); }
+
+/* Match / mismatch marks in reconciliations. */
+.ok-text { color: var(--ok); font-weight: 600; }
+.bad-text { color: var(--bad); font-weight: 600; }

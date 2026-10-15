@@ -28,7 +28,7 @@ use Illuminate\View\View;
 class PostingController extends Controller
 {
     /** Roles every automatic entry may need. */
-    public const REQUIRED_ROLES = ['INVENTORY', 'WIP', 'INPUT_VAT', 'PAYABLE', 'INVENTORY_ADJUSTMENT', 'RECEIVABLE', 'SALES', 'OUTPUT_VAT', 'COST_OF_SALES', 'OWNER_CURRENT'];
+    public const REQUIRED_ROLES = ['INVENTORY', 'WIP', 'INPUT_VAT', 'PAYABLE', 'INVENTORY_ADJUSTMENT', 'RECEIVABLE', 'SALES', 'OUTPUT_VAT', 'COST_OF_SALES', 'OWNER_CURRENT', 'VAT_PAYABLE'];
 
     public function settings(): View
     {
@@ -205,6 +205,7 @@ class PostingController extends Controller
         $outVat = $role('OUTPUT_VAT');
         $cogs = $role('COST_OF_SALES');
         $owner = $role('OWNER_CURRENT');
+        $vatDue = $role('VAT_PAYABLE');
         // Cost recorded on projects (net stock issued + approved project expenses), open or delivered.
         $projectCost = fn (bool $delivered) => (float) DB::selectOne("
             SELECT COALESCE((SELECT sum(CASE movement_type WHEN 'ISSUE' THEN 1 ELSE -1 END * round(quantity * unit_cost, 2)) FROM stock_movements
@@ -230,9 +231,9 @@ class PostingController extends Controller
             ],
             [
                 'label' => __('ضريبة المدخلات'), 'account' => $vat,
-                'sub' => (float) DB::selectOne("SELECT COALESCE((SELECT sum(vat_amount) FROM expenses WHERE status = 'APPROVED'), 0)
-                    + COALESCE((SELECT sum(vat_amount) FROM purchase_invoices WHERE status = 'APPROVED'), 0) AS v")->v,
-                'gl' => $gl($vat), 'note' => __('ضريبة المصروفات والمشتريات المعتمدة (قبل تسوية الإقرار)'), 'link' => null,
+                'sub' => (float) DB::table('v_vat_documents')->whereIn('bucket', ['PURCH_DEDUCT', 'PURCH_VERIFY'])->sum('vat')
+                    - (float) DB::table('vat_returns')->where('status', 'APPROVED')->sum('filed_input_vat'),
+                'gl' => $gl($vat), 'note' => __('ضريبة المصروفات والمشتريات المعتمدة − ما سُوّي في الإقرارات المعتمدة'), 'link' => route('accounting.vat.index'),
             ],
             [
                 'label' => __('الموردون'), 'account' => $ap,
@@ -252,8 +253,15 @@ class PostingController extends Controller
             ],
             [
                 'label' => __('ضريبة المخرجات'), 'account' => $outVat,
-                'sub' => (float) DB::table('sales_invoices')->where('status', 'APPROVED')->sum(DB::raw("CASE kind WHEN 'CREDIT_NOTE' THEN -vat_amount ELSE vat_amount END")),
-                'gl' => $outVat ? -$gl($outVat) : null, 'note' => __('ضريبة فواتير العملاء المعتمدة بعد الإشعارات الدائنة (قبل تسوية الإقرار)'), 'link' => route('sales.invoices.index'),
+                'sub' => (float) DB::table('v_vat_documents')->whereIn('bucket', ['SALES_STD', 'SALES_ZERO', 'SALES_CREDIT'])->sum('vat')
+                    - (float) DB::table('vat_returns')->where('status', 'APPROVED')->sum('filed_output_vat'),
+                'gl' => $outVat ? -$gl($outVat) : null, 'note' => __('ضريبة فواتير العملاء المعتمدة بعد الإشعارات الدائنة − ما سُوّي في الإقرارات المعتمدة'), 'link' => route('accounting.vat.index'),
+            ],
+            [
+                'label' => __('ضريبة مستحقة للهيئة'), 'account' => $vatDue,
+                'sub' => (float) DB::table('vat_returns')->where('status', 'APPROVED')->sum(DB::raw('filed_output_vat - filed_input_vat'))
+                    - (float) DB::table('vat_returns')->whereNotNull('paid_date')->sum('paid_amount'),
+                'gl' => $vatDue ? -$gl($vatDue) : null, 'note' => __('صافي الإقرارات المعتمدة − المسدَّد للهيئة'), 'link' => route('accounting.vat.index'),
             ],
         ];
 

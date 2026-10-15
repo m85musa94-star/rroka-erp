@@ -33,6 +33,7 @@ class ChartTemplate
             ['21', 'الخصوم المتداولة', 'Current liabilities', 'LIABILITY', '2', false, null, null],
             ['2101', 'الموردون (الذمم الدائنة)', 'Accounts payable', 'LIABILITY', '21', true, 'PAYABLE', 'PAYABLE'],
             ['2110', 'ضريبة القيمة المضافة — المخرجات', 'Output VAT', 'LIABILITY', '21', true, 'OUTPUT_VAT', 'CURRENT_LIABILITIES'],
+            ['2115', 'ضريبة القيمة المضافة المستحقة للهيئة', 'VAT payable to ZATCA', 'LIABILITY', '21', true, 'VAT_PAYABLE', 'CURRENT_LIABILITIES'],
             ['2111', 'ضريبة القيمة المضافة — صافي المستحق للهيئة', 'VAT payable to ZATCA', 'LIABILITY', '21', true, null, 'CURRENT_LIABILITIES'],
             ['2120', 'دفعات مقدمة من العملاء', 'Customer advances', 'LIABILITY', '21', true, 'CUSTOMER_ADVANCES', 'CURRENT_LIABILITIES'],
             ['2130', 'رواتب مستحقة', 'Accrued salaries', 'LIABILITY', '21', true, null, 'CURRENT_LIABILITIES'],

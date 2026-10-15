@@ -54,6 +54,10 @@ class HomeBoard
         $add($can('accounting.post'), __('حركات مالك بانتظار الاعتماد'),
             fn () => DB::table('owner_transactions')->where('status', 'DRAFT')->count(), route('accounting.owner.index'), 'warn',
             fn () => DB::table('owner_transactions')->where('status', 'DRAFT')->sum('amount'));
+        $add($can('accounting.post'), __('ضريبة مستحقة للهيئة لم تُسدَّد'),
+            fn () => DB::table('vat_returns')->where('status', 'APPROVED')->whereNull('paid_date')->whereRaw('filed_output_vat > filed_input_vat')->count(),
+            route('accounting.vat.index'), 'bad',
+            fn () => DB::table('vat_returns')->where('status', 'APPROVED')->whereNull('paid_date')->whereRaw('filed_output_vat > filed_input_vat')->sum(DB::raw('filed_output_vat - filed_input_vat')));
         $add($can('accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close'), __('مستندات معتمدة لم تُرحَّل للدفاتر'),
             fn () => DB::table('v_posting_backlog')->count(), route('accounting.posting.backlog'), 'bad',
             fn () => DB::table('v_posting_backlog')->sum('amount'));

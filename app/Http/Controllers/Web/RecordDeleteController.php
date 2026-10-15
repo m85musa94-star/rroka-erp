@@ -34,6 +34,7 @@ class RecordDeleteController extends Controller
         'receipts' => [Models\CustomerReceipt::class, 'sales.manage', 'sales.receipts.index', true],
         'supplier-payments' => [Models\SupplierPayment::class, 'purchases.manage', 'supplier-payments.index', true],
         'owner-transactions' => [Models\OwnerTransaction::class, 'accounting.manage', 'accounting.owner.index', true],
+        'vat-returns' => [Models\VatReturn::class, 'accounting.manage', 'accounting.vat.index', true],
     ];
 
     /** Whether the delete button is offered for this record to this user. */

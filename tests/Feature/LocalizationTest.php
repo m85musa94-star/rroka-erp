@@ -34,6 +34,7 @@ use App\Models\Supplier;
 use App\Models\SupplierPayment;
 use App\Models\TreasuryTransfer;
 use App\Models\User;
+use App\Models\VatReturn;
 use App\Reports\ReportRegistry;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -212,6 +213,9 @@ class LocalizationTest extends ApiTestCase
         $this->actingAs($admin)->post('/expenses', ['expense_date' => now()->toDateString(), 'category_id' => ExpenseCategory::value('id'), 'payee' => 'Saw shop',
             'description' => 'Saw paid by the owner', 'amount' => 300, 'vat_amount' => 0, 'payment_account_id' => 'OWNER'])->assertSessionHasNoErrors();
         $ownerExpenseId = Expense::where('payment_method', 'OWNER')->value('id');
+        $this->actingAs($admin)->put('/accounting/vat/settings', ['vat_period' => 'QUARTERLY']);
+        $this->actingAs($admin)->post('/accounting/vat/returns', ['period_start' => '2026-01-01', 'period_end' => '2026-03-31', 'filed_output_vat' => 450, 'filed_input_vat' => 0])->assertSessionHasNoErrors();
+        $vatReturnId = VatReturn::value('id');
 
         $pages = [
             '/', '/clients', '/clients?v=kanban', '/clients?g=city', '/clients/create', "/clients/{$client->id}", "/clients/{$client->id}/edit",
@@ -224,6 +228,8 @@ class LocalizationTest extends ApiTestCase
             "/supplier-payments/create?expense={$creditExpenseId}", "/supplier-payments/create?purchase={$purchaseId}", "/supplier-payments/{$supplierPaymentId}",
             "/supplier-payments/{$supplierPaymentId}/edit", '/supplier-payments/balances',
             '/accounting/owner', '/accounting/owner/create', '/accounting/owner/create?kind=WITHDRAWAL', "/accounting/owner/{$ownerTxnId}", "/expenses/{$ownerExpenseId}", "/expenses/{$ownerExpenseId}/edit", '/expenses?f[]=owner',
+            '/accounting/vat', '/accounting/vat/report?from=2026-01-01&to=2026-12-31', '/accounting/vat/report?from=2026-01-01&to=2026-12-31&print=1',
+            '/accounting/vat/returns/create?from=2026-04-01&to=2026-06-30', "/accounting/vat/returns/{$vatReturnId}", "/accounting/vat/returns/{$vatReturnId}/edit",
             '/settings/rates', '/users', '/users/create', "/users/{$admin->id}/edit",
             '/roles', '/roles/create', "/roles/{$roleId}/edit",
             '/reports', '/settings/daftra', '/settings/demo',

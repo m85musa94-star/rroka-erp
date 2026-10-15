@@ -43,6 +43,7 @@ use App\Http\Controllers\Web\SupplierPaymentController;
 use App\Http\Controllers\Web\ThemeController;
 use App\Http\Controllers\Web\TreasuryTransferController;
 use App\Http\Controllers\Web\UserController;
+use App\Http\Controllers\Web\VatController;
 use App\Models\JournalEntry;
 use App\Reports\ReportRegistry;
 use App\Support\Release;
@@ -395,6 +396,10 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::get('/owner', [OwnerTransactionController::class, 'index'])->name('owner.index');
         Route::get('/owner/create', [OwnerTransactionController::class, 'create'])->name('owner.create')->middleware('permission:accounting.manage');
         Route::get('/owner/{owner}', [OwnerTransactionController::class, 'show'])->name('owner.show')->whereNumber('owner');
+        Route::get('/vat', [VatController::class, 'index'])->name('vat.index');
+        Route::get('/vat/report', [VatController::class, 'report'])->name('vat.report');
+        Route::get('/vat/returns/create', [VatController::class, 'create'])->name('vat.create')->middleware('permission:accounting.manage');
+        Route::get('/vat/returns/{return}', [VatController::class, 'show'])->name('vat.show')->whereNumber('return');
     });
     Route::middleware('permission:accounting.manage')->prefix('accounting')->name('accounting.')->group(function () {
         Route::get('/accounts/create', [AccountController::class, 'create'])->name('accounts.create');
@@ -414,12 +419,18 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::get('/owner/{owner}/edit', [OwnerTransactionController::class, 'edit'])->name('owner.edit')->whereNumber('owner');
         Route::put('/owner/{owner}', [OwnerTransactionController::class, 'update'])->name('owner.update')->whereNumber('owner');
         Route::post('/owner/{owner}/cancel', [OwnerTransactionController::class, 'cancel'])->name('owner.cancel')->whereNumber('owner');
+        Route::post('/vat/returns', [VatController::class, 'store'])->name('vat.store');
+        Route::get('/vat/returns/{return}/edit', [VatController::class, 'edit'])->name('vat.edit')->whereNumber('return');
+        Route::put('/vat/returns/{return}', [VatController::class, 'update'])->name('vat.update')->whereNumber('return');
+        Route::post('/vat/returns/{return}/cancel', [VatController::class, 'cancel'])->name('vat.cancel')->whereNumber('return');
     });
     Route::middleware('permission:accounting.post')->prefix('accounting')->name('accounting.')->group(function () {
         Route::post('/journal/{entry}/post', [JournalEntryController::class, 'post'])->name('journal.post')->whereNumber('entry');
         Route::post('/journal/{entry}/reverse', [JournalEntryController::class, 'reverse'])->name('journal.reverse')->whereNumber('entry');
         Route::post('/posting/post-all', [PostingController::class, 'postAll'])->name('posting.post-all');
         Route::post('/owner/{owner}/approve', [OwnerTransactionController::class, 'approve'])->name('owner.approve')->whereNumber('owner');
+        Route::post('/vat/returns/{return}/approve', [VatController::class, 'approve'])->name('vat.approve')->whereNumber('return');
+        Route::post('/vat/returns/{return}/pay', [VatController::class, 'pay'])->name('vat.pay')->whereNumber('return');
         Route::post('/posting/{type}/{id}', [PostingController::class, 'post'])->name('posting.post')->whereIn('type', JournalEntry::DOCUMENT_SOURCES)->whereNumber('id');
         Route::post('/posting/{type}/{id}/exclude', [PostingController::class, 'exclude'])->name('posting.exclude')->whereIn('type', JournalEntry::DOCUMENT_SOURCES)->whereNumber('id');
         Route::delete('/posting/exclusions/{exclusion}', [PostingController::class, 'unexclude'])->name('posting.unexclude')->whereNumber('exclusion');
@@ -428,6 +439,8 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::post('/periods/{month}/close', [AccountingController::class, 'closePeriod'])->name('periods.close');
         Route::post('/periods/{month}/reopen', [AccountingController::class, 'reopenPeriod'])->name('periods.reopen');
         Route::post('/posting/auto', [PostingController::class, 'toggle'])->name('posting.toggle');
+        Route::put('/vat/settings', [VatController::class, 'saveSettings'])->name('vat.settings');
+        Route::post('/vat/reopen', [VatController::class, 'reopen'])->name('vat.reopen');
     });
 
     Route::middleware('permission:studio.view|quotations.view|purchases.view|expenses.view')->group(function () {
