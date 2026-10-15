@@ -65,6 +65,7 @@ return [
         'RROKA_PURCHASE_NEGATIVE' => 'الخصم أكبر من مجموع البنود.',
         'RROKA_EXPENSE_TRANSITION' => 'المصروف يبدأ مسودة.',
         'RROKA_EXPENSE_LOCKED' => 'المصروف المعتمد أو الملغى لا يُعدَّل.',
+        'RROKA_PERIOD_EXCEPTIONS' => 'لا يُقفل الشهر وفيه استثناء أحمر: مستند معتمد لم يُرحَّل، أو مبلغ على العملاء أو الموردين بلا اسم الطرف. راجع «الاستثناءات».',
         'RROKA_VAT_LOCK' => 'الفترة الضريبية المقدَّم إقرارها تُعاد فتحها من شاشة الإقرار الضريبي مع ذكر السبب.',
         'RROKA_VAT_PERIOD_LOCKED' => 'تاريخ المستند داخل فترة ضريبية قُدِّم إقرارها؛ لا يُعتمد إلا بإعادة فتح الفترة بسبب مكتوب.',
         'RROKA_VAT_RETURN_OVERLAP' => 'إقرار معتمد آخر يغطي جزءًا من هذه الفترة.',
@@ -243,6 +244,8 @@ return [
     'detail_type' => ['RECEIVABLE' => 'مدينون (عملاء)', 'BANK_CASH' => 'البنك والنقدية', 'CURRENT_ASSETS' => 'أصول متداولة', 'NON_CURRENT_ASSETS' => 'أصول غير متداولة', 'PREPAYMENTS' => 'مصروفات مدفوعة مقدمًا', 'FIXED_ASSETS' => 'أصول ثابتة', 'PAYABLE' => 'دائنون (موردون)', 'CREDIT_CARD' => 'بطاقة ائتمان', 'CURRENT_LIABILITIES' => 'خصوم متداولة', 'NON_CURRENT_LIABILITIES' => 'خصوم غير متداولة', 'EQUITY' => 'حقوق الملكية', 'CURRENT_YEAR_EARNINGS' => 'أرباح السنة الحالية', 'INCOME' => 'الإيرادات', 'OTHER_INCOME' => 'إيرادات أخرى', 'EXPENSES' => 'المصروفات', 'DEPRECIATION' => 'الإهلاك', 'COST_OF_REVENUE' => 'تكلفة الإيرادات'],
 
     'account_role' => ['CASH' => 'النقدية', 'BANK' => 'البنك', 'CUSTODY' => 'العهد', 'RECEIVABLE' => 'العملاء (الذمم المدينة)', 'INVENTORY' => 'مخزون الخامات', 'WIP' => 'أعمال تحت التنفيذ', 'INPUT_VAT' => 'ضريبة المدخلات', 'PAYABLE' => 'الموردون', 'OUTPUT_VAT' => 'ضريبة المخرجات', 'CUSTOMER_ADVANCES' => 'دفعات مقدمة من العملاء', 'CAPITAL' => 'رأس المال', 'OWNER_CURRENT' => 'جاري المالك', 'RETAINED_EARNINGS' => 'الأرباح المبقاة', 'SALES' => 'إيرادات المبيعات', 'SALES_DISCOUNT' => 'خصومات المبيعات', 'COST_OF_SALES' => 'تكلفة المبيعات', 'FIXED_ASSETS' => 'الأصول الثابتة', 'ACCUMULATED_DEPRECIATION' => 'مجمع الإهلاك', 'DEPRECIATION' => 'مصروف الإهلاك', 'INVENTORY_ADJUSTMENT' => 'فروقات جرد المخزون', 'VAT_PAYABLE' => 'ضريبة مستحقة للهيئة'],
+
+    'severity' => ['RED' => 'يمنع الإقفال', 'ORANGE' => 'قبل الإقرار', 'YELLOW' => 'مراجعة دورية'],
 
     'vat_bucket' => ['SALES_STD' => 'مبيعات خاضعة للضريبة', 'SALES_ZERO' => 'مبيعات بلا ضريبة (صفرية أو معفاة)', 'SALES_CREDIT' => 'الإشعارات الدائنة على المبيعات',
         'PURCH_DEDUCT' => 'مشتريات ومصروفات بضريبة قابلة للخصم', 'PURCH_VERIFY' => 'ضريبة تحتاج تحقق (مورد بلا رقم ضريبي)', 'PURCH_NOVAT' => 'مشتريات ومصروفات بلا ضريبة'],

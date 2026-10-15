@@ -65,6 +65,7 @@ return [
         'RROKA_PURCHASE_NEGATIVE' => 'The discount is larger than the lines total.',
         'RROKA_EXPENSE_TRANSITION' => 'An expense starts as a draft.',
         'RROKA_EXPENSE_LOCKED' => 'An approved or cancelled expense cannot change.',
+        'RROKA_PERIOD_EXCEPTIONS' => 'The month does not close with a red exception: an approved document not posted, or a receivables/payables amount without its partner. See Exceptions.',
         'RROKA_VAT_LOCK' => 'A filed VAT period is reopened from the VAT return screen with a reason.',
         'RROKA_VAT_PERIOD_LOCKED' => 'The document date is inside a filed VAT period; it is approved only after reopening the period with a reason.',
         'RROKA_VAT_RETURN_OVERLAP' => 'Another approved return covers part of this period.',
@@ -243,6 +244,8 @@ return [
     'detail_type' => ['RECEIVABLE' => 'Receivable', 'BANK_CASH' => 'Bank and Cash', 'CURRENT_ASSETS' => 'Current Assets', 'NON_CURRENT_ASSETS' => 'Non-current Assets', 'PREPAYMENTS' => 'Prepayments', 'FIXED_ASSETS' => 'Fixed Assets', 'PAYABLE' => 'Payable', 'CREDIT_CARD' => 'Credit Card', 'CURRENT_LIABILITIES' => 'Current Liabilities', 'NON_CURRENT_LIABILITIES' => 'Non-current Liabilities', 'EQUITY' => 'Equity', 'CURRENT_YEAR_EARNINGS' => 'Current Year Earnings', 'INCOME' => 'Income', 'OTHER_INCOME' => 'Other Income', 'EXPENSES' => 'Expenses', 'DEPRECIATION' => 'Depreciation', 'COST_OF_REVENUE' => 'Cost of Revenue'],
 
     'account_role' => ['CASH' => 'Cash', 'BANK' => 'Bank', 'CUSTODY' => 'Custody', 'RECEIVABLE' => 'Accounts receivable', 'INVENTORY' => 'Materials inventory', 'WIP' => 'Work in progress', 'INPUT_VAT' => 'Input VAT', 'PAYABLE' => 'Accounts payable', 'OUTPUT_VAT' => 'Output VAT', 'CUSTOMER_ADVANCES' => 'Customer advances', 'CAPITAL' => 'Capital', 'OWNER_CURRENT' => 'Owner current account', 'RETAINED_EARNINGS' => 'Retained earnings', 'SALES' => 'Sales revenue', 'SALES_DISCOUNT' => 'Sales discounts', 'COST_OF_SALES' => 'Cost of sales', 'FIXED_ASSETS' => 'Fixed assets', 'ACCUMULATED_DEPRECIATION' => 'Accumulated depreciation', 'DEPRECIATION' => 'Depreciation expense', 'INVENTORY_ADJUSTMENT' => 'Inventory count differences', 'VAT_PAYABLE' => 'VAT payable to ZATCA'],
+
+    'severity' => ['RED' => 'Blocks closing', 'ORANGE' => 'Before the VAT return', 'YELLOW' => 'Periodic review'],
 
     'vat_bucket' => ['SALES_STD' => 'Taxable sales', 'SALES_ZERO' => 'Sales without VAT (zero-rated or exempt)', 'SALES_CREDIT' => 'Credit notes on sales',
         'PURCH_DEDUCT' => 'Purchases and expenses with deductible VAT', 'PURCH_VERIFY' => 'VAT to verify (supplier without a VAT number)', 'PURCH_NOVAT' => 'Purchases and expenses without VAT'],

@@ -1458,6 +1458,19 @@ SELECT pg_temp.expect_ok('vat: after reopening the late receipt is approved',
 SELECT pg_temp.expect_eq('backlog: no VAT document is left unposted',
     (SELECT count(*) FROM v_posting_backlog WHERE source_type IN ('VAT_RETURN', 'VAT_PAYMENT')), 0::bigint);
 
+-- ---------------------------------------------------------------------
+-- Closing a month with red exceptions is refused
+-- ---------------------------------------------------------------------
+UPDATE accounting_settings SET auto_posting = false;
+INSERT INTO expenses (id, expense_date, category_id, payee, description, amount, vat_amount, payment_method, payment_account_id)
+    VALUES (70, '2026-02-20', 2, 'x', 'TEST approved, not posted', 10, 0, 'BANK', 2);
+UPDATE expenses SET status = 'APPROVED', approved_by = 2, approved_at = now() WHERE id = 70;
+UPDATE fiscal_periods SET status = 'OPEN', reopen_reason = 'TEST' WHERE period_start = '2026-02-01';
+SELECT pg_temp.expect_error('close: not with an unposted document of the month',
+    'UPDATE fiscal_periods SET status = ''CLOSED'', closed_by = 2, closed_at = now() WHERE period_start = ''2026-02-01''', 'RROKA_PERIOD_EXCEPTIONS');
+INSERT INTO posting_exclusions (source_type, source_id, reason, created_by) VALUES ('EXPENSE', 70, 'TEST in the opening balances', 2);
+SELECT pg_temp.expect_ok('close: an excluded document (with its reason) does not block',
+    'UPDATE fiscal_periods SET status = ''CLOSED'', closed_by = 2, closed_at = now() WHERE period_start = ''2026-02-01''');
 UPDATE accounting_settings SET auto_posting = false;
 
 -- ---------------------------------------------------------------------

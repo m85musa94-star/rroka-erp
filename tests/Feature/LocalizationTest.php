@@ -228,6 +228,7 @@ class LocalizationTest extends ApiTestCase
             "/supplier-payments/create?expense={$creditExpenseId}", "/supplier-payments/create?purchase={$purchaseId}", "/supplier-payments/{$supplierPaymentId}",
             "/supplier-payments/{$supplierPaymentId}/edit", '/supplier-payments/balances',
             '/accounting/owner', '/accounting/owner/create', '/accounting/owner/create?kind=WITHDRAWAL', "/accounting/owner/{$ownerTxnId}", "/expenses/{$ownerExpenseId}", "/expenses/{$ownerExpenseId}/edit", '/expenses?f[]=owner',
+            '/accounting/exceptions', '/accounting/exceptions/backlog', '/accounting/exceptions/no_image', '/accounting/exceptions/self_approved', '/accounting/exceptions/reconciliation',
             '/accounting/vat', '/accounting/vat/report?from=2026-01-01&to=2026-12-31', '/accounting/vat/report?from=2026-01-01&to=2026-12-31&print=1',
             '/accounting/vat/returns/create?from=2026-04-01&to=2026-06-30', "/accounting/vat/returns/{$vatReturnId}", "/accounting/vat/returns/{$vatReturnId}/edit",
             '/settings/rates', '/users', '/users/create', "/users/{$admin->id}/edit",

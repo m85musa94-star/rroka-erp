@@ -193,6 +193,16 @@ class PostingController extends Controller
      */
     public function reconciliation(): View
     {
+        return view('accounting.posting.reconciliation', self::reconciliationData() + [
+            'backlog' => PostingBacklog::selectRaw('count(*) AS n, COALESCE(sum(amount), 0) AS v')->first(),
+            'excluded' => DB::table('posting_exclusions')->count(),
+            'books' => DB::table('accounting_settings')->value('books_start'),
+        ]);
+    }
+
+    /** Each subledger against its account in the books (also read by the exceptions board). */
+    public static function reconciliationData(): array
+    {
         $role = fn (string $r) => Account::where('system_role', $r)->first();
         $gl = fn (?Account $a, ?callable $where = null) => $a
             ? (float) DB::table('v_ledger_lines')->where('account_id', $a->id)->when($where, $where)->sum('net')
@@ -289,11 +299,6 @@ class PostingController extends Controller
              WHERE COALESCE(s.v, 0) <> 0 OR COALESCE(g.v, 0) <> 0
              ORDER BY p.project_no", [$wip?->id ?? 0]);
 
-        return view('accounting.posting.reconciliation', [
-            'rows' => $rows, 'custody' => $custody, 'projects' => $projects, 'wip' => $wip,
-            'backlog' => PostingBacklog::selectRaw('count(*) AS n, COALESCE(sum(amount), 0) AS v')->first(),
-            'excluded' => DB::table('posting_exclusions')->count(),
-            'books' => DB::table('accounting_settings')->value('books_start'),
-        ]);
+        return ['rows' => $rows, 'custody' => $custody, 'projects' => $projects, 'wip' => $wip];
     }
 }

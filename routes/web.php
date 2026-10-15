@@ -1,5 +1,6 @@
 <?php
 
+use App\Accounting\Exceptions;
 use App\Http\Controllers\Web\AccountController;
 use App\Http\Controllers\Web\AccountingController;
 use App\Http\Controllers\Web\AttendanceController;
@@ -396,6 +397,8 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::get('/owner', [OwnerTransactionController::class, 'index'])->name('owner.index');
         Route::get('/owner/create', [OwnerTransactionController::class, 'create'])->name('owner.create')->middleware('permission:accounting.manage');
         Route::get('/owner/{owner}', [OwnerTransactionController::class, 'show'])->name('owner.show')->whereNumber('owner');
+        Route::get('/exceptions', [AccountingController::class, 'exceptions'])->name('exceptions.index');
+        Route::get('/exceptions/{key}', [AccountingController::class, 'exception'])->name('exceptions.show')->whereIn('key', array_keys(Exceptions::definitions()));
         Route::get('/vat', [VatController::class, 'index'])->name('vat.index');
         Route::get('/vat/report', [VatController::class, 'report'])->name('vat.report');
         Route::get('/vat/returns/create', [VatController::class, 'create'])->name('vat.create')->middleware('permission:accounting.manage');

@@ -195,6 +195,7 @@ class AppMenu
                     ['الربط المحاسبي', 'accounting.posting.settings', [], ['accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close']],
                     ['حركات المالك', 'accounting.owner.index', [], ['accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close']],
                     ['الإقرار الضريبي', 'accounting.vat.index', [], ['accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close']],
+                    ['الاستثناءات', 'accounting.exceptions.index', [], ['accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close']],
                 ],
                 'expenses' => [
                     ['المصروفات', 'expenses.index', [], ['expenses.view', 'expenses.manage']],

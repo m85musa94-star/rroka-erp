@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Accounting\Exceptions;
 use App\Http\Controllers\Controller;
 use App\Models\FiscalPeriod;
 use Carbon\CarbonImmutable;
@@ -117,5 +118,18 @@ class AccountingController extends Controller
     private function booksStart(): ?string
     {
         return DB::table('accounting_settings')->value('books_start');
+    }
+
+    /** The exceptions board: every detective control that has something, by severity. */
+    public function exceptions(): View
+    {
+        return view('accounting.exceptions.index', ['items' => Exceptions::summary()]);
+    }
+
+    public function exception(string $key): View
+    {
+        $def = Exceptions::definitions()[$key] ?? abort(404);
+
+        return view('accounting.exceptions.show', ['def' => $def, 'rows' => Exceptions::rows($key)]);
     }
 }

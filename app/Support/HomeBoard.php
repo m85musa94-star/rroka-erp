@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Accounting\Exceptions;
 use App\Models\EmployeeDocument;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -58,6 +59,8 @@ class HomeBoard
             fn () => DB::table('vat_returns')->where('status', 'APPROVED')->whereNull('paid_date')->whereRaw('filed_output_vat > filed_input_vat')->count(),
             route('accounting.vat.index'), 'bad',
             fn () => DB::table('vat_returns')->where('status', 'APPROVED')->whereNull('paid_date')->whereRaw('filed_output_vat > filed_input_vat')->sum(DB::raw('filed_output_vat - filed_input_vat')));
+        $add($can('accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close'), __('استثناءات تحتاج مراجعة (أحمر وبرتقالي)'),
+            fn () => Exceptions::attentionCount(), route('accounting.exceptions.index'), 'bad');
         $add($can('accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close'), __('مستندات معتمدة لم تُرحَّل للدفاتر'),
             fn () => DB::table('v_posting_backlog')->count(), route('accounting.posting.backlog'), 'bad',
             fn () => DB::table('v_posting_backlog')->sum('amount'));
