@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Accounting\FinancialReports;
 use App\Accounting\ReportOptions;
 use App\Models\Account;
+use App\Models\Client;
 use App\Models\FiscalPeriod;
 use App\Models\JournalEntry;
 use Illuminate\Http\Request;
@@ -52,7 +53,7 @@ class AccountingTest extends ApiTestCase
 
         // Owner funds the bank, then rent is paid (1,000 + 150 VAT).
         $bank = $this->acc('110201');
-        $deposit = $this->entry($admin, '2026-01-05', [['account_id' => $bank, 'debit' => 50000], ['account_id' => $this->acc('3201'), 'credit' => 50000]], 'TEST owner deposit');
+        $deposit = $this->entry($admin, '2026-01-05', [['account_id' => $bank, 'debit' => 50000], ['account_id' => $this->acc('3101'), 'credit' => 50000]], 'TEST capital deposit');
         $rent = $this->entry($admin, '2026-01-10', [
             ['account_id' => $this->acc('5202'), 'debit' => 1000], ['account_id' => $this->acc('1140'), 'debit' => 150], ['account_id' => $bank, 'credit' => 1100],
         ], 'TEST rent');
@@ -114,7 +115,7 @@ class AccountingTest extends ApiTestCase
         $admin = $this->admin();
         $this->actingAs($admin)->post('/accounting/accounts/template');
         $cash = Account::where('code', '1101')->value('id');
-        $owner = Account::where('code', '3201')->value('id');
+        $owner = Account::where('code', '3101')->value('id');
         $jan = $this->entry($admin, '2026-01-20', [['account_id' => $cash, 'debit' => 100], ['account_id' => $owner, 'credit' => 100]]);
         $this->actingAs($admin)->post('/accounting/periods/2026-01/close')->assertSessionHasErrors('rule');   // a draft in January
         $this->actingAs($admin)->post("/accounting/journal/{$jan->id}/post")->assertSessionHasNoErrors();
@@ -142,9 +143,10 @@ class AccountingTest extends ApiTestCase
             $this->actingAs($admin)->post("/accounting/journal/{$e->id}/post")->assertSessionHasNoErrors();
         };
         // Owner funds 50,000; rent 1,000 + 150 VAT; a sale of 5,000 on credit; its cost 2,000 paid by bank.
-        $post('2026-01-05', [['account_id' => $bank, 'debit' => 50000], ['account_id' => $this->acc('3201'), 'credit' => 50000]]);
+        $post('2026-01-05', [['account_id' => $bank, 'debit' => 50000], ['account_id' => $this->acc('3101'), 'credit' => 50000]]);
         $post('2026-01-10', [['account_id' => $this->acc('5202'), 'debit' => 1000], ['account_id' => $this->acc('1140'), 'debit' => 150], ['account_id' => $bank, 'credit' => 1150]]);
-        $post('2026-02-01', [['account_id' => $this->acc('1110'), 'debit' => 5000], ['account_id' => $this->acc('4101'), 'credit' => 5000]]);
+        $client = Client::create(['business_name' => 'TEST client']);   // a receivables line names its client
+        $post('2026-02-01', [['account_id' => $this->acc('1110'), 'debit' => 5000, 'partner' => 'CLIENT:'.$client->id], ['account_id' => $this->acc('4101'), 'credit' => 5000]]);
         $post('2026-02-02', [['account_id' => $this->acc('5101'), 'debit' => 2000], ['account_id' => $bank, 'credit' => 2000]]);
 
         // P&L: income 5,000 − cost of revenue 2,000 = gross 3,000; − rent 1,000 = net 2,000.
@@ -190,7 +192,7 @@ class AccountingTest extends ApiTestCase
 
         $clerk = $this->userWith(['accounting.manage']);
         $this->actingAs($clerk)->post('/accounting/accounts/template')->assertSessionHasNoErrors();
-        $e = $this->entry($clerk, '2026-03-01', [['account_id' => Account::where('code', '1101')->value('id'), 'debit' => 5], ['account_id' => Account::where('code', '3201')->value('id'), 'credit' => 5]]);
+        $e = $this->entry($clerk, '2026-03-01', [['account_id' => Account::where('code', '1101')->value('id'), 'debit' => 5], ['account_id' => Account::where('code', '3101')->value('id'), 'credit' => 5]]);
         $this->actingAs($clerk)->post("/accounting/journal/{$e->id}/post")->assertForbidden();   // posting is a separate permission
         $this->actingAs($clerk)->post('/accounting/periods/2026-03/close')->assertForbidden();
 
@@ -201,7 +203,7 @@ class AccountingTest extends ApiTestCase
     {
         $admin = $this->admin();
         $this->actingAs($admin)->post('/accounting/accounts/template')->assertSessionHasNoErrors();
-        $e = $this->entry($admin, '2026-02-05', [['account_id' => $this->acc('5202'), 'debit' => 500], ['account_id' => $this->acc('3201'), 'credit' => 500]], 'TEST rent');
+        $e = $this->entry($admin, '2026-02-05', [['account_id' => $this->acc('5202'), 'debit' => 500], ['account_id' => $this->acc('3101'), 'credit' => 500]], 'TEST rent');
         $this->actingAs($admin)->post("/accounting/journal/{$e->id}/post")->assertSessionHasNoErrors();
 
         $report = '/accounting/reports/profit-loss?date=custom&from=2026-02-01&to=2026-02-28';

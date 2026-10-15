@@ -37,13 +37,13 @@
 <div class="card">
     <h2>{{ __('السطور') }}</h2>
     <div class="table-wrap"><table>
-        <tr><th>{{ __('الحساب') }}</th><th>{{ __('البيان') }}</th><th>{{ __('المشروع') }}</th><th>{{ __('مركز التكلفة') }}</th><th class="num">{{ __('مدين') }}</th><th class="num">{{ __('دائن') }}</th></tr>
+        <tr><th>{{ __('الحساب') }}</th><th>{{ __('البيان') }}</th><th>{{ __('الطرف') }}</th><th>{{ __('المشروع') }}</th><th>{{ __('مركز التكلفة') }}</th><th class="num">{{ __('مدين') }}</th><th class="num">{{ __('دائن') }}</th></tr>
         @foreach($e->lines as $l)
             <tr><td><a href="{{ route('accounting.accounts.show', $l->account) }}"><bdi dir="ltr">{{ $l->account->code }}</bdi> — {{ $l->account->label() }}</a></td>
-                <td>{{ $l->description }}</td><td>{{ $l->project?->project_no }}</td><td>{{ $l->costCenter?->code }}</td>
+                <td>{{ $l->description }}</td><td>{{ $l->partnerName() }}</td><td>{{ $l->project?->project_no }}</td><td>{{ $l->costCenter?->code }}</td>
                 <td class="num">{{ (float) $l->debit ? number_format($l->debit, 2) : '' }}</td><td class="num">{{ (float) $l->credit ? number_format($l->credit, 2) : '' }}</td></tr>
         @endforeach
-        <tr><th colspan="4">{{ __('المجموع') }}</th><th class="num">{{ number_format($debit, 2) }}</th><th class="num">{{ number_format($credit, 2) }}</th></tr>
+        <tr><th colspan="5">{{ __('المجموع') }}</th><th class="num">{{ number_format($debit, 2) }}</th><th class="num">{{ number_format($credit, 2) }}</th></tr>
     </table></div>
     @if($e->status === 'DRAFT' && ($diff != 0 || $e->lines->count() < 2))
         <p class="hint warn-text">{{ __('القيد غير متوازن (الفرق :d)؛ لا يُرحَّل حتى يتساوى المدين والدائن.', ['d' => number_format(abs($diff), 2)]) }}</p>

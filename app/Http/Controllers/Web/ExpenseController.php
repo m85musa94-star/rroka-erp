@@ -37,15 +37,16 @@ class ExpenseController extends Controller
                 'self' => ['label' => __('اعتماد ذاتي (للمراجعة)'), 'group' => 'x', 'apply' => fn ($q) => $q->where('expenses.status', 'APPROVED')->whereColumn('approved_by', 'expenses.created_by')],
                 'no_doc' => ['label' => __('بلا صورة مستند'), 'group' => 'd', 'apply' => fn ($q) => $q->whereNull('attachment_id')],
                 'custody' => ['label' => __('من عهد الموظفين'), 'group' => 'pay', 'apply' => fn ($q) => $q->where('payment_method', 'PETTY_CASH')],
-                'no_account' => ['label' => __('معتمدة بلا جهة دفع (قبل تفعيل الخزينة)'), 'group' => 'pay', 'apply' => fn ($q) => $q->where('expenses.status', 'APPROVED')->whereNull('payment_account_id')->where('payment_method', '<>', 'CREDIT')],
+                'no_account' => ['label' => __('معتمدة بلا جهة دفع (قبل تفعيل الخزينة)'), 'group' => 'pay', 'apply' => fn ($q) => $q->where('expenses.status', 'APPROVED')->whereNull('payment_account_id')->whereNotIn('payment_method', ['CREDIT', 'OWNER'])],
                 'credit' => ['label' => __('آجلة على حساب المورد'), 'group' => 'pay', 'apply' => fn ($q) => $q->where('payment_method', 'CREDIT')],
+                'owner' => ['label' => __('دفعها المالك من ماله'), 'group' => 'pay', 'apply' => fn ($q) => $q->where('payment_method', 'OWNER')],
                 'this_month' => ['label' => __('هذا الشهر'), 'group' => 'date', 'apply' => fn ($q) => $q->where('expense_date', '>=', now()->startOfMonth())],
             ],
             groups: [
                 'category' => ['label' => __('التصنيف'), 'key' => fn ($e) => $e->category_id, 'title' => fn ($e) => $e->category->name],
                 'project' => ['label' => __('المشروع'), 'key' => fn ($e) => $e->project_id ?? 0, 'title' => fn ($e) => $e->project?->project_no ?? __('بلا مشروع')],
                 'month' => ['label' => __('الشهر'), 'key' => fn ($e) => $e->expense_date->format('Y-m'), 'title' => fn ($e) => $e->expense_date->format('Y-m')],
-                'account' => ['label' => __('دُفع من'), 'key' => fn ($e) => $e->payment_account_id ?? ($e->payment_method === 'CREDIT' ? -1 : 0), 'title' => fn ($e) => $e->paymentAccount?->name ?? ($e->payment_method === 'CREDIT' ? __('آجل على حساب المورد') : __('بلا جهة دفع'))],
+                'account' => ['label' => __('دُفع من'), 'key' => fn ($e) => $e->payment_account_id ?? ['CREDIT' => -1, 'OWNER' => -2][$e->payment_method] ?? 0, 'title' => fn ($e) => $e->paymentAccount?->name ?? ['CREDIT' => __('آجل على حساب المورد'), 'OWNER' => __('دفعها المالك من ماله')][$e->payment_method] ?? __('بلا جهة دفع')],
                 'method' => ['label' => __('طريقة الدفع'), 'key' => fn ($e) => $e->payment_method, 'title' => fn ($e) => __("rroka.payment_method.$e->payment_method")],
             ],
             keep: ['project_id', 'payment_account_id'],
@@ -180,13 +181,17 @@ class ExpenseController extends Controller
             'amount' => ['required', 'numeric', 'gt:0'],
             'vat_amount' => ['required', 'numeric', 'min:0'],
             // "CREDIT" = the supplier's invoice is not paid yet (owed to the supplier).
-            'payment_account_id' => ['required', $request->input('payment_account_id') === 'CREDIT' ? 'in:CREDIT'
+            // "OWNER" = paid by the owner from their own money (owed to the owner).
+            'payment_account_id' => ['required', in_array($request->input('payment_account_id'), ['CREDIT', 'OWNER'], true) ? 'in:CREDIT,OWNER'
                 : Rule::exists('payment_accounts', 'id')->where('is_active', true)],
             'payment_method' => ['nullable', Rule::in(PaymentAccount::METHODS['BANK'])],
             'project_id' => ['nullable', 'integer', 'exists:projects,id'],
             'reference' => ['nullable', 'string', 'max:100', 'required_if:payment_account_id,CREDIT'],
             'document' => ['nullable', 'file', 'max:20480', 'mimetypes:image/jpeg,image/png,image/webp'],
         ], ['reference.required_if' => __('رقم فاتورة المورد مطلوب للفاتورة الآجلة.')]);
+        if ($data['payment_account_id'] === 'OWNER') {
+            return ['payment_account_id' => null, 'payment_method' => 'OWNER', 'paid_by_employee_id' => null] + $data;
+        }
         if ($data['payment_account_id'] === 'CREDIT') {
             if (empty($data['supplier_id'])) {
                 throw ValidationException::withMessages(['supplier_id' => __('الفاتورة الآجلة تحتاج موردًا مسجلًا.')]);

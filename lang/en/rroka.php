@@ -65,6 +65,9 @@ return [
         'RROKA_PURCHASE_NEGATIVE' => 'The discount is larger than the lines total.',
         'RROKA_EXPENSE_TRANSITION' => 'An expense starts as a draft.',
         'RROKA_EXPENSE_LOCKED' => 'An approved or cancelled expense cannot change.',
+        'RROKA_EXPENSE_OWNER' => 'An expense paid by the owner has no cash box or bank.',
+        'RROKA_JOURNAL_PARTNER' => 'A receivables line needs the client and a payables line the supplier (a registered one).',
+        'RROKA_JOURNAL_OWNER_MANUAL' => 'The owner account takes no manual entry; use owner transactions or an expense paid by the owner.',
         'RROKA_EXPENSE_CREDIT' => 'An invoice on credit needs a registered supplier and their invoice number, and no cash box or bank.',
         'RROKA_SUPPLIER_PAYMENT_INVOICE' => 'A payment is on an open credit invoice of the same supplier.',
         'RROKA_SUPPLIER_PAYMENT_EXCEEDS' => 'Payments cannot exceed the invoice.',
@@ -157,7 +160,7 @@ return [
     'entities' => [
         'accounts' => 'account', 'journal_entries' => 'journal entry', 'journal_lines' => 'journal line', 'fiscal_periods' => 'fiscal period', 'accounting_settings' => 'books settings', 'cost_estimates' => 'cost estimate', 'cost_estimate_materials' => 'estimate material', 'cost_estimate_operations' => 'estimate operation', 'cost_estimate_direct_costs' => 'direct cost', 'cost_estimate_snapshots' => 'frozen cost', 'vat_rates' => 'VAT rate', 'pricing_policies' => 'pricing policy',
         'cost_centers' => 'cost centre', 'energy_rates' => 'electricity price', 'employee_cost_cards' => 'employee cost card', 'employee_cost_card_shares' => 'cost centre share', 'machine_cost_cards' => 'machine cost card', 'material_standard_prices' => 'standard price', 'waste_defaults' => 'waste rate', 'overhead_pools' => 'overhead pool', 'overhead_pool_lines' => 'pool line',
-        'payment_accounts' => 'account', 'treasury_transfers' => 'transfer', 'suppliers' => 'supplier', 'purchase_invoices' => 'supplier invoice', 'purchase_invoice_lines' => 'supplier invoice line', 'expenses' => 'expense', 'expense_categories' => 'expense category', 'sales_invoices' => 'customer invoice', 'customer_receipts' => 'customer receipt', 'supplier_payments' => 'supplier payment',
+        'payment_accounts' => 'account', 'treasury_transfers' => 'transfer', 'suppliers' => 'supplier', 'purchase_invoices' => 'supplier invoice', 'purchase_invoice_lines' => 'supplier invoice line', 'expenses' => 'expense', 'expense_categories' => 'expense category', 'sales_invoices' => 'customer invoice', 'customer_receipts' => 'customer receipt', 'supplier_payments' => 'supplier payment', 'owner_transactions' => 'owner transaction',
         'employee_contracts' => 'contract', 'leave_requests' => 'time-off request', 'leave_allocations' => 'allocation', 'attendances' => 'attendance', 'leave_types' => 'time-off type',
         'workers' => 'employee', 'departments' => 'department', 'job_positions' => 'job position', 'employee_documents' => 'document',
         'raw_materials' => 'material', 'designs' => 'design', 'design_versions' => 'design version', 'design_bom_lines' => 'BOM line', 'production_orders' => 'manufacturing order',
@@ -198,7 +201,7 @@ return [
 
     'contract_type' => ['FIXED_TERM' => 'Fixed term', 'INDEFINITE' => 'Indefinite'],
 
-    'payment_method' => ['CASH' => 'Cash', 'BANK' => 'Bank transfer', 'CARD' => 'Card', 'PETTY_CASH' => 'Employee petty cash', 'CREDIT' => 'On credit (owed to the supplier)'],
+    'payment_method' => ['CASH' => 'Cash', 'BANK' => 'Bank transfer', 'CARD' => 'Card', 'PETTY_CASH' => 'Employee petty cash', 'CREDIT' => 'On credit (owed to the supplier)', 'OWNER' => 'Paid by the owner'],
 
     'driver' => ['LABOR_HOURS' => 'Direct labour hours', 'MACHINE_HOURS' => 'Machine hours', 'PCT_OF_MANUFACTURING_COST' => '% of manufacturing cost'],
 
@@ -236,7 +239,9 @@ return [
 
     'account_role' => ['CASH' => 'Cash', 'BANK' => 'Bank', 'CUSTODY' => 'Custody', 'RECEIVABLE' => 'Accounts receivable', 'INVENTORY' => 'Materials inventory', 'WIP' => 'Work in progress', 'INPUT_VAT' => 'Input VAT', 'PAYABLE' => 'Accounts payable', 'OUTPUT_VAT' => 'Output VAT', 'CUSTOMER_ADVANCES' => 'Customer advances', 'CAPITAL' => 'Capital', 'OWNER_CURRENT' => 'Owner current account', 'RETAINED_EARNINGS' => 'Retained earnings', 'SALES' => 'Sales revenue', 'SALES_DISCOUNT' => 'Sales discounts', 'COST_OF_SALES' => 'Cost of sales', 'FIXED_ASSETS' => 'Fixed assets', 'ACCUMULATED_DEPRECIATION' => 'Accumulated depreciation', 'DEPRECIATION' => 'Depreciation expense', 'INVENTORY_ADJUSTMENT' => 'Inventory count differences'],
 
-    'journal_source' => ['MANUAL' => 'Manual', 'OPENING' => 'Opening', 'REVERSAL' => 'Reversal', 'EXPENSE' => 'Expense', 'PURCHASE' => 'Purchase invoice', 'TRANSFER' => 'Treasury transfer', 'STOCK' => 'Stock movement', 'SALE' => 'Customer invoice', 'RECEIPT' => 'Customer receipt', 'PROJECT_CLOSE' => 'Project delivery', 'SUPPLIER_PAYMENT' => 'Supplier payment'],
+    'owner_kind' => ['FUNDING' => 'Owner funding', 'WITHDRAWAL' => 'Owner withdrawal', 'PAID_EXPENSE' => 'Expense paid by the owner'],
+
+    'journal_source' => ['MANUAL' => 'Manual', 'OPENING' => 'Opening', 'REVERSAL' => 'Reversal', 'EXPENSE' => 'Expense', 'PURCHASE' => 'Purchase invoice', 'TRANSFER' => 'Treasury transfer', 'STOCK' => 'Stock movement', 'SALE' => 'Customer invoice', 'RECEIPT' => 'Customer receipt', 'PROJECT_CLOSE' => 'Project delivery', 'SUPPLIER_PAYMENT' => 'Supplier payment', 'OWNER' => 'Owner transaction'],
 
     'expense_kind' => ['PROJECT' => 'On a project', 'OVERHEAD' => 'Workshop overhead', 'OTHER' => 'General & admin'],
 

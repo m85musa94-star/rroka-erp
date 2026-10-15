@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Account;
+use App\Models\Client;
 use App\Models\CostCenter;
+use App\Models\Employee;
 use App\Models\JournalEntry;
 use App\Models\Project;
+use App\Models\Supplier;
 use App\Support\ActivityLog;
 use App\Support\ListView;
 use Illuminate\Http\RedirectResponse;
@@ -95,7 +98,7 @@ class JournalEntryController extends Controller
 
         return view('accounting.journal.form', [
             'e' => $entry,
-            'lines' => $entry->lines->map(fn ($l) => $l->only('account_id', 'debit', 'credit', 'description', 'project_id', 'cost_center_id'))->all(),
+            'lines' => $entry->lines->map(fn ($l) => $l->only('account_id', 'debit', 'credit', 'description', 'project_id', 'cost_center_id') + ['partner' => $l->partnerKey()])->all(),
             ...$this->choices(),
         ]);
     }
@@ -181,7 +184,18 @@ class JournalEntryController extends Controller
             'lines.*.description' => ['nullable', 'string', 'max:300'],
             'lines.*.project_id' => ['nullable', 'integer', 'exists:projects,id'],
             'lines.*.cost_center_id' => ['nullable', 'integer', 'exists:cost_centers,id'],
+            'lines.*.partner' => ['nullable', 'string', 'regex:/^(CLIENT|SUPPLIER|EMPLOYEE):\d+$/'],
         ], ['lines.min' => __('القيد يحتاج سطرين على الأقل.')]);
+        // Receivables / payables lines name their client / supplier (the database enforces it too).
+        $details = Account::whereIn('id', array_column($data['lines'], 'account_id'))->pluck('detail_type', 'id');
+        foreach ($data['lines'] as $i => $l) {
+            $need = ['RECEIVABLE' => 'CLIENT', 'PAYABLE' => 'SUPPLIER'][$details[$l['account_id']] ?? ''] ?? null;
+            if ($need && ! str_starts_with($l['partner'] ?? '', $need.':')) {
+                throw ValidationException::withMessages(["lines.$i.partner" => $need === 'CLIENT'
+                    ? __('السطر :n على حساب العملاء: اختر العميل.', ['n' => $i + 1])
+                    : __('السطر :n على حساب الموردين: اختر المورد.', ['n' => $i + 1])]);
+            }
+        }
         foreach ($data['lines'] as $i => $l) {
             if (((float) $l['debit'] > 0) === ((float) $l['credit'] > 0)) {
                 throw ValidationException::withMessages(["lines.$i.debit" => __('السطر :n: اكتب مبلغًا في المدين أو في الدائن، لا في كليهما ولا تتركهما فارغين.', ['n' => $i + 1])]);
@@ -203,6 +217,8 @@ class JournalEntryController extends Controller
             $e->lines()->create([
                 'account_id' => $l['account_id'], 'debit' => $l['debit'], 'credit' => $l['credit'], 'description' => $l['description'] ?? null,
                 'project_id' => $l['project_id'] ?? null, 'cost_center_id' => $l['cost_center_id'] ?? null,
+                'partner_type' => ($l['partner'] ?? '') !== '' ? strstr($l['partner'], ':', true) : null,
+                'partner_id' => ($l['partner'] ?? '') !== '' ? (int) substr(strstr($l['partner'], ':'), 1) : null,
             ]);
         }
     }
@@ -210,9 +226,12 @@ class JournalEntryController extends Controller
     private function choices(): array
     {
         return [
-            'accounts' => Account::where('is_postable', true)->where('is_active', true)->orderBy('code')->get(['id', 'code', 'name', 'name_en']),
+            'accounts' => Account::where('is_postable', true)->where('is_active', true)->orderBy('code')->get(['id', 'code', 'name', 'name_en', 'detail_type', 'system_role']),
             'projects' => Project::orderByDesc('id')->limit(500)->get(['id', 'project_no']),
             'centers' => CostCenter::where('is_active', true)->orderBy('code')->get(['id', 'code', 'name']),
+            'clients' => Client::orderBy('business_name')->get(['id', 'business_name']),
+            'suppliers' => Supplier::orderBy('name')->get(['id', 'name']),
+            'employees' => Employee::orderBy('name')->get(['id', 'name']),
         ];
     }
 

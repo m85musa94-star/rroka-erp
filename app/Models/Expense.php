@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Expense extends Model
 {
-    public const METHODS = ['CASH', 'BANK', 'CARD', 'PETTY_CASH', 'CREDIT'];
+    public const METHODS = ['CASH', 'BANK', 'CARD', 'PETTY_CASH', 'CREDIT', 'OWNER'];
 
     protected $fillable = ['expense_date', 'category_id', 'supplier_id', 'payee', 'description', 'amount', 'vat_amount',
         'payment_method', 'paid_by_employee_id', 'payment_account_id', 'project_id', 'reference', 'attachment_id'];

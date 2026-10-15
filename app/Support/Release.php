@@ -9,5 +9,5 @@ namespace App\Support;
  */
 class Release
 {
-    public const VERSION = '2026-10-14.1';
+    public const VERSION = '2026-10-15.1';
 }

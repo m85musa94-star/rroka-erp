@@ -28,7 +28,7 @@ use Illuminate\View\View;
 class PostingController extends Controller
 {
     /** Roles every automatic entry may need. */
-    public const REQUIRED_ROLES = ['INVENTORY', 'WIP', 'INPUT_VAT', 'PAYABLE', 'INVENTORY_ADJUSTMENT', 'RECEIVABLE', 'SALES', 'OUTPUT_VAT', 'COST_OF_SALES'];
+    public const REQUIRED_ROLES = ['INVENTORY', 'WIP', 'INPUT_VAT', 'PAYABLE', 'INVENTORY_ADJUSTMENT', 'RECEIVABLE', 'SALES', 'OUTPUT_VAT', 'COST_OF_SALES', 'OWNER_CURRENT'];
 
     public function settings(): View
     {
@@ -204,6 +204,7 @@ class PostingController extends Controller
         $ar = $role('RECEIVABLE');
         $outVat = $role('OUTPUT_VAT');
         $cogs = $role('COST_OF_SALES');
+        $owner = $role('OWNER_CURRENT');
         // Cost recorded on projects (net stock issued + approved project expenses), open or delivered.
         $projectCost = fn (bool $delivered) => (float) DB::selectOne("
             SELECT COALESCE((SELECT sum(CASE movement_type WHEN 'ISSUE' THEN 1 ELSE -1 END * round(quantity * unit_cost, 2)) FROM stock_movements
@@ -242,6 +243,12 @@ class PostingController extends Controller
                 'label' => __('العملاء'), 'account' => $ar,
                 'sub' => (float) DB::table('v_client_balances')->sum('balance'),
                 'gl' => $gl($ar), 'note' => __('فواتير العملاء − الإشعارات الدائنة − سندات القبض (المعتمدة)'), 'link' => route('sales.balances'),
+            ],
+            [
+                'label' => __('جاري المالك'), 'account' => $owner,
+                'sub' => (float) DB::table('v_owner_statement')->sum(DB::raw('credit - debit')),
+                'gl' => $owner ? -$gl($owner, fn ($q) => $q->where('source_type', '<>', 'OPENING')) : null,
+                'note' => __('تمويل + مصروفات دفعها المالك − سحوبات (المعتمدة؛ دون القيد الافتتاحي)'), 'link' => route('accounting.owner.index'),
             ],
             [
                 'label' => __('ضريبة المخرجات'), 'account' => $outVat,

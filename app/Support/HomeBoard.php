@@ -51,6 +51,9 @@ class HomeBoard
         $add($can('purchases.view', 'purchases.manage'), __('موردون لهم مستحقات قائمة'),
             fn () => DB::table('v_supplier_balances')->where('balance', '>', 0)->count(), route('supplier-payments.balances', ['open' => 1]), 'info',
             fn () => DB::table('v_supplier_balances')->where('balance', '>', 0)->sum('balance'));
+        $add($can('accounting.post'), __('حركات مالك بانتظار الاعتماد'),
+            fn () => DB::table('owner_transactions')->where('status', 'DRAFT')->count(), route('accounting.owner.index'), 'warn',
+            fn () => DB::table('owner_transactions')->where('status', 'DRAFT')->sum('amount'));
         $add($can('accounting.view', 'accounting.manage', 'accounting.post', 'accounting.close'), __('مستندات معتمدة لم تُرحَّل للدفاتر'),
             fn () => DB::table('v_posting_backlog')->count(), route('accounting.posting.backlog'), 'bad',
             fn () => DB::table('v_posting_backlog')->sum('amount'));

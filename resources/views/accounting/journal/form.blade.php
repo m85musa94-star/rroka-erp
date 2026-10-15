@@ -24,12 +24,17 @@
     <div class="card">
         <h2>{{ __('السطور') }}</h2>
         <div class="table-wrap"><table id="lines">
-            <thead><tr><th style="width:28%">{{ __('الحساب') }}</th><th>{{ __('البيان') }}</th><th>{{ __('المشروع') }}</th><th>{{ __('مركز التكلفة') }}</th><th>{{ __('مدين') }}</th><th>{{ __('دائن') }}</th><th></th></tr></thead>
+            <thead><tr><th style="width:28%">{{ __('الحساب') }}</th><th>{{ __('البيان') }}</th><th>{{ __('الطرف') }}</th><th>{{ __('المشروع') }}</th><th>{{ __('مركز التكلفة') }}</th><th>{{ __('مدين') }}</th><th>{{ __('دائن') }}</th><th></th></tr></thead>
             <tbody>
             @foreach($rows as $i => $l)
                 <tr>
-                    <td><select name="lines[{{ $i }}][account_id]"><option value="">{{ __('— الحساب —') }}</option>@foreach($accounts as $a)<option value="{{ $a->id }}" @selected((string) ($l['account_id'] ?? '') === (string) $a->id)>{{ $a->code }} — {{ $a->label() }}</option>@endforeach</select></td>
+                    <td><select name="lines[{{ $i }}][account_id]"><option value="">{{ __('— الحساب —') }}</option>@foreach($accounts as $a)<option value="{{ $a->id }}" data-detail="{{ $a->detail_type }}" @selected((string) ($l['account_id'] ?? '') === (string) $a->id) @disabled($a->system_role === 'OWNER_CURRENT')>{{ $a->code }} — {{ $a->label() }}</option>@endforeach</select></td>
                     <td><input name="lines[{{ $i }}][description]" value="{{ $l['description'] ?? '' }}"></td>
+                    <td><select name="lines[{{ $i }}][partner]" class="partner"><option value="">—</option>
+                        <optgroup label="{{ __('العملاء') }}" data-kind="CLIENT">@foreach($clients as $c)<option value="CLIENT:{{ $c->id }}" @selected(($l['partner'] ?? '') === 'CLIENT:'.$c->id)>{{ $c->business_name }}</option>@endforeach</optgroup>
+                        <optgroup label="{{ __('الموردون') }}" data-kind="SUPPLIER">@foreach($suppliers as $s)<option value="SUPPLIER:{{ $s->id }}" @selected(($l['partner'] ?? '') === 'SUPPLIER:'.$s->id)>{{ $s->name }}</option>@endforeach</optgroup>
+                        <optgroup label="{{ __('الموظفون') }}" data-kind="EMPLOYEE">@foreach($employees as $w)<option value="EMPLOYEE:{{ $w->id }}" @selected(($l['partner'] ?? '') === 'EMPLOYEE:'.$w->id)>{{ $w->name }}</option>@endforeach</optgroup>
+                    </select></td>
                     <td><select name="lines[{{ $i }}][project_id]"><option value="">—</option>@foreach($projects as $p)<option value="{{ $p->id }}" @selected((string) ($l['project_id'] ?? '') === (string) $p->id)>{{ $p->project_no }}</option>@endforeach</select></td>
                     <td><select name="lines[{{ $i }}][cost_center_id]"><option value="">—</option>@foreach($centers as $c)<option value="{{ $c->id }}" @selected((string) ($l['cost_center_id'] ?? '') === (string) $c->id)>{{ $c->code }}</option>@endforeach</select></td>
                     <td><input name="lines[{{ $i }}][debit]" type="number" step="0.01" min="0" value="{{ (float) ($l['debit'] ?? 0) ? $l['debit'] : '' }}" dir="ltr" class="dr"></td>
@@ -38,10 +43,11 @@
                 </tr>
             @endforeach
             </tbody>
-            <tfoot><tr><th colspan="4">{{ __('المجموع') }} <span id="diff" class="muted"></span></th><th class="num" id="tdr">0.00</th><th class="num" id="tcr">0.00</th><th></th></tr></tfoot>
+            <tfoot><tr><th colspan="5">{{ __('المجموع') }} <span id="diff" class="muted"></span></th><th class="num" id="tdr">0.00</th><th class="num" id="tcr">0.00</th><th></th></tr></tfoot>
         </table></div>
         <button type="button" class="btn ghost sm" id="add" style="margin-top:10px">{{ __('+ إضافة سطر') }}</button>
         <p class="hint">{{ __('كل سطر مدين أو دائن. يُحفظ القيد مسودة ولو لم يتوازن، ولا يُرحَّل إلا متوازنًا.') }}</p>
+        <p class="hint">{{ __('السطر على حساب العملاء يحتاج اسم العميل، وعلى حساب الموردين اسم المورد. جاري المالك لا يُستخدم في القيد اليدوي؛ حركاته من «حركات المالك».') }}</p>
     </div>
     <div class="actions"><button class="btn">{{ __('حفظ كمسودة') }}</button><a class="btn ghost" href="{{ url()->previous() }}">{{ __('إلغاء') }}</a></div>
 </form>
@@ -69,6 +75,15 @@
     });
     body.addEventListener('click', e => { if (e.target.classList.contains('del') && body.rows.length > 2) { e.target.closest('tr').remove(); renumber(); recalc(); } });
     document.addEventListener('input', recalc); recalc();
+    // On receivables / payables only the matching partners are offered.
+    const syncPartner = tr => {
+        const acc = tr.querySelector('select[name$="[account_id]"]'), p = tr.querySelector('.partner');
+        const need = {RECEIVABLE: 'CLIENT', PAYABLE: 'SUPPLIER'}[acc.selectedOptions[0]?.dataset.detail || ''];
+        [...p.querySelectorAll('optgroup')].forEach(g => { g.hidden = !!need && g.dataset.kind !== need; });
+        if (need && p.value && !p.value.startsWith(need + ':')) p.value = '';
+    };
+    body.addEventListener('change', e => { if (e.target.name?.endsWith('[account_id]')) syncPartner(e.target.closest('tr')); });
+    [...body.rows].forEach(syncPartner);
 })();
 </script>
 @endpush

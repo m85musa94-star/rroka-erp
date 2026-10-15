@@ -26,6 +26,7 @@ use App\Http\Controllers\Web\MachineCostCardController;
 use App\Http\Controllers\Web\MaterialController;
 use App\Http\Controllers\Web\MaterialCostController;
 use App\Http\Controllers\Web\OverheadPoolController;
+use App\Http\Controllers\Web\OwnerTransactionController;
 use App\Http\Controllers\Web\PaymentAccountController;
 use App\Http\Controllers\Web\PostingController;
 use App\Http\Controllers\Web\ProductionController;
@@ -391,6 +392,9 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::get('/posting', [PostingController::class, 'settings'])->name('posting.settings');
         Route::get('/posting/backlog', [PostingController::class, 'backlog'])->name('posting.backlog');
         Route::get('/reconciliation', [PostingController::class, 'reconciliation'])->name('posting.reconciliation');
+        Route::get('/owner', [OwnerTransactionController::class, 'index'])->name('owner.index');
+        Route::get('/owner/create', [OwnerTransactionController::class, 'create'])->name('owner.create')->middleware('permission:accounting.manage');
+        Route::get('/owner/{owner}', [OwnerTransactionController::class, 'show'])->name('owner.show')->whereNumber('owner');
     });
     Route::middleware('permission:accounting.manage')->prefix('accounting')->name('accounting.')->group(function () {
         Route::get('/accounts/create', [AccountController::class, 'create'])->name('accounts.create');
@@ -406,11 +410,16 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::delete('/journal/{entry}', [JournalEntryController::class, 'destroy'])->name('journal.destroy')->whereNumber('entry');
         Route::put('/posting/links', [PostingController::class, 'saveLinks'])->name('posting.links');
         Route::post('/posting/role-accounts', [PostingController::class, 'createRoleAccounts'])->name('posting.role-accounts');
+        Route::post('/owner', [OwnerTransactionController::class, 'store'])->name('owner.store')->middleware('throttle:30,1');
+        Route::get('/owner/{owner}/edit', [OwnerTransactionController::class, 'edit'])->name('owner.edit')->whereNumber('owner');
+        Route::put('/owner/{owner}', [OwnerTransactionController::class, 'update'])->name('owner.update')->whereNumber('owner');
+        Route::post('/owner/{owner}/cancel', [OwnerTransactionController::class, 'cancel'])->name('owner.cancel')->whereNumber('owner');
     });
     Route::middleware('permission:accounting.post')->prefix('accounting')->name('accounting.')->group(function () {
         Route::post('/journal/{entry}/post', [JournalEntryController::class, 'post'])->name('journal.post')->whereNumber('entry');
         Route::post('/journal/{entry}/reverse', [JournalEntryController::class, 'reverse'])->name('journal.reverse')->whereNumber('entry');
         Route::post('/posting/post-all', [PostingController::class, 'postAll'])->name('posting.post-all');
+        Route::post('/owner/{owner}/approve', [OwnerTransactionController::class, 'approve'])->name('owner.approve')->whereNumber('owner');
         Route::post('/posting/{type}/{id}', [PostingController::class, 'post'])->name('posting.post')->whereIn('type', JournalEntry::DOCUMENT_SOURCES)->whereNumber('id');
         Route::post('/posting/{type}/{id}/exclude', [PostingController::class, 'exclude'])->name('posting.exclude')->whereIn('type', JournalEntry::DOCUMENT_SOURCES)->whereNumber('id');
         Route::delete('/posting/exclusions/{exclusion}', [PostingController::class, 'unexclude'])->name('posting.unexclude')->whereNumber('exclusion');

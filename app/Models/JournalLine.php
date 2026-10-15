@@ -35,4 +35,21 @@ class JournalLine extends Model
     {
         return $this->belongsTo(CostCenter::class);
     }
+
+    /** The client, supplier or employee the line belongs to, by name. */
+    public function partnerName(): ?string
+    {
+        return match ($this->partner_type) {
+            'CLIENT' => Client::whereKey($this->partner_id)->value('business_name'),
+            'SUPPLIER' => Supplier::whereKey($this->partner_id)->value('name'),
+            'EMPLOYEE' => Employee::whereKey($this->partner_id)->value('name'),
+            default => null,
+        };
+    }
+
+    /** "CLIENT:3"-style key used by the entry form's partner select. */
+    public function partnerKey(): string
+    {
+        return $this->partner_type ? $this->partner_type.':'.$this->partner_id : '';
+    }
 }

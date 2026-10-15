@@ -829,7 +829,8 @@ INSERT INTO accounts (id, code, name, account_type, is_postable) VALUES
     (900, '1', 'TEST assets', 'ASSET', false), (901, '5', 'TEST expenses', 'EXPENSE', false), (902, '3', 'TEST equity', 'EQUITY', false);
 INSERT INTO accounts (id, code, name, account_type, parent_id, system_role, detail_type) VALUES
     (910, '1102', 'TEST bank', 'ASSET', 900, 'BANK', 'BANK_CASH'), (911, '5101', 'TEST rent', 'EXPENSE', 901, NULL, 'EXPENSES'),
-    (912, '3201', 'TEST owner current', 'EQUITY', 902, 'OWNER_CURRENT', 'EQUITY');
+    (912, '3201', 'TEST owner current', 'EQUITY', 902, 'OWNER_CURRENT', 'EQUITY'),
+    (914, '3101', 'TEST capital', 'EQUITY', 902, 'CAPITAL', 'EQUITY');
 SELECT setval('accounts_id_seq', 1000);
 
 SELECT pg_temp.expect_error('chart: a child must have the type of its parent',
@@ -891,15 +892,15 @@ SELECT pg_temp.expect_error('chart: an account with entries keeps its type',
     'UPDATE accounts SET parent_id = NULL, detail_type = ''BANK_CASH'' WHERE id = 911', 'RROKA_ACCOUNT_USED');
 
 -- A rolled-back posting does not consume a number (gap-free).
-INSERT INTO journal_entries (id, entry_date, description, created_by) VALUES (2, '2026-02-12', 'TEST owner deposit', 1);
+INSERT INTO journal_entries (id, entry_date, description, created_by) VALUES (2, '2026-02-12', 'TEST capital deposit', 1);
 INSERT INTO journal_lines (entry_id, account_id, debit) VALUES (2, 910, 5000);
-INSERT INTO journal_lines (entry_id, account_id, credit) VALUES (2, 912, 5000);
+INSERT INTO journal_lines (entry_id, account_id, credit) VALUES (2, 914, 5000);
 SELECT pg_temp.expect_error('journal: a failed posting rolls back',
     $q$DO $b$ BEGIN UPDATE journal_entries SET status = 'POSTED', posted_by = 2 WHERE id = 2; RAISE EXCEPTION 'TEST rollback'; END $b$$q$, 'TEST rollback');
 SELECT pg_temp.expect_ok('journal: draft deleted with its lines', 'DELETE FROM journal_entries WHERE id = 2');
-INSERT INTO journal_entries (id, entry_date, description, created_by) VALUES (3, '2026-02-12', 'TEST owner deposit', 1);
+INSERT INTO journal_entries (id, entry_date, description, created_by) VALUES (3, '2026-02-12', 'TEST capital deposit', 1);
 INSERT INTO journal_lines (entry_id, account_id, debit) VALUES (3, 910, 5000);
-INSERT INTO journal_lines (entry_id, account_id, credit) VALUES (3, 912, 5000);
+INSERT INTO journal_lines (entry_id, account_id, credit) VALUES (3, 914, 5000);
 UPDATE journal_entries SET status = 'POSTED', posted_by = 1 WHERE id = 3;
 SELECT pg_temp.expect_eq('journal: numbering stays gap-free', (SELECT entry_no FROM journal_entries WHERE id = 3), 'JV-2026-00002');
 
@@ -919,7 +920,7 @@ SELECT pg_temp.expect_error('reversal: a draft cannot be reversed',
        INSERT INTO journal_entries (entry_date, description, created_by, source_type, reverses_id) VALUES ('2026-02-21', 'TEST', 1, 'REVERSAL', 5)$q$, 'RROKA_JOURNAL_REVERSAL');
 SELECT pg_temp.expect_eq('ledger: rent nets to zero after the reversal',
     (SELECT sum(net) FROM v_ledger_lines WHERE account_id = 911), 0.00::numeric);
-SELECT pg_temp.expect_eq('ledger: bank = owner deposit 5,000', (SELECT sum(net) FROM v_ledger_lines WHERE account_id = 910), 5000.00::numeric);
+SELECT pg_temp.expect_eq('ledger: bank = capital deposit 5,000', (SELECT sum(net) FROM v_ledger_lines WHERE account_id = 910), 5000.00::numeric);
 SELECT pg_temp.expect_eq('ledger: trial balance balances', (SELECT sum(debit) - sum(credit) FROM v_ledger_lines), 0.00::numeric);
 
 -- Periods.
@@ -1339,6 +1340,53 @@ SELECT pg_temp.expect_eq('balances: the supplier''s balance agrees with the book
     (SELECT -sum(net) FROM v_ledger_lines WHERE account_id = 923 AND partner_type = 'SUPPLIER' AND partner_id = 1)::numeric(16,2));
 SELECT pg_temp.expect_eq('backlog: no supplier payment is left unposted',
     (SELECT count(*) FROM v_posting_backlog WHERE source_type = 'SUPPLIER_PAYMENT'), 0::bigint);
+
+-- ---------------------------------------------------------------------
+-- Owner transactions, expenses paid by the owner, rules on manual lines
+-- ---------------------------------------------------------------------
+INSERT INTO owner_transactions (id, kind, txn_date, payment_account_id, amount, description, reference)
+    VALUES (1, 'FUNDING', '2026-04-05', 2, 50000, 'TEST working capital', 'TRX 7781');
+SELECT pg_temp.expect_error('owner: starts as draft',
+    'INSERT INTO owner_transactions (kind, txn_date, payment_account_id, amount, description, status) VALUES (''FUNDING'', ''2026-01-05'', 2, 1, ''x'', ''APPROVED'')', 'RROKA_SALES_TRANSITION');
+SELECT pg_temp.expect_ok('owner: funding approved and posted',
+    'UPDATE owner_transactions SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 1');
+SELECT pg_temp.expect_eq('owner: bank debited, owner current credited 50,000',
+    (SELECT sum(l.debit) FILTER (WHERE l.account_id = 910) || ':' || sum(l.credit) FILTER (WHERE l.account_id = 912)
+       FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id WHERE j.source_type = 'OWNER' AND j.source_id = 1), '50000.00:50000.00');
+INSERT INTO owner_transactions (id, kind, txn_date, payment_account_id, amount, description) VALUES (2, 'WITHDRAWAL', '2026-04-20', 2, 5000, 'TEST withdrawal');
+UPDATE owner_transactions SET status = 'APPROVED', approved_by = 2, approved_at = now() WHERE id = 2;
+SELECT pg_temp.expect_eq('owner: withdrawal debits owner current, credits bank',
+    (SELECT sum(l.debit) FILTER (WHERE l.account_id = 912) || ':' || sum(l.credit) FILTER (WHERE l.account_id = 910)
+       FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id WHERE j.source_type = 'OWNER' AND j.source_id = 2), '5000.00:5000.00');
+SELECT pg_temp.expect_error('owner: an approved transaction never changes', 'UPDATE owner_transactions SET amount = 1 WHERE id = 1', 'RROKA_SALES_LOCKED');
+SELECT pg_temp.expect_error('owner: an approved transaction is never deleted', 'DELETE FROM owner_transactions WHERE id = 1', 'RROKA_DELETE_NOT_DRAFT');
+SELECT pg_temp.expect_error('owner: paid by the owner has no cash box',
+    'INSERT INTO expenses (expense_date, category_id, payee, description, amount, vat_amount, payment_method, payment_account_id) VALUES (''2026-01-10'', 2, ''x'', ''TEST'', 10, 0, ''OWNER'', 1)', 'RROKA_EXPENSE_OWNER');
+INSERT INTO expenses (id, expense_date, category_id, payee, description, amount, vat_amount, payment_method)
+    VALUES (50, '2026-04-10', 2, 'TEST machine shop', 'TEST saw bought by the owner', 8000, 1200, 'OWNER');
+SELECT pg_temp.expect_ok('owner: an expense paid by the owner is approved without a cash box',
+    'UPDATE expenses SET status = ''APPROVED'', approved_by = 2, approved_at = now() WHERE id = 50');
+SELECT pg_temp.expect_eq('owner: … owed to the owner 9,200',
+    (SELECT l.credit FROM journal_lines l JOIN journal_entries j ON j.id = l.entry_id
+      WHERE j.source_type = 'EXPENSE' AND j.source_id = 50 AND l.account_id = 912), 9200.00::numeric);
+SELECT pg_temp.expect_eq('owner: statement = 50,000 + 9,200 − 5,000 agrees with the books',
+    (SELECT sum(credit - debit) FROM v_owner_statement),
+    (SELECT -sum(net) FROM v_ledger_lines WHERE account_id = 912 AND entry_id IN (SELECT id FROM journal_entries WHERE source_type <> 'MANUAL'))::numeric);
+INSERT INTO journal_entries (id, entry_date, description, created_by) VALUES (900, '2026-04-25', 'TEST manual', 1);
+SELECT pg_temp.expect_error('manual: the owner account takes no manual entry',
+    'INSERT INTO journal_lines (entry_id, account_id, credit) VALUES (900, 912, 10)', 'RROKA_JOURNAL_OWNER_MANUAL');
+SELECT pg_temp.expect_error('manual: a receivables line needs the client',
+    'INSERT INTO journal_lines (entry_id, account_id, debit) VALUES (900, 930, 10)', 'RROKA_JOURNAL_PARTNER');
+SELECT pg_temp.expect_error('manual: a payables line needs the supplier (not a client)',
+    'INSERT INTO journal_lines (entry_id, account_id, debit, partner_type, partner_id) VALUES (900, 923, 10, ''CLIENT'', 1)', 'RROKA_JOURNAL_PARTNER');
+SELECT pg_temp.expect_error('manual: the partner must exist',
+    'INSERT INTO journal_lines (entry_id, account_id, debit, partner_type, partner_id) VALUES (900, 930, 10, ''CLIENT'', 99999)', 'RROKA_JOURNAL_PARTNER');
+SELECT pg_temp.expect_ok('manual: a receivables line names its client',
+    'INSERT INTO journal_lines (entry_id, account_id, debit, partner_type, partner_id) VALUES (900, 930, 10, ''CLIENT'', 1)');
+SELECT pg_temp.expect_ok('manual: the opening entry may use the owner account',
+    $q$INSERT INTO journal_entries (id, entry_date, description, created_by, source_type) VALUES (901, '2026-01-01', 'TEST opening', 1, 'OPENING');
+       INSERT INTO journal_lines (entry_id, account_id, credit) VALUES (901, 912, 10)$q$);
+DELETE FROM journal_entries WHERE id IN (900, 901);
 
 UPDATE accounting_settings SET auto_posting = false;
 
