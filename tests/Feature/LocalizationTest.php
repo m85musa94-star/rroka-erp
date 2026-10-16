@@ -14,6 +14,7 @@ use App\Models\EmployeeCostCard;
 use App\Models\EnergyRate;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
+use App\Models\ImportBatch;
 use App\Models\JobPosition;
 use App\Models\JournalEntry;
 use App\Models\LeaveType;
@@ -36,6 +37,7 @@ use App\Models\TreasuryTransfer;
 use App\Models\User;
 use App\Models\VatReturn;
 use App\Reports\ReportRegistry;
+use App\Support\Xlsx;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
@@ -217,7 +219,16 @@ class LocalizationTest extends ApiTestCase
         $this->actingAs($admin)->post('/accounting/vat/returns', ['period_start' => '2026-01-01', 'period_end' => '2026-03-31', 'filed_output_vat' => 450, 'filed_input_vat' => 0])->assertSessionHasNoErrors();
         $vatReturnId = VatReturn::value('id');
 
+        // Data import: a checked file with an error and an imported one (English column titles are read too).
+        $sheet = fn (array $rows) => UploadedFile::fake()->createWithContent('filled.xlsx', Xlsx::book([['name' => 'Data', 'rows' => $rows]]));
+        $this->actingAs($admin)->post('/imports/suppliers', ['file' => $sheet([['Supplier name', 'VAT number'], ['Board house', '123']])])->assertSessionHasNoErrors();
+        $checkedId = ImportBatch::latest('id')->value('id');
+        $this->actingAs($admin)->post('/imports/clients', ['file' => $sheet([['Client name', 'Customer type'], ['Gulf Co', 'Company']])])->assertSessionHasNoErrors();
+        $importedId = ImportBatch::latest('id')->value('id');
+        $this->actingAs($admin)->post("/imports/batches/{$importedId}/import")->assertSessionHasNoErrors();
+
         $pages = [
+            '/imports', '/imports/suppliers', '/imports/purchases', '/imports/journal_entries', "/imports/batches/{$checkedId}", "/imports/batches/{$importedId}",
             '/', '/clients', '/clients?v=kanban', '/clients?g=city', '/clients/create', "/clients/{$client->id}", "/clients/{$client->id}/edit",
             '/quotations', '/quotations?v=kanban', '/quotations/create', "/quotations/{$q['id']}", "/quotations/{$q['id']}/print", "/quotations/{$draft['id']}/print",
             '/projects', '/projects?v=kanban', "/projects/{$projectId}", '/projects/past/create', "/projects/{$pastId}", "/quotations/{$pastQuote}",

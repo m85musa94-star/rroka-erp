@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Http\Controllers\Web\ImportController;
 use App\Models\Employee;
 use App\Models\User;
 use App\Reports\ReportRegistry;
@@ -40,6 +41,7 @@ class AppMenu
             ['key' => 'daftra', 'label' => __('الربط مع دفترة'), 'route' => 'daftra.index', 'match' => 'daftra.*', 'permission' => 'daftra.sync', 'group' => 'settings'],
             ['key' => 'users', 'label' => __('المستخدمون'), 'route' => 'users.index', 'match' => 'users.*', 'permission' => 'users.manage', 'group' => 'settings'],
             ['key' => 'roles', 'label' => __('الأدوار والصلاحيات'), 'route' => 'roles.index', 'match' => 'roles.*', 'permission' => 'users.manage', 'group' => 'settings'],
+            ['key' => 'imports', 'label' => __('استيراد البيانات'), 'route' => 'imports.index', 'match' => 'imports.*', 'permission' => 'self.import', 'group' => 'settings'],
             ['key' => 'demo', 'label' => __('البيانات التجريبية'), 'route' => 'demo.index', 'match' => 'demo.*', 'permission' => 'users.manage', 'group' => 'settings'],
         ];
     }
@@ -68,12 +70,18 @@ class AppMenu
 
     /**
      * A string permission, or any of an array of permissions. "self.employee" means
-     * the user has an employee file (self-service such as requesting time off).
+     * the user has an employee file (self-service such as requesting time off);
+     * "self.import" that the user may enter data in at least one screen that has a template.
      */
     public static function can(User $user, string|array $permission): bool
     {
         foreach ((array) $permission as $p) {
-            if ($p === 'self.employee' ? Employee::where('user_id', $user->id)->exists() : $user->hasPermission($p)) {
+            $ok = match ($p) {
+                'self.employee' => Employee::where('user_id', $user->id)->exists(),
+                'self.import' => ImportController::available($user) !== [],
+                default => $user->hasPermission($p),
+            };
+            if ($ok) {
                 return true;
             }
         }
@@ -110,6 +118,7 @@ class AppMenu
                 ['الربط مع دفترة', 'daftra.index', [], 'daftra.sync'],
                 ['المستخدمون', 'users.index', [], 'users.manage'],
                 ['الأدوار والصلاحيات', 'roles.index', [], 'users.manage'],
+                ['استيراد البيانات', 'imports.index', [], 'self.import'],
                 ['البيانات التجريبية', 'demo.index', [], 'users.manage'],
             ],
             default => match ($app['key']) {

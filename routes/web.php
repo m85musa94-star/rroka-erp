@@ -21,6 +21,7 @@ use App\Http\Controllers\Web\EmployeeController;
 use App\Http\Controllers\Web\EmployeeCostCardController;
 use App\Http\Controllers\Web\ExpenseController;
 use App\Http\Controllers\Web\FinancialReportController;
+use App\Http\Controllers\Web\ImportController;
 use App\Http\Controllers\Web\JournalEntryController;
 use App\Http\Controllers\Web\LeaveController;
 use App\Http\Controllers\Web\LocaleController;
@@ -479,5 +480,18 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         Route::get('/settings/demo', [DemoDataController::class, 'index'])->name('demo.index');
         Route::post('/settings/demo', [DemoDataController::class, 'store'])->name('demo.store');
         Route::delete('/settings/demo', [DemoDataController::class, 'destroy'])->name('demo.destroy');
+    });
+    // Data import from filled templates: each type checks the permissions of its screen's save route.
+    Route::prefix('imports')->name('imports.')->group(function () {
+        Route::get('/', [ImportController::class, 'index'])->name('index');
+        Route::get('/batches/{batch}', [ImportController::class, 'batch'])->name('batch')->whereNumber('batch');
+        Route::get('/batches/{batch}/errors', [ImportController::class, 'errors'])->name('errors')->whereNumber('batch');
+        Route::post('/batches/{batch}/check', [ImportController::class, 'check'])->name('check')->whereNumber('batch')->middleware('throttle:20,1');
+        Route::post('/batches/{batch}/import', [ImportController::class, 'import'])->name('import')->whereNumber('batch')->middleware('throttle:20,1');
+        Route::post('/batches/{batch}/approve', [ImportController::class, 'approve'])->name('approve')->whereNumber('batch')->middleware('throttle:20,1');
+        Route::post('/batches/{batch}/discard', [ImportController::class, 'discard'])->name('discard')->whereNumber('batch');
+        Route::get('/{type}', [ImportController::class, 'show'])->name('show')->where('type', '[a-z_]+');
+        Route::get('/{type}/template', [ImportController::class, 'template'])->name('template')->where('type', '[a-z_]+');
+        Route::post('/{type}', [ImportController::class, 'upload'])->name('upload')->where('type', '[a-z_]+')->middleware('throttle:20,1');
     });
 });

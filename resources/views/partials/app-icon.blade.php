@@ -101,6 +101,14 @@
         <circle cx="44" cy="40" r="7" fill="#F2BD5B"/>
         <rect x="14" y="37" width="16" height="5" rx="2" fill="#5FD0BD"/>
         @break
+    @case('imports')
+        <rect x="12" y="10" width="34" height="44" rx="4" fill="#5FD0BD"/>
+        <rect x="18" y="20" width="22" height="3" rx="1.5" fill="#1D6F63"/>
+        <rect x="18" y="27" width="22" height="3" rx="1.5" fill="#1D6F63"/>
+        <rect x="18" y="34" width="14" height="3" rx="1.5" fill="#1D6F63"/>
+        <circle cx="46" cy="44" r="12" fill="#F2BD5B"/>
+        <path d="M46 37v13M40 43l6-6 6 6" stroke="#8E5486" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        @break
     @case('users')
         <circle cx="32" cy="22" r="11" fill="#E8833A"/>
         <path d="M12 54c0-12 9-20 20-20s20 8 20 20z" fill="#F2BD5B"/>

@@ -27,6 +27,7 @@
         @isset($total)
             @if($total !== null)<div class="cp-pager"><span>{{ $total }} {{ __('سجل') }}</span></div>@endif
         @endisset
+        @include('partials.import-menu')
     </div>
 
     @isset($lv)

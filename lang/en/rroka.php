@@ -65,6 +65,8 @@ return [
         'RROKA_PURCHASE_NEGATIVE' => 'The discount is larger than the lines total.',
         'RROKA_EXPENSE_TRANSITION' => 'An expense starts as a draft.',
         'RROKA_EXPENSE_LOCKED' => 'An approved or cancelled expense cannot change.',
+        'RROKA_IMPORT_LOCKED' => 'This import batch does not change: an imported or discarded file stays on record as it is. Upload the file again if needed.',
+        'RROKA_IMPORT_PREVIEW_COMMIT' => 'Nothing written while checking a file is ever saved; run the import to save it.',
         'RROKA_PERIOD_EXCEPTIONS' => 'The month does not close with a red exception: an approved document not posted, or a receivables/payables amount without its partner. See Exceptions.',
         'RROKA_VAT_LOCK' => 'A filed VAT period is reopened from the VAT return screen with a reason.',
         'RROKA_VAT_PERIOD_LOCKED' => 'The document date is inside a filed VAT period; it is approved only after reopening the period with a reason.',
@@ -146,6 +148,7 @@ return [
     ],
 
     'status' => [
+        'PREVIEW' => 'Checking', 'IMPORTED' => 'Imported', 'DISCARDED' => 'Discarded',
         'POSTED' => 'Posted', 'OPEN' => 'Open', 'CLOSED' => 'Closed', 'EXPIRED' => 'Expired', 'RUNNING' => 'Running', 'SUBMITTED' => 'To approve', 'REFUSED' => 'Refused',
         'CLIENT_REVIEW' => 'Client review', 'CLIENT_APPROVED' => 'Client approved', 'RELEASED_FOR_PRODUCTION' => 'Released', 'SUPERSEDED' => 'Superseded', 'PLANNED' => 'Planned', 'IN_PROGRESS' => 'In progress',
         'DRAFT' => 'Draft', 'SENT' => 'Sent', 'APPROVED' => 'Approved', 'REJECTED' => 'Rejected',
@@ -164,6 +167,7 @@ return [
     ],
 
     'entities' => [
+        'import_batches' => 'import batch', 'import_batch_records' => 'imported record',
         'accounts' => 'account', 'journal_entries' => 'journal entry', 'journal_lines' => 'journal line', 'fiscal_periods' => 'fiscal period', 'accounting_settings' => 'books settings', 'cost_estimates' => 'cost estimate', 'cost_estimate_materials' => 'estimate material', 'cost_estimate_operations' => 'estimate operation', 'cost_estimate_direct_costs' => 'direct cost', 'cost_estimate_snapshots' => 'frozen cost', 'vat_rates' => 'VAT rate', 'pricing_policies' => 'pricing policy',
         'cost_centers' => 'cost centre', 'energy_rates' => 'electricity price', 'employee_cost_cards' => 'employee cost card', 'employee_cost_card_shares' => 'cost centre share', 'machine_cost_cards' => 'machine cost card', 'material_standard_prices' => 'standard price', 'waste_defaults' => 'waste rate', 'overhead_pools' => 'overhead pool', 'overhead_pool_lines' => 'pool line',
         'payment_accounts' => 'account', 'treasury_transfers' => 'transfer', 'suppliers' => 'supplier', 'purchase_invoices' => 'supplier invoice', 'purchase_invoice_lines' => 'supplier invoice line', 'expenses' => 'expense', 'expense_categories' => 'expense category', 'sales_invoices' => 'customer invoice', 'customer_receipts' => 'customer receipt', 'supplier_payments' => 'supplier payment', 'owner_transactions' => 'owner transaction', 'vat_returns' => 'VAT return', 'vat_lock_events' => 'VAT period reopening',
@@ -175,6 +179,7 @@ return [
     ],
 
     'fields' => [
+        'error_count' => 'Errors', 'checked_at' => 'Last check', 'record_count' => 'Records created', 'imported_by' => 'Imported by', 'imported_at' => 'Imported at',
         'detail_type' => 'Type', 'reconcile' => 'Allow reconciliation', 'account_type' => 'Type', 'parent_id' => 'Parent account', 'is_postable' => 'Takes entries', 'system_role' => 'System role', 'name_en' => 'English name', 'entry_date' => 'Date', 'entry_no' => 'Entry no.', 'debit' => 'Debit', 'credit' => 'Credit', 'account_id' => 'Account', 'posted_by' => 'Posted by', 'posted_at' => 'Posted at', 'reverses_id' => 'Reverses entry', 'reopen_reason' => 'Reopen reason', 'closed_by' => 'Closed by', 'closed_at' => 'Closed at', 'books_start' => 'Books start', 'source_type' => 'Entry type', 'fiscal_year' => 'Year', 'seq_no' => 'Sequence', 'period_start' => 'Month', 'supplier_id' => 'Supplier', 'supplier_invoice_no' => 'Supplier invoice no.', 'invoice_date' => 'Invoice date', 'due_date' => 'Due date', 'vat_amount' => 'VAT', 'attachment_id' => 'Document image', 'expense_date' => 'Date', 'category_id' => 'Category', 'payee' => 'Payee', 'amount' => 'Amount', 'payment_method' => 'Payment method', 'paid_by_employee_id' => 'Paid from custody of', 'reference' => 'Reference', 'is_overhead' => 'Overhead', 'daftra_account_ref' => 'Daftra account', 'line_no' => 'Line no.',
         'payment_account_id' => 'Paid from', 'from_account_id' => 'From', 'to_account_id' => 'To', 'transfer_date' => 'Date', 'kind' => 'Kind', 'bank_name' => 'Bank', 'employee_id' => 'Employee', 'custody_limit' => 'Custody limit', 'daftra_treasury_ref' => 'Daftra treasury',
         'version' => 'Version', 'effective_from' => 'Effective from', 'source' => 'Source', 'estimated' => 'Estimated', 'driver' => 'Driver', 'rate_per_kwh' => 'Price per kWh', 'price_basis' => 'Price basis', 'share_pct' => 'Share %', 'cost_center_id' => 'Cost centre', 'housing' => 'Housing', 'transportation' => 'Transportation', 'insurance' => 'Insurance', 'government_fees' => 'Residency & government fees', 'allowances' => 'Allowances', 'other_costs' => 'Other costs', 'theoretical_hours' => 'Theoretical hours', 'practical_hours' => 'Practical hours', 'hourly_rate' => 'Hourly cost', 'monthly_cost' => 'Monthly cost', 'acquisition_cost' => 'Acquisition cost', 'residual_value' => 'Residual value', 'useful_life_years' => 'Useful life (years)', 'theoretical_annual_hours' => 'Theoretical annual hours', 'practical_annual_hours' => 'Practical annual hours', 'power_kw' => 'Power kW', 'load_factor' => 'Load factor', 'annual_maintenance' => 'Annual maintenance', 'annual_spare_parts' => 'Annual spare parts', 'annual_other' => 'Other annual running cost', 'period_to' => 'To', 'practical_capacity' => 'Practical capacity', 'theoretical_capacity' => 'Theoretical capacity', 'budgeted_manufacturing_cost' => 'Expected manufacturing cost', 'rate' => 'Rate', 'gross_cost' => 'Gross', 'net_cost' => 'Net', 'machine_energy_deduction' => 'Machine electricity deducted', 'machine_id' => 'Machine', 'pool_id' => 'Pool', 'card_id' => 'Card',

@@ -65,6 +65,8 @@ return [
         'RROKA_PURCHASE_NEGATIVE' => 'الخصم أكبر من مجموع البنود.',
         'RROKA_EXPENSE_TRANSITION' => 'المصروف يبدأ مسودة.',
         'RROKA_EXPENSE_LOCKED' => 'المصروف المعتمد أو الملغى لا يُعدَّل.',
+        'RROKA_IMPORT_LOCKED' => 'دفعة الاستيراد هذه لا تتغير: الملف المستورد أو المتروك يبقى في السجل كما هو. ارفع الملف من جديد إن لزم.',
+        'RROKA_IMPORT_PREVIEW_COMMIT' => 'ما يُكتب أثناء فحص الملف لا يُحفظ أبدًا؛ نفّذ الاستيراد لحفظه.',
         'RROKA_PERIOD_EXCEPTIONS' => 'لا يُقفل الشهر وفيه استثناء أحمر: مستند معتمد لم يُرحَّل، أو مبلغ على العملاء أو الموردين بلا اسم الطرف. راجع «الاستثناءات».',
         'RROKA_VAT_LOCK' => 'الفترة الضريبية المقدَّم إقرارها تُعاد فتحها من شاشة الإقرار الضريبي مع ذكر السبب.',
         'RROKA_VAT_PERIOD_LOCKED' => 'تاريخ المستند داخل فترة ضريبية قُدِّم إقرارها؛ لا يُعتمد إلا بإعادة فتح الفترة بسبب مكتوب.',
@@ -146,6 +148,7 @@ return [
     ],
 
     'status' => [
+        'PREVIEW' => 'قيد الفحص', 'IMPORTED' => 'مستورَد', 'DISCARDED' => 'متروك',
         'POSTED' => 'مرحَّل', 'OPEN' => 'مفتوح', 'CLOSED' => 'مقفل', 'EXPIRED' => 'منتهٍ', 'RUNNING' => 'ساري', 'SUBMITTED' => 'بانتظار الاعتماد', 'REFUSED' => 'مرفوض',
         'CLIENT_REVIEW' => 'مراجعة العميل', 'CLIENT_APPROVED' => 'وافق العميل', 'RELEASED_FOR_PRODUCTION' => 'مُصدَر للإنتاج', 'SUPERSEDED' => 'مُستبدَل', 'PLANNED' => 'مخطط', 'IN_PROGRESS' => 'قيد التنفيذ',
         'DRAFT' => 'مسودة', 'SENT' => 'مُرسَل', 'APPROVED' => 'معتمد', 'REJECTED' => 'مرفوض',
@@ -164,6 +167,7 @@ return [
     ],
 
     'entities' => [
+        'import_batches' => 'دفعة الاستيراد', 'import_batch_records' => 'سجل مستورد',
         'accounts' => 'الحساب', 'journal_entries' => 'القيد', 'journal_lines' => 'سطر القيد', 'fiscal_periods' => 'الفترة المالية', 'accounting_settings' => 'إعدادات الدفاتر', 'cost_estimates' => 'تقدير التكلفة', 'cost_estimate_materials' => 'مادة التقدير', 'cost_estimate_operations' => 'عملية التقدير', 'cost_estimate_direct_costs' => 'تكلفة مباشرة', 'cost_estimate_snapshots' => 'التكلفة المجمّدة', 'vat_rates' => 'نسبة الضريبة', 'pricing_policies' => 'سياسة التسعير',
         'cost_centers' => 'مركز التكلفة', 'energy_rates' => 'سعر الكهرباء', 'employee_cost_cards' => 'بطاقة تكلفة الموظف', 'employee_cost_card_shares' => 'حصة مركز التكلفة', 'machine_cost_cards' => 'بطاقة تكلفة الآلة', 'material_standard_prices' => 'السعر المعياري', 'waste_defaults' => 'نسبة الهالك', 'overhead_pools' => 'وعاء التكاليف غير المباشرة', 'overhead_pool_lines' => 'بند الوعاء',
         'payment_accounts' => 'الحساب', 'treasury_transfers' => 'التحويل', 'suppliers' => 'المورد', 'purchase_invoices' => 'فاتورة المورد', 'purchase_invoice_lines' => 'بند فاتورة المورد', 'expenses' => 'المصروف', 'expense_categories' => 'تصنيف المصروف', 'sales_invoices' => 'فاتورة العميل', 'customer_receipts' => 'سند القبض', 'supplier_payments' => 'سند الصرف للمورد', 'owner_transactions' => 'حركة المالك', 'vat_returns' => 'الإقرار الضريبي', 'vat_lock_events' => 'إعادة فتح فترة ضريبية',
@@ -175,6 +179,7 @@ return [
     ],
 
     'fields' => [
+        'error_count' => 'عدد الأخطاء', 'checked_at' => 'آخر فحص', 'record_count' => 'السجلات المنشأة', 'imported_by' => 'استورده', 'imported_at' => 'وقت الاستيراد',
         'detail_type' => 'النوع', 'reconcile' => 'تسمح بالتسوية', 'account_type' => 'النوع', 'parent_id' => 'تحت الحساب', 'is_postable' => 'يقبل القيود', 'system_role' => 'الدور النظامي', 'name_en' => 'الاسم بالإنجليزية', 'entry_date' => 'التاريخ', 'entry_no' => 'رقم القيد', 'debit' => 'مدين', 'credit' => 'دائن', 'account_id' => 'الحساب', 'posted_by' => 'رحّله', 'posted_at' => 'وقت الترحيل', 'reverses_id' => 'يعكس القيد', 'reopen_reason' => 'سبب إعادة الفتح', 'closed_by' => 'أقفله', 'closed_at' => 'وقت الإقفال', 'books_start' => 'بداية الدفاتر', 'source_type' => 'نوع القيد', 'fiscal_year' => 'السنة', 'seq_no' => 'التسلسل', 'period_start' => 'الشهر', 'supplier_id' => 'المورد', 'supplier_invoice_no' => 'رقم فاتورة المورد', 'invoice_date' => 'تاريخ الفاتورة', 'due_date' => 'تاريخ الاستحقاق', 'vat_amount' => 'الضريبة', 'attachment_id' => 'صورة المستند', 'expense_date' => 'التاريخ', 'category_id' => 'التصنيف', 'payee' => 'الجهة', 'amount' => 'المبلغ', 'payment_method' => 'طريقة الدفع', 'paid_by_employee_id' => 'من عهدة', 'reference' => 'المرجع', 'is_overhead' => 'غير مباشر', 'daftra_account_ref' => 'حساب دفترة', 'line_no' => 'رقم البند',
         'payment_account_id' => 'دُفع من', 'from_account_id' => 'من', 'to_account_id' => 'إلى', 'transfer_date' => 'التاريخ', 'kind' => 'النوع', 'bank_name' => 'البنك', 'employee_id' => 'الموظف', 'custody_limit' => 'الحد الأعلى للعهدة', 'daftra_treasury_ref' => 'خزينة دفترة',
         'version' => 'الإصدار', 'effective_from' => 'ساري من', 'source' => 'المصدر', 'estimated' => 'تقديري', 'driver' => 'المحرك', 'rate_per_kwh' => 'سعر الكيلوواط ساعة', 'price_basis' => 'أساس السعر', 'share_pct' => 'الحصة %', 'cost_center_id' => 'مركز التكلفة', 'housing' => 'السكن', 'transportation' => 'النقل', 'insurance' => 'التأمينات', 'government_fees' => 'الإقامة والرسوم الحكومية', 'allowances' => 'البدلات', 'other_costs' => 'تكاليف أخرى', 'theoretical_hours' => 'الساعات النظرية', 'practical_hours' => 'الساعات العملية', 'hourly_rate' => 'تكلفة الساعة', 'monthly_cost' => 'التكلفة الشهرية', 'acquisition_cost' => 'تكلفة الشراء', 'residual_value' => 'القيمة المتبقية', 'useful_life_years' => 'العمر الإنتاجي (سنوات)', 'theoretical_annual_hours' => 'الساعات السنوية النظرية', 'practical_annual_hours' => 'الساعات السنوية العملية', 'power_kw' => 'القدرة kW', 'load_factor' => 'معامل التحميل', 'annual_maintenance' => 'الصيانة السنوية', 'annual_spare_parts' => 'قطع الغيار السنوية', 'annual_other' => 'تكاليف تشغيل أخرى سنوية', 'period_to' => 'إلى', 'practical_capacity' => 'الطاقة العملية', 'theoretical_capacity' => 'الطاقة النظرية', 'budgeted_manufacturing_cost' => 'تكلفة التصنيع المتوقعة', 'rate' => 'المعدل', 'gross_cost' => 'الإجمالي', 'net_cost' => 'الصافي', 'machine_energy_deduction' => 'كهرباء الآلات المطروحة', 'machine_id' => 'الآلة', 'pool_id' => 'الوعاء', 'card_id' => 'البطاقة',

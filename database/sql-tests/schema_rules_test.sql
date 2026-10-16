@@ -1486,6 +1486,67 @@ SELECT pg_temp.expect_error('attach: … nor moved to another document',
     'UPDATE document_attachments SET source_id = 7 WHERE source_id = 6', 'RROKA_ATTACHMENT_LOCKED');
 
 -- ---------------------------------------------------------------------
+-- Data import: a check never uses document numbers nor saves; batches stay on record
+-- ---------------------------------------------------------------------
+CREATE TEMP TABLE seq_before AS SELECT last_value FROM seq_supplier_no;
+SELECT pg_temp.expect_error('import: data written while checking a file can never be saved',
+    'DO $x$ BEGIN
+        PERFORM set_config(''rroka.import_preview'', ''on'', true);
+        INSERT INTO suppliers (name) VALUES (''TEST preview supplier'');
+        IF NOT EXISTS (SELECT 1 FROM suppliers WHERE name = ''TEST preview supplier'' AND supplier_no LIKE ''%-T%'') THEN
+            RAISE EXCEPTION ''preview number not used'';
+        END IF;
+        SET CONSTRAINTS ALL IMMEDIATE;
+    END $x$', 'RROKA_IMPORT_PREVIEW_COMMIT');
+SELECT pg_temp.expect_eq('import: checking a file uses no document number',
+    (SELECT last_value FROM seq_supplier_no), (SELECT last_value FROM seq_before));
+SELECT pg_temp.expect_eq('import: nothing from the check is left',
+    (SELECT count(*) FROM suppliers WHERE name = 'TEST preview supplier'), 0::bigint);
+SELECT pg_temp.expect_ok('import: normal numbering is unchanged',
+    'DO $x$ BEGIN
+        INSERT INTO suppliers (name) VALUES (''TEST imported supplier'');
+        IF NOT EXISTS (SELECT 1 FROM suppliers WHERE name = ''TEST imported supplier'' AND supplier_no NOT LIKE ''%-T%'') THEN
+            RAISE EXCEPTION ''normal number not used'';
+        END IF;
+    END $x$');
+
+SELECT pg_temp.expect_error('import: a batch starts as a check',
+    'INSERT INTO import_batches (import_type, file_name, file_sha256, rows, row_count, status, created_by)
+     VALUES (''suppliers'', ''s.xlsx'', repeat(''a'', 64), ''[{}]'', 1, ''DISCARDED'', 1)', 'RROKA_IMPORT_LOCKED');
+SELECT pg_temp.expect_error('import: the row count matches the rows',
+    'INSERT INTO import_batches (import_type, file_name, file_sha256, rows, row_count, created_by)
+     VALUES (''suppliers'', ''s.xlsx'', repeat(''a'', 64), ''[{}]'', 2, 1)', 'RROKA_IMPORT_LOCKED');
+INSERT INTO import_batches (id, import_type, file_name, file_sha256, rows, row_count, created_by)
+    VALUES (1, 'suppliers', 's.xlsx', repeat('a', 64), '[{"name": "TEST imported supplier"}]', 1, 1),
+           (2, 'suppliers', 's-copy.xlsx', repeat('a', 64), '[{"name": "TEST imported supplier"}]', 1, 1);
+SELECT pg_temp.expect_ok('import: a check records its result',
+    'UPDATE import_batches SET result = ''[{"ok": true}]'', error_count = 0, checked_at = now() WHERE id = 1');
+SELECT pg_temp.expect_error('import: the uploaded rows never change',
+    'UPDATE import_batches SET rows = ''[{"name": "other"}]'' WHERE id = 1', 'RROKA_IMPORT_LOCKED');
+SELECT pg_temp.expect_error('import: not imported with errors',
+    'UPDATE import_batches SET status = ''IMPORTED'', imported_by = 1, imported_at = now(), error_count = 1 WHERE id = 1', 'import_batches_check');
+SELECT pg_temp.expect_ok('import: a record is linked while its batch is imported',
+    'INSERT INTO import_batch_records (batch_id, row_no, record_table, record_id)
+     SELECT 1, 1, ''suppliers'', id FROM suppliers WHERE name = ''TEST imported supplier''');
+SELECT pg_temp.expect_error('import: the count of records must match',
+    'UPDATE import_batches SET status = ''IMPORTED'', imported_by = 1, imported_at = now(), record_count = 2 WHERE id = 1', 'RROKA_IMPORT_LOCKED');
+SELECT pg_temp.expect_ok('import: the batch is imported',
+    'UPDATE import_batches SET status = ''IMPORTED'', imported_by = 1, imported_at = now(), record_count = 1 WHERE id = 1');
+SELECT pg_temp.expect_error('import: an imported batch does not change',
+    'UPDATE import_batches SET status = ''DISCARDED'' WHERE id = 1', 'RROKA_IMPORT_LOCKED');
+SELECT pg_temp.expect_error('import: a batch is never deleted', 'DELETE FROM import_batches WHERE id = 2', 'RROKA_IMPORT_LOCKED');
+SELECT pg_temp.expect_error('import: no record is linked after the import',
+    'INSERT INTO import_batch_records (batch_id, row_no, record_table, record_id) VALUES (1, 1, ''suppliers'', 999)', 'RROKA_IMPORT_LOCKED');
+SELECT pg_temp.expect_error('import: a record link stays on record',
+    'DELETE FROM import_batch_records WHERE batch_id = 1', 'RROKA_IMPORT_LOCKED');
+SELECT pg_temp.expect_ok('import: a second check of the same file links its record …',
+    'INSERT INTO import_batch_records (batch_id, row_no, record_table, record_id) VALUES (2, 1, ''suppliers'', 999)');
+SELECT pg_temp.expect_error('import: … but the same file is imported once per screen',
+    'UPDATE import_batches SET status = ''IMPORTED'', imported_by = 1, imported_at = now(), record_count = 1 WHERE id = 2', 'ux_import_batches_file');
+SELECT pg_temp.expect_ok('import: a check is discarded',
+    'UPDATE import_batches SET status = ''DISCARDED'' WHERE id = 2');
+
+-- ---------------------------------------------------------------------
 -- Report
 -- ---------------------------------------------------------------------
 \pset footer off

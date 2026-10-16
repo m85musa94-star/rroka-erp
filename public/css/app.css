@@ -139,10 +139,10 @@ textarea { min-height: 70px; }
 form.inline { display: inline; }
 
 .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--chip-bg); color: var(--chip-ink); }
-.b-DRAFT, .b-PLANNED, .b-SUPERSEDED { background: var(--chip-bg); color: var(--chip-ink); }
+.b-DRAFT, .b-PREVIEW, .b-PLANNED, .b-SUPERSEDED { background: var(--chip-bg); color: var(--chip-ink); }
 .b-SENT, .b-PENDING, .b-IN_PRODUCTION, .b-INSTALLATION, .b-CLIENT_REVIEW, .b-IN_PROGRESS, .b-SUBMITTED { background: var(--info-soft); color: var(--info); }
-.b-APPROVED, .b-POSTED, .b-OPEN, .b-ACTIVE, .b-COMPLETED, .b-SUCCESS, .b-CLIENT_APPROVED, .b-RELEASED_FOR_PRODUCTION, .b-RUNNING { background: var(--ok-soft); color: var(--ok); }
-.b-REJECTED, .b-CLOSED, .b-CANCELLED, .b-EXPIRED, .b-FAILED, .b-REFUSED { background: var(--bad-soft); color: var(--bad); }
+.b-APPROVED, .b-IMPORTED, .b-POSTED, .b-OPEN, .b-ACTIVE, .b-COMPLETED, .b-SUCCESS, .b-CLIENT_APPROVED, .b-RELEASED_FOR_PRODUCTION, .b-RUNNING { background: var(--ok-soft); color: var(--ok); }
+.b-REJECTED, .b-DISCARDED, .b-CLOSED, .b-CANCELLED, .b-EXPIRED, .b-FAILED, .b-REFUSED { background: var(--bad-soft); color: var(--bad); }
 .b-ON_HOLD { background: var(--warn-soft); color: var(--warn); }
 
 .alert { padding: 12px 14px; border-radius: 8px; margin-bottom: 16px; }
@@ -580,3 +580,23 @@ table.pivot tbody tr:nth-child(even) td { background: var(--surface-2); }
 /* Match / mismatch marks in reconciliations. */
 .ok-text { color: var(--ok); font-weight: 600; }
 .bad-text { color: var(--bad); font-weight: 600; }
+
+/* Import from Excel (templates) */
+.imp-drop { position: relative; }
+.imp-drop > summary { list-style: none; cursor: pointer; }
+.imp-drop > summary::-webkit-details-marker { display: none; }
+.imp-menu { position: absolute; top: calc(100% + 6px); inset-inline-end: 0; z-index: 20; background: var(--menu-bg); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow-lg); min-width: 300px; padding: 6px; display: grid; gap: 2px; }
+.imp-item { padding: 8px 10px; border-radius: 6px; display: grid; gap: 2px; font-size: 14px; }
+.imp-item:hover { background: var(--hover-strong); }
+.imp-item span { font-size: 13px; }
+.imp-sections { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.imp-sections .card h2 { font-size: 15px; margin: 0 0 8px; }
+.imp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.imp-list li { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 6px 4px; border-bottom: 1px solid var(--line); }
+.imp-list li:last-child { border-bottom: 0; }
+.imp-list .acts { white-space: nowrap; font-size: 13px; }
+.imp-steps { margin: 0; padding-inline-start: 20px; display: grid; gap: 4px; }
+.imp-upload { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+tr.imp-bad td { background: var(--bad-soft); }
+.imp-msg { font-size: 13px; }
+@media (max-width: 640px) { .imp-menu { inset-inline-end: auto; inset-inline-start: 0; min-width: 260px; } }

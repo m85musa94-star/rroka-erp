@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
  */
 class ActivityLog
 {
-    private const IGNORED = ['id', 'created_at', 'updated_at', 'created_by', 'remember_token', 'password'];
+    private const IGNORED = ['id', 'created_at', 'updated_at', 'created_by', 'remember_token', 'password', 'rows', 'result'];
 
     /**
      * @param  array<string, list<int>>  $records  table => ids
