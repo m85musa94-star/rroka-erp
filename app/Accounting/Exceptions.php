@@ -73,9 +73,12 @@ class Exceptions
                 ->map(fn ($r) => tap($r, fn ($r) => $r->url = route('accounting.journal.show', $r->entry_id))),
             'vat_rate' => $docs('SELECT source_type, source_id, doc_no, doc_date, party AS label, vat AS amount FROM v_vat_documents
                  WHERE NOT rate_ok AND doc_date > ? ORDER BY doc_date', [$lock]),
-            'vat_verify' => $docs("SELECT source_type, source_id, doc_no, doc_date, party AS label, vat AS amount FROM v_vat_documents
-                 WHERE bucket = 'PURCH_VERIFY' AND doc_date > ? ORDER BY doc_date", [$lock]),
-            'no_image' => $docs('SELECT * FROM ('.self::approvedDocs().') d WHERE attachment_id IS NULL ORDER BY doc_date'),
+            'vat_verify' => $docs("SELECT source_type, source_id, doc_no, doc_date, party AS label, vat AS amount,
+                       CASE source_type WHEN 'EXPENSE' THEN (SELECT supplier_id FROM expenses WHERE id = source_id)
+                                        WHEN 'PURCHASE' THEN (SELECT supplier_id FROM purchase_invoices WHERE id = source_id) END AS supplier_id
+                  FROM v_vat_documents WHERE bucket = 'PURCH_VERIFY' AND doc_date > ? ORDER BY doc_date", [$lock]),
+            'no_image' => $docs('SELECT * FROM ('.self::approvedDocs().') d WHERE attachment_id IS NULL
+                 AND NOT EXISTS (SELECT 1 FROM document_attachments x WHERE x.source_type = d.source_type AND x.source_id = d.source_id) ORDER BY doc_date'),
             'self_approved' => $docs('SELECT * FROM ('.self::approvedDocs().') d WHERE approved_by = created_by ORDER BY doc_date'),
             'supplier_overdue' => $docs("SELECT * FROM (
                     SELECT 'EXPENSE' AS source_type, e.id AS source_id, e.expense_no AS doc_no, e.expense_date AS doc_date, s.name || ' — ' || e.reference AS label,
@@ -97,6 +100,35 @@ class Exceptions
                  WHERE amount > 0.005 ORDER BY doc_date", [$old]),
             default => abort(404),
         };
+    }
+
+    /**
+     * What can be done about one record of an item, for this user: [label, url, method].
+     * An item without an action (e.g. self-approval) is for review only.
+     */
+    public static function actions(string $key, object $r): array
+    {
+        $u = auth()->user();
+        $can = fn (string ...$p) => collect($p)->contains(fn ($x) => $u->hasPermission($x));
+
+        return array_values(array_filter(match ($key) {
+            'backlog' => [
+                $can('accounting.post') ? [__('ترحيل الآن'), route('accounting.posting.post', [$r->source_type, $r->source_id]), 'post'] : null,
+                $can('accounting.post') ? [__('استبعاد بسبب'), route('accounting.posting.backlog'), 'get'] : null,
+            ],
+            'reconciliation' => [[__('فتح المطابقة'), route('accounting.posting.reconciliation'), 'get']],
+            'partnerless' => [[__('عكس القيد وتصحيحه'), $r->url, 'get']],
+            'vat_rate' => [[__('فتح المستند'), $r->url, 'get']],
+            'vat_verify' => [
+                ! empty($r->supplier_id) && $can('purchases.manage') ? [__('إضافة الرقم الضريبي للمورد'), route('suppliers.edit', $r->supplier_id), 'get'] : null,
+                [__('فتح المستند'), $r->url, 'get'],
+            ],
+            'no_image' => [[__('إرفاق صورة'), $r->url, 'get']],
+            'supplier_overdue' => [$can('purchases.manage') ? [__('سداد للمورد'),
+                route('supplier-payments.create', $r->source_type === 'EXPENSE' ? ['expense' => $r->source_id] : ['purchase' => $r->source_id]), 'get'] : null],
+            'client_overdue' => [$can('sales.manage') ? [__('تسجيل تحصيل'), route('sales.receipts.create', ['invoice' => $r->source_id]), 'get'] : null],
+            default => [],
+        }));
     }
 
     /** Approved documents of every kind, with their attachment and who entered / approved them (a transfer has no image: 0). */

@@ -57,5 +57,6 @@
     </table></div>
     <p class="hint">{{ __('تكلفة الوحدة المستلمة = سعر الوحدة بعد توزيع خصم الفاتورة على البنود بنسبة قيمتها، ودون الضريبة.') }}</p>
 </div>
+@include('partials.attachments', ['type' => 'purchases', 'model' => $p])
 @include('partials.chatter', ['activity' => $activity])
 @endsection

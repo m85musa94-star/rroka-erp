@@ -4,7 +4,6 @@
     @include('partials.control-panel', ['crumbs' => [[__('دليل الحسابات'), route('accounting.accounts.index')], [$a->code.' — '.$a->label(), null]]])
 @endsection
 @section('content')
-@include('partials.back-link')
 <div class="card">
     <h1 class="rec-title">{{ $a->code }} — {{ $a->label() }}</h1>
     @if($a->is_postable && auth()->user()->hasPermission('accounting.manage'))<div class="actions" style="float:inline-end"><a class="btn ghost sm" href="{{ route('accounting.accounts.edit', $a) }}">{{ __('إعدادات الحساب') }}</a></div>@endif

@@ -78,5 +78,6 @@
     @endif
 </div>
 @endif
+@include('partials.attachments', ['type' => 'vat-returns', 'model' => $x])
 @include('partials.chatter', ['activity' => $activity])
 @endsection

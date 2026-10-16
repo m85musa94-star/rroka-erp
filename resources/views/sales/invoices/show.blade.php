@@ -61,5 +61,6 @@
     </table></div>
 </div>
 @endif
+@include('partials.attachments', ['type' => 'sales-invoices', 'model' => $x])
 @include('partials.chatter', ['activity' => $activity])
 @endsection

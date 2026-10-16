@@ -16,6 +16,7 @@ use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\DemoDataController;
 use App\Http\Controllers\Web\DepartmentController;
 use App\Http\Controllers\Web\DesignController;
+use App\Http\Controllers\Web\DocumentAttachmentController;
 use App\Http\Controllers\Web\EmployeeController;
 use App\Http\Controllers\Web\EmployeeCostCardController;
 use App\Http\Controllers\Web\ExpenseController;
@@ -375,6 +376,8 @@ Route::middleware(['auth', 'active', 'audit.user'])->group(function () {
         ->whereNumber('transfer')->middleware('permission:treasury.approve');
 
     // Delete on every screen: drafts and unused master data only (RecordDeleteController checks the permission).
+    Route::post('/attachments/{type}/{id}', [DocumentAttachmentController::class, 'store'])->name('attachments.store')
+        ->whereIn('type', array_keys(DocumentAttachmentController::TYPES))->whereNumber('id')->middleware('throttle:30,1');
     Route::delete('/records/{type}/{id}', [RecordDeleteController::class, 'destroy'])->name('records.destroy')
         ->whereIn('type', array_keys(RecordDeleteController::TYPES))->whereNumber('id');
 

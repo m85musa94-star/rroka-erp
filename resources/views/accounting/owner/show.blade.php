@@ -35,5 +35,6 @@
         @if($x->approved_at)<dt>{{ __('اعتمده') }}</dt><dd>{{ $names[$x->approved_by] ?? '—' }} — {{ $x->approved_at->format('Y-m-d H:i') }} @if($x->selfApproved())<span class="badge b-ON_HOLD">{{ __('اعتماد ذاتي') }}</span>@endif</dd>@endif
     </dl>
 </div>
+@include('partials.attachments', ['type' => 'owner-transactions', 'model' => $x])
 @include('partials.chatter', ['activity' => $activity])
 @endsection

@@ -2258,5 +2258,22 @@
     "فواتير عملاء غير محصّلة": "Uncollected customer invoices",
     "أكثر من :d يومًا ولها رصيد قائم (حسب ربط سند القبض بالفاتورة).": "Older than :d days with an open balance (by the receipts linked to the invoice).",
     "أعمال تحت التنفيذ — :t": "Work in progress — :t",
-    "استثناءات تحتاج مراجعة (أحمر وبرتقالي)": "Exceptions to review (red and orange)"
+    "استثناءات تحتاج مراجعة (أحمر وبرتقالي)": "Exceptions to review (red and orange)",
+    "رجوع إلى الشاشة السابقة": "Back to the previous screen",
+    "بنفس الفلاتر والفترة التي فُتحت بها": "with the filters and period it was opened with",
+    "المستندات المؤيدة": "Supporting documents",
+    "إرفاق صورة": "Attach an image",
+    "المستند المعتمد لا يتغير؛ الصورة تُحفظ بجانبه ولا تُحذف.": "An approved document does not change; the image is kept beside it and never removed.",
+    "ترحيل كل المستندات المعروضة؟": "Post every document listed?",
+    "ترحيل الكل": "Post all",
+    "الإجراء": "Action",
+    "للمراجعة فقط": "Review only",
+    "ترحيل الآن": "Post now",
+    "استبعاد بسبب": "Exclude with a reason",
+    "فتح المطابقة": "Open the reconciliation",
+    "عكس القيد وتصحيحه": "Reverse and correct the entry",
+    "فتح المستند": "Open the document",
+    "إضافة الرقم الضريبي للمورد": "Add the supplier's VAT number",
+    "مستند مؤيد": "Supporting document",
+    "أُرفقت الصورة بالمستند.": "The image was attached to the document."
 }

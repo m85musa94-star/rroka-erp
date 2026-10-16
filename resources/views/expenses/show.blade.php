@@ -57,5 +57,6 @@
     </table></div>
 </div>
 @endif
+@include('partials.attachments', ['type' => 'expenses', 'model' => $x])
 @include('partials.chatter', ['activity' => $activity])
 @endsection

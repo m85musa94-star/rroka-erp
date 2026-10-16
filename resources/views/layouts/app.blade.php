@@ -64,6 +64,7 @@
             <div class="alert bad"><ul>@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul></div>
         @endif
 
+        @include('partials.back-link')
         @yield('content')
         <p class="hint app-version">{{ __('الإصدار') }} <bdi dir="ltr">{{ \App\Support\Release::VERSION }}</bdi></p>
     </main>
@@ -74,6 +75,33 @@ document.addEventListener('submit', e => {
     const msg = e.target.dataset && e.target.dataset.confirm;
     if (msg && !confirm(msg)) { e.preventDefault(); }
 });
+// The way back: a link inside the page content (not the menus, filters or pager) opens its
+// target with ?back=<this page> (its filters and dates included), so that page shows "Back".
+(() => {
+    const main = document.querySelector('main.main');
+    if (!main) return;
+    const here = location.pathname + location.search;
+    const skip = a => a.closest('.cp, .control-panel, .pager, .back-bar, nav, form') || a.target === '_blank' || a.hasAttribute('download');
+    const withBack = href => {
+        let u;
+        try { u = new URL(href, location.href); } catch (e) { return null; }
+        if (u.origin !== location.origin || u.pathname === location.pathname || u.searchParams.has('back')) return null;
+        if (u.searchParams.has('export') || u.searchParams.has('print') || u.pathname.includes('/file/')) return null;
+        u.searchParams.set('back', here);
+        return u.pathname + u.search + u.hash;
+    };
+    main.querySelectorAll('a[href]').forEach(a => {
+        if (skip(a)) return;
+        const h = withBack(a.getAttribute('href'));
+        if (h) a.setAttribute('href', h);
+    });
+    // Clickable rows go where their first link goes (with the way back).
+    main.querySelectorAll('tr.row-link').forEach(tr => {
+        const a = tr.querySelector('a[href]');
+        if (!a) return;
+        tr.onclick = e => { if (!e.target.closest('a, button, input, select, form')) location = a.getAttribute('href'); };
+    });
+})();
 </script>
 @stack('scripts')
 </body>

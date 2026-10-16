@@ -10,7 +10,9 @@ use App\Models\ExpenseCategory;
 use App\Models\PaymentAccount;
 use App\Models\SalesInvoice;
 use App\Models\Supplier;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 /** The exceptions board lists every detective control with its records; red exceptions block closing their month. */
 class ExceptionsTest extends ApiTestCase
@@ -56,6 +58,16 @@ class ExceptionsTest extends ApiTestCase
         $this->actingAs($admin)->get('/accounting/exceptions/backlog')->assertOk()->assertSee($x->expense_no)->assertSee(route('expenses.show', $x), false);
         $this->actingAs($admin)->get('/')->assertOk()->assertSee('استثناءات تحتاج مراجعة');
 
+        // Each record says what can be done about it.
+        $this->actingAs($admin)->get('/accounting/exceptions/backlog')->assertOk()->assertSee('ترحيل الآن')->assertSee('ترحيل الكل');
+        $this->actingAs($admin)->get('/accounting/exceptions/vat_verify')->assertOk()->assertSee(route('suppliers.edit', $unregistered), false);
+        $this->actingAs($admin)->get('/accounting/exceptions/client_overdue')->assertOk()->assertSee('تسجيل تحصيل');
+        $this->actingAs($admin)->get('/accounting/exceptions/self_approved')->assertOk()->assertSee('للمراجعة فقط');
+        // Any screen opened from another shows the way back (a local path only).
+        $this->actingAs($admin)->get('/expenses/'.$x->id.'?back='.urlencode('/accounting/exceptions/no_image'))->assertOk()
+            ->assertSee('رجوع إلى الشاشة السابقة')->assertSee('/accounting/exceptions/no_image');
+        $this->actingAs($admin)->get('/expenses/'.$x->id.'?back='.urlencode('//evil.example'))->assertOk()->assertDontSee('رجوع إلى الشاشة السابقة');
+
         // February does not close while its documents are unposted; once posted it does (January first).
         DB::table('fiscal_periods')->insertOrIgnore([['period_start' => '2026-01-01'], ['period_start' => '2026-02-01']]);
         $this->actingAs($admin)->post('/accounting/periods/2026-01/close')->assertSessionHasNoErrors();
@@ -70,5 +82,24 @@ class ExceptionsTest extends ApiTestCase
         $this->actingAs($this->userWith(['accounting.view']))->get('/accounting/exceptions')->assertOk();
         $this->actingAs($this->userWith(['expenses.view']))->get('/accounting/exceptions')->assertForbidden();
         $this->actingAs($this->userWith(['accounting.view']))->get('/accounting/exceptions/nope')->assertNotFound();
+    }
+
+    public function test_image_attached_after_approval_clears_the_exception(): void
+    {
+        Storage::fake('studio');
+        $admin = $this->admin();
+        $this->actingAs($admin)->post('/treasury/accounts', ['kind' => 'CASH', 'name' => 'TEST cash box'])->assertSessionHasNoErrors();
+        $cat = ExpenseCategory::create(['name' => 'TEST supplies', 'is_overhead' => false]);
+        $this->actingAs($admin)->post('/expenses', ['expense_date' => '2026-02-10', 'category_id' => $cat->id, 'payee' => 'TEST', 'description' => 'TEST',
+            'amount' => 100, 'vat_amount' => 0, 'payment_account_id' => PaymentAccount::value('id')])->assertSessionHasNoErrors();
+        $x = Expense::sole();
+        $this->actingAs($admin)->post("/expenses/{$x->id}/approve")->assertSessionHasNoErrors();
+        $this->assertTrue(collect(Exceptions::rows('no_image'))->pluck('doc_no')->contains($x->expense_no));
+        $this->actingAs($admin)->get("/expenses/{$x->id}")->assertOk()->assertSee('إرفاق صورة');
+        $this->actingAs($admin)->post("/attachments/expenses/{$x->id}", ['document' => UploadedFile::fake()->image('r.jpg')])->assertSessionHasNoErrors();
+        $this->assertSame(1, DB::table('document_attachments')->where('source_type', 'EXPENSE')->where('source_id', $x->id)->count());
+        $this->assertFalse(collect(Exceptions::rows('no_image'))->pluck('doc_no')->contains($x->expense_no));
+        $this->assertNull($x->fresh()->attachment_id);   // the approved document itself is unchanged
+        $this->actingAs($this->userWith(['expenses.view']))->post("/attachments/expenses/{$x->id}", ['document' => UploadedFile::fake()->image('r.jpg')])->assertForbidden();
     }
 }

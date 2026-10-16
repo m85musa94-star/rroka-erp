@@ -130,6 +130,6 @@ class AccountingController extends Controller
     {
         $def = Exceptions::definitions()[$key] ?? abort(404);
 
-        return view('accounting.exceptions.show', ['def' => $def, 'rows' => Exceptions::rows($key)]);
+        return view('accounting.exceptions.show', ['key' => $key, 'def' => $def, 'rows' => Exceptions::rows($key)]);
     }
 }

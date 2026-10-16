@@ -1474,6 +1474,18 @@ SELECT pg_temp.expect_ok('close: an excluded document (with its reason) does not
 UPDATE accounting_settings SET auto_posting = false;
 
 -- ---------------------------------------------------------------------
+-- Images attached after approval: append-only
+-- ---------------------------------------------------------------------
+INSERT INTO studio_assets (id, category, title, disk, path, mime_type, size_bytes, sha256, uploaded_by)
+    VALUES (900, 'DOCUMENT', 'TEST late receipt', 'studio', 'x/900.jpg', 'image/jpeg', 1, repeat('9', 64), 1);
+SELECT pg_temp.expect_ok('attach: an image is added to an approved expense',
+    'INSERT INTO document_attachments (source_type, source_id, asset_id, created_by) VALUES (''EXPENSE'', 6, 900, 2)');
+SELECT pg_temp.expect_error('attach: an attached image is never removed',
+    'DELETE FROM document_attachments WHERE source_id = 6', 'RROKA_ATTACHMENT_LOCKED');
+SELECT pg_temp.expect_error('attach: … nor moved to another document',
+    'UPDATE document_attachments SET source_id = 7 WHERE source_id = 6', 'RROKA_ATTACHMENT_LOCKED');
+
+-- ---------------------------------------------------------------------
 -- Report
 -- ---------------------------------------------------------------------
 \pset footer off
